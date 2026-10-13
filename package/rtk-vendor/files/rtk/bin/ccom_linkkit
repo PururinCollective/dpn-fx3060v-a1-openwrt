@@ -1,0 +1,21 @@
+#!/bin/sh
+# NijikaWrt placeholder for /bin/ccom_linkkit (runs inside the /rtk chroot).
+#
+# The stock binary is D-Link's Alibaba Cloud Link Kit agent: MQTT to the
+# Alibaba IoT cloud with firmware updates (FOTA), config pushes
+# (COTA), remote property/service calls, WiFi provisioning (AWSS) and a LAN
+# control service (ALCS). It is removed from NijikaWrt at build time
+# (scripts/patch-vendor.sh).
+#
+# The stock `startup` launches it and libmib kills/restarts it by name, so
+# this placeholder keeps that contract: it opens no sockets and does nothing.
+
+logger -t ccom_linkkit "Alibaba Cloud IoT agent removed by NijikaWrt (placeholder only)" 2>/dev/null
+
+trap '' HUP USR1 USR2 PIPE
+trap 'exit 0' TERM INT QUIT
+
+while :; do
+	sleep 3600 &
+	wait $!
+done

@@ -1,0 +1,178 @@
+#!/bin/sh
+# /etc/config/rtk: the stock configuration (flash MIB) as a UCI config.
+#
+#   rtk.mib.<KEY>              every scalar of `flash all`
+#   rtk.<TABLE>_<i>.<field>    records of the chain tables in
+#                              nijika.uci.tables (WAN and WiFi by default)
+#
+#   uci-mirror sync    push the options changed in UCI since the last sync
+#                      (`flash set`), then rebuild the file from flash:
+#                      a missing option is filled in from flash, a deleted
+#                      one comes back with the flash value
+#   uci-mirror diff    show what the next sync would write to flash
+#
+# Runs after the vendor boot, on `reload_config` / LuCI "Save & Apply" of
+# the rtk config, and every 10 minutes. Only options that differ from the
+# last sync are written, so a value the stock stack changed meanwhile (web
+# GUI, TR-069) is never overwritten with an old copy. The stock services
+# read the MIB when they start: most changes need a reboot.
+
+. /lib/functions.sh
+. /usr/lib/nijika/common.sh
+
+# RTK_UCI_DIR / NIJIKA_RUNDIR only change for tests
+UCI_DIR=${RTK_UCI_DIR:-/etc/config}
+CONF=$UCI_DIR/rtk
+SNAP=$NIJIKA_RUNDIR/rtk.snapshot
+
+tables() {
+	local t
+	config_load nijika
+	config_get t uci tables 'ATM_VC_TBL WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL'
+	echo $t
+}
+
+# flash -> "section.option=value" lines
+dump() {
+	local t
+	rtk /bin/flash all 2>/dev/null | awk '
+		{ sub(/\r$/, "") }
+		/^[A-Za-z_][A-Za-z0-9_]*=/ {
+			p = index($0, "="); k = substr($0, 1, p - 1)
+			if (!(k in seen)) { seen[k] = 1; print "mib." $0 }
+		}'
+	for t in $(tables); do
+		rtk /bin/flash get "$t" 2>/dev/null | awk -v t="$t" '
+			{ sub(/\r$/, "") }
+			$0 ~ "^" t "\\.[0-9]+:$" { i = substr($0, length(t) + 2); sub(/:$/, "", i); next }
+			i != "" && /^[A-Za-z_][A-Za-z0-9_]*[ \t]*=/ {
+				p = index($0, "="); k = substr($0, 1, p - 1); v = substr($0, p + 1)
+				# "%-18s = %s": drop the padding and the one space after "="
+				if (k ~ /[ \t]$/) { sub(/[ \t]+$/, "", k); sub(/^ /, "", v) }
+				print t "_" i "." k "=" v
+			}'
+	done
+}
+
+# "section.option=value" lines -> UCI config file
+to_uci() {
+	awk '
+		function q(s,   n, a, i, o) {
+			# a quote inside the value becomes quote-backslash-quote-quote, built
+			# without gsub(): busybox 1.37 awk drops backslashes from its
+			# replacement strings
+			n = split(s, a, "\047"); o = a[1]
+			for (i = 2; i <= n; i++) o = o "\047\\\047\047" a[i]
+			return "\047" o "\047"
+		}
+		BEGIN {
+			print "# Stock configuration (flash MIB) of the vendor stack, kept by"
+			print "# /usr/libexec/rtk/uci-mirror. Edit with uci, then `reload_config`"
+			print "# (or `nijika uci sync`) writes the changed options with `flash set`."
+			print "# Most changes take effect after a reboot."
+		}
+		{
+			p = index($0, "="); key = substr($0, 1, p - 1); val = substr($0, p + 1)
+			d = index(key, "."); sec = substr(key, 1, d - 1); opt = substr(key, d + 1)
+			if (sec != cur) {
+				type = sec; if (sec != "mib") sub(/_[0-9]+$/, "", type)
+				printf "\nconfig %s \047%s\047\n", type, sec
+				cur = sec
+			}
+			printf "\toption %s %s\n", opt, q(val)
+		}'
+}
+
+# current UCI values (committed) -> "section.option=value" lines
+from_uci() {
+	/sbin/uci -q -c "$UCI_DIR" show rtk | awk '
+		BEGIN { sq = "\047"; esc = sq "\\" sq sq }
+		/^rtk\.[A-Za-z0-9_]+\.[A-Za-z0-9_]+=/ {
+			line = substr($0, 5); p = index(line, "=")
+			k = substr(line, 1, p - 1); v = substr(line, p + 1)
+			if (substr(v, 1, 1) == sq && substr(v, length(v), 1) == sq) v = substr(v, 2, length(v) - 2)
+			# quote-backslash-quote-quote back to one quote (string search, no gsub)
+			o = ""
+			while ((i = index(v, esc)) > 0) { o = o substr(v, 1, i - 1) sq; v = substr(v, i + 4) }
+			print k "=" o v
+		}'
+}
+
+# lines of $2 that are new or changed against $1
+changed() {
+	awk 'NR == FNR { p = index($0, "="); old[substr($0, 1, p - 1)] = substr($0, p + 1); next }
+	     { p = index($0, "="); k = substr($0, 1, p - 1)
+	       if (!(k in old) || old[k] != substr($0, p + 1)) print }' "$1" "$2"
+}
+
+# UCI key -> flash key: mib.LAN_IP_ADDR -> LAN_IP_ADDR,
+# ATM_VC_TBL_0.MTU -> ATM_VC_TBL.0.MTU
+flash_key() {
+	local sec="${1%%.*}" opt="${1#*.}"
+	if [ "$sec" = mib ]; then
+		echo "$opt"
+	else
+		echo "${sec%_*}.${sec##*_}.$opt"
+	fi
+}
+
+push() {
+	local line key val t n=0 fail=0
+	while IFS= read -r line; do
+		key=${line%%=*} val=${line#*=}
+		t=$(flash_key "$key")
+		if rtk /bin/flash set "$t" "$val" >/dev/null 2>&1; then
+			logger -t rtk-uci "flash set $t"
+			n=$((n + 1))
+		else
+			logger -t rtk-uci "flash set $t failed"
+			fail=$((fail + 1))
+		fi
+	done
+	[ $n -gt 0 ] && echo "rtk: $n option(s) written to flash"
+	[ $fail -gt 0 ] && echo "rtk: $fail option(s) rejected by flash (see logread -e rtk-uci)"
+	return 0
+}
+
+do_sync() {
+	local new="$NIJIKA_RUNDIR/rtk.new" cur="$NIJIKA_RUNDIR/rtk.current"
+
+	# 1. UCI -> flash, only what changed since the last sync. Without a
+	#    snapshot (first run after boot) flash wins.
+	if [ -f "$SNAP" ] && [ -f "$CONF" ]; then
+		from_uci > "$cur"
+		changed "$SNAP" "$cur" | push
+	fi
+
+	# 2. flash -> UCI
+	dump > "$new"
+	[ -s "$new" ] || { rm -f "$new"; echo "rtk: flash not readable" >&2; return 1; }
+	to_uci < "$new" > "$new.uci"
+	if ! cmp -s "$new.uci" "$CONF"; then
+		cat "$new.uci" > "$CONF"
+		chmod 0600 "$CONF"
+	fi
+	mv "$new" "$SNAP"
+	rm -f "$new.uci" "$cur"
+}
+
+do_diff() {
+	[ -f "$SNAP" ] || { echo "no sync yet"; return 0; }
+	from_uci > "$NIJIKA_RUNDIR/rtk.current"
+	changed "$SNAP" "$NIJIKA_RUNDIR/rtk.current" | while IFS= read -r line; do
+		echo "flash set $(flash_key "${line%%=*}") ${line#*=}"
+	done
+	rm -f "$NIJIKA_RUNDIR/rtk.current"
+}
+
+vendor_up || { echo "vendor stack is not running" >&2; exit 1; }
+mkdir -p "$NIJIKA_RUNDIR"
+
+case "$1" in
+	sync|apply|'')
+		( flock -x 9; do_sync ) 9>"$NIJIKA_RUNDIR/rtk-uci.lock" ;;
+	diff)
+		do_diff ;;
+	*)
+		echo "usage: $0 sync|diff" >&2; exit 1 ;;
+esac

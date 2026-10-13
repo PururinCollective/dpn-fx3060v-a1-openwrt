@@ -38,6 +38,10 @@ early() {
 	# later; the stock stack enables IPv6 per interface when configured.
 	echo 1 > /proc/sys/net/ipv6/conf/default/disable_ipv6
 
+	# DNS over HTTPS switch for the stock dnsmasq wrapper, before the stock
+	# stack first starts dnsmasq (late phase)
+	/usr/libexec/rtk/doh-apply boot
+
 	logger -t rtk-vendor "early phase: stock rc0..rc9"
 	/usr/libexec/rtk/run /bin/sh /etc/nijika/rcS 0 9 </dev/null >>"$(rc_out)" 2>&1 &
 	local pid=$! i=0

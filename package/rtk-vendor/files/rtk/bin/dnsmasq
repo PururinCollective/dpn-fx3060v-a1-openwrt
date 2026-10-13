@@ -1,0 +1,40 @@
+#!/bin/sh
+# NijikaWrt wrapper for the stock dnsmasq (the real one is /lib/nijika/dnsmasq,
+# so `pidof`/`killall dnsmasq` still find it). The stock stack rewrites
+# /var/dnsmasq.conf and restarts dnsmasq on every WAN change; this runs each
+# time. With DNS over HTTPS on (/var/nijika/doh holds the proxy address) the
+# generic upstream servers are replaced by the local DoH proxy. The ISP's
+# split DNS (server=/domain/...: voice/IMS, TR-069) stays as it is.
+
+REAL=/lib/nijika/dnsmasq
+DOH=/var/nijika/doh
+
+conf= prev=
+for a in "$@"; do
+	[ "$prev" = -C ] && conf="$a"
+	case "$a" in --conf-file=*) conf="${a#--conf-file=}" ;; esac
+	prev="$a"
+done
+
+mkdir -p /var/nijika
+echo "$*" > /var/nijika/dnsmasq.args
+
+if [ -n "$conf" ] && [ -f "$conf" ]; then
+	# always start from what the stock stack wrote
+	if grep -q '^# nijika-doh' "$conf"; then
+		[ -f "$conf.stock" ] && cp "$conf.stock" "$conf"
+	else
+		cp "$conf" "$conf.stock"
+	fi
+	if [ -s "$DOH" ]; then
+		up=$(cat "$DOH")
+		{
+			echo "# nijika-doh: generic lookups go to the DNS over HTTPS proxy $up"
+			echo "no-resolv"
+			echo "server=$up"
+			grep -v '^server=[^/]' "$conf.stock"
+		} > "$conf"
+	fi
+fi
+
+exec "$REAL" "$@"

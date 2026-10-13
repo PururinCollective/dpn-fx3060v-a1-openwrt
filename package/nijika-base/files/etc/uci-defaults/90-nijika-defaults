@@ -16,6 +16,21 @@ case "$(uci -q get nijika.vendor.boa)" in
 	stock) uci -q set nijika.vendor.boa='lan'; uci -q commit nijika ;;
 esac
 
+# Sections added after r1 (kept settings from an older NijikaWrt).
+uci -q get nijika.doh >/dev/null || uci -q batch <<'END'
+set nijika.doh=doh
+set nijika.doh.enabled='1'
+set nijika.doh.resolver_url='https://b.hitoha.moe/dns-query'
+set nijika.doh.bootstrap_dns='1.1.1.1,8.8.8.8'
+set nijika.doh.listen_port='5053'
+commit nijika
+END
+uci -q get nijika.uci >/dev/null || uci -q batch <<'END'
+set nijika.uci=uci
+set nijika.uci.tables='ATM_VC_TBL WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL'
+commit nijika
+END
+
 # Time comes from the stock stack.
 /etc/init.d/sysntpd disable 2>/dev/null
 

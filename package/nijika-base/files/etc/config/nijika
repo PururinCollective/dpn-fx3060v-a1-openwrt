@@ -24,3 +24,18 @@ config pon 'pon'
 	# PON/ONT status (diag, omcicli) is read on demand when LuCI, `nijika
 	# info` or the login banner asks, and reused for this many seconds.
 	option cache_ttl '5'
+
+config uci 'uci'
+	# Chain tables mirrored into /etc/config/rtk as rtk.<TABLE>_<n>.<field>,
+	# next to every scalar in rtk.mib.<KEY> (see /usr/libexec/rtk/uci-mirror).
+	option tables 'ATM_VC_TBL WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL'
+
+config doh 'doh'
+	# DNS over HTTPS for the LAN and the router: the stock dnsmasq sends
+	# every lookup to https-dns-proxy on 127.0.0.1:<listen_port>, except the
+	# ISP's own domains (voice/IMS, TR-069), which stay on the ISP's DNS.
+	option enabled '1'
+	option resolver_url 'https://b.hitoha.moe/dns-query'
+	# Plain DNS used only to look up the resolver's host name.
+	option bootstrap_dns '1.1.1.1,8.8.8.8'
+	option listen_port '5053'

@@ -171,6 +171,41 @@ Quick Setup writes:
 | WiFi | `WLAN_MBSSIB_TBL.0.{ssid,wpaPSK}` + `SSID`/`WLAN_WPA_PSK` (wlan0), `WLAN1_MBSSIB_TBL.0.*` + `WLAN1_SSID`/`WLAN1_WPA_PSK` (wlan1); band from `WLAN*_PHY_BAND_SELECT` |
 | VoIP | `voipflashcmd set … <line> 0` |
 
+### /etc/config/rtk
+
+`/usr/libexec/rtk/uci-mirror` keeps `/etc/config/rtk` as a UCI view of the
+flash MIB: `rtk.mib.<KEY>` for every scalar of `flash all`, and
+`rtk.<TABLE>_<n>.<field>` for the records of the tables in `nijika.uci.tables`.
+A sync first writes the options that changed in UCI since the previous sync
+(compared against a snapshot in `/tmp/nijika`) with `flash set`, then rebuilds
+the file from flash; the file is only rewritten when its content changed.
+Without a snapshot (first sync after boot) flash wins. Syncs run from the
+`40-uci-mirror` post-boot hook, every 10 minutes from `nijika-housekeep`, and
+on a `rtk` config change through the reload trigger of `nijika-housekeep`
+(`reload_config`, LuCI apply).
+
+## DNS over HTTPS
+
+The LAN keeps using the stock dnsmasq (2.45, started by the stock stack with
+`-C /var/dnsmasq.conf`, rewritten on every WAN change). `patch-vendor.sh` moves
+the real binary to `/rtk/lib/nijika/dnsmasq` (same name, so `pidof`/`killall`
+still find it) and `/rtk/bin/dnsmasq` becomes a wrapper: when
+`/rtk/var/nijika/doh` holds the proxy address, it drops the generic
+`server=<isp-dns>@<wan-ip>` lines, adds `no-resolv` and
+`server=127.0.0.1#5053`, and keeps the ISP's split DNS
+(`server=/ims.tm.com.my/...` for voice, `server=/acs.tm.com.my/...` for
+TR-069). The stock version of the file is kept as `dnsmasq.conf.stock`, so DoH
+can be switched off again without a WAN restart.
+
+`nijika-doh` (START=60) runs `/usr/sbin/https-dns-proxy -a 127.0.0.1 -p 5053
+-b <bootstrap> -r <resolver>` under procd and calls `doh-apply`, which writes
+or removes the switch file and restarts a running stock dnsmasq when it
+changed. `vendor-boot early` writes the switch before the stock stack first
+starts dnsmasq. The package's own init script (built around OpenWrt's dnsmasq
+and nftables) is removed at assembly. The router's own lookups already go to
+the stock dnsmasq (`nameserver 127.0.0.1` in the stock resolv.conf), so they
+use DoH too.
+
 ## Firewall and services
 
 The stock `startup` builds the iptables/ebtables ruleset, NAT, PPPoE

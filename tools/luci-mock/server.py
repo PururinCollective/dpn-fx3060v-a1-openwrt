@@ -136,7 +136,9 @@ UCI = {'nijika': {
     'vendor': {'.type': 'vendor', '.name': 'vendor', '.anonymous': False, 'boa': 'hidden', 'console': '1', 'inetd': '0',
                'lan_mgmt': '1', 'lan_ifname': 'br0'},
     'banner': {'.type': 'banner', '.name': 'banner', '.anonymous': False, 'animate': 'ssh', 'color': 'auto'},
-    'pon': {'.type': 'pon', '.name': 'pon', '.anonymous': False, 'cache_ttl': '5'}}}
+    'pon': {'.type': 'pon', '.name': 'pon', '.anonymous': False, 'cache_ttl': '5'},
+    'doh': {'.type': 'doh', '.name': 'doh', '.anonymous': False, 'enabled': '1',
+            'resolver_url': 'https://b.hitoha.moe/dns-query', 'bootstrap_dns': '1.1.1.1,8.8.8.8', 'listen_port': '5053'}}}
 
 
 def ubus(obj, method, args):

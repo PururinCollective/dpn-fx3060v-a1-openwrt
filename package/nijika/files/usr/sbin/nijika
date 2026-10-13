@@ -478,6 +478,38 @@ nijika_reset() {
 
 # -------------------------------------------------------------- misc ----
 
+# DNS over HTTPS (nijika-doh + the stock dnsmasq wrapper)
+nijika_doh() {
+	case "$1" in
+		on|off)
+			uci set nijika.doh.enabled="$([ "$1" = on ] && echo 1 || echo 0)"
+			uci commit nijika
+			/etc/init.d/nijika-doh reload
+			;;
+		url)
+			[ -n "$2" ] || { echo "usage: nijika doh url https://<host>/dns-query"; return 1; }
+			uci set nijika.doh.resolver_url="$2"
+			uci commit nijika
+			/etc/init.d/nijika-doh reload
+			;;
+		''|status) ;;
+		*) echo "usage: nijika doh [on|off|url <resolver-url>]"; return 1 ;;
+	esac
+	echo "DNS over HTTPS : $([ "$(uci -q get nijika.doh.enabled)" = 0 ] && echo off || echo on)"
+	echo "resolver       : $(uci -q get nijika.doh.resolver_url)"
+	echo "proxy          : $(pidof https-dns-proxy >/dev/null && echo running || echo stopped), 127.0.0.1:$(uci -q get nijika.doh.listen_port || echo 5053)"
+	echo "stock dnsmasq  : $(grep -q '^# nijika-doh' /rtk/var/dnsmasq.conf 2>/dev/null && echo 'forwards to the proxy (ISP voice/TR-069 domains excepted)' || echo 'uses the ISP DNS')"
+}
+
+# /etc/config/rtk mirrors the stock configuration (uci-mirror)
+nijika_uci() {
+	case "$1" in
+		sync|'') /usr/libexec/rtk/uci-mirror sync && echo "/etc/config/rtk is in sync with flash" ;;
+		diff) /usr/libexec/rtk/uci-mirror diff ;;
+		*) echo "usage: nijika uci [sync|diff]"; return 1 ;;
+	esac
+}
+
 nijika_version() {
 	. /etc/openwrt_release
 	. /etc/nijika_release
@@ -511,6 +543,11 @@ System
                                   (NijikaWrt sysupgrade/factory or stock D-Link;
                                   refuses to replace stock without --replace-stock)
   mib get|set|def|all|chain ...   Stock configuration database
+  doh [on|off|url <URL>]          DNS over HTTPS for the LAN (default
+                                  https://b.hitoha.moe/dns-query)
+  uci [sync|diff]                 /etc/config/rtk = stock config as UCI:
+                                  uci get rtk.mib.LAN_IP_ADDR,
+                                  uci set ...; uci commit rtk; reload_config
   boa [hidden|lan]                Stock D-Link GUI on :8080: router-only or LAN
   reset [--all]                   Factory reset (keeps PON identity)
   banner                          Show the login banner
@@ -535,6 +572,8 @@ case "$CMD" in
 	upgrade) nijika_upgrade "$@" ;;
 	mib) nijika_mib "$@" ;;
 	boa) nijika_boa "$@" ;;
+	uci) nijika_uci "$@" ;;
+	doh) nijika_doh "$@" ;;
 	reset) nijika_reset "$@" ;;
 	banner) NIJIKA_BANNER_FORCE=1 exec /usr/libexec/nijika/banner ;;
 	version|-v|--version) nijika_version ;;

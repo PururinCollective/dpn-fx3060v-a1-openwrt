@@ -1,0 +1,3 @@
+#!/bin/sh
+# Mirror the stock configuration into /etc/config/rtk (see uci-mirror).
+exec /usr/libexec/rtk/uci-mirror sync

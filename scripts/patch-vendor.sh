@@ -65,4 +65,13 @@ if [ -f "$RTKDIR/etc/inetd.conf" ]; then
 	sed -i 's|^ssh |#ssh |' "$RTKDIR/etc/inetd.conf"
 fi
 
+# DNS over HTTPS: the stock dnsmasq runs through a wrapper (rtk/bin/dnsmasq
+# from rtk-vendor) that swaps its generic upstreams for the local DoH proxy.
+# The real binary keeps its name so pidof/killall dnsmasq still find it.
+if [ -f "$RTKDIR/bin/dnsmasq" ] && ! grep -q "NijikaWrt wrapper" "$RTKDIR/bin/dnsmasq" 2>/dev/null; then
+	mkdir -p "$RTKDIR/lib/nijika"
+	mv "$RTKDIR/bin/dnsmasq" "$RTKDIR/lib/nijika/dnsmasq"
+	log "moved bin/dnsmasq to lib/nijika/dnsmasq (DoH wrapper)"
+fi
+
 log "vendor tree patched"

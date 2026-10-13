@@ -1,0 +1,36 @@
+#!/bin/sh
+# Point the stock dnsmasq at the DNS over HTTPS proxy (nijika.doh.enabled=1)
+# or back at the ISP's DNS, through the switch file the stock dnsmasq wrapper
+# (/rtk/bin/dnsmasq) reads.
+#   doh-apply boot   only write the switch (the stock stack starts dnsmasq later)
+#   doh-apply        also restart a running stock dnsmasq if the switch changed
+
+. /lib/functions.sh
+
+config_load nijika
+config_get_bool en doh enabled 1
+config_get port doh listen_port 5053
+
+dir=/rtk/var/nijika
+flag=$dir/doh
+want=
+[ "$en" = 1 ] && want="127.0.0.1#$port"
+have=$(cat "$flag" 2>/dev/null)
+
+mkdir -p "$dir"
+if [ -n "$want" ]; then echo "$want" > "$flag"; else rm -f "$flag"; fi
+
+[ "$1" = boot ] && exit 0
+[ "$want" = "$have" ] && exit 0
+
+args=$(cat "$dir/dnsmasq.args" 2>/dev/null)
+pid=$(pidof dnsmasq)
+[ -n "$pid" ] && [ -n "$args" ] || exit 0
+
+logger -t nijika-doh "restarting the stock dnsmasq: DNS over HTTPS $([ -n "$want" ] && echo on || echo off)"
+kill $pid
+i=0
+while pidof dnsmasq >/dev/null && [ $i -lt 5 ]; do sleep 1; i=$((i + 1)); done
+# the stock monitor may have restarted it already
+pidof dnsmasq >/dev/null || /usr/libexec/rtk/run /bin/dnsmasq $args
+exit 0

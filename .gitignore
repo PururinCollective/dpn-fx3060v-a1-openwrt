@@ -1,6 +1,6 @@
-dl/
-build/
-bin/
+/dl/
+/build/
+/bin/
 stock/*
 !stock/README.md
 *.part

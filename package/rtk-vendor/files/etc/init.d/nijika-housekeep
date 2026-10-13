@@ -1,5 +1,7 @@
 #!/bin/sh /etc/rc.common
-# Periodic fix-ups for the stock vendor stack (firewall LAN access, /var mirror).
+# Periodic fix-ups for the stock vendor stack (firewall LAN access, /var
+# mirror, hostname) and the UCI mirror of the stock configuration: a change
+# of /etc/config/rtk (reload_config, LuCI "Save & Apply") is written to flash.
 
 START=95
 USE_PROCD=1
@@ -9,4 +11,12 @@ start_service() {
 	procd_set_param command /usr/libexec/rtk/housekeep
 	procd_set_param respawn 3600 5 0
 	procd_close_instance
+}
+
+service_triggers() {
+	procd_add_reload_trigger rtk
+}
+
+reload_service() {
+	/usr/libexec/rtk/uci-mirror sync | logger -t rtk-uci
 }

@@ -59,6 +59,10 @@ done
 rm -rf "$R"/lib/modules/[0-9]*
 # The opkg -> apk cheat sheet printed at every login (base-files).
 rm -f "$R/etc/profile.d/apk-cheatsheet.sh"
+# https-dns-proxy runs from nijika-doh; the package's own service is built
+# around OpenWrt's dnsmasq and nftables, which this image does not have.
+rm -f "$R/etc/init.d/https-dns-proxy" "$R"/etc/rc.d/[SK]*https-dns-proxy \
+	"$R/etc/config/https-dns-proxy" "$R/etc/uci-defaults/50-https-dns-proxy-migrate-options.sh"
 
 # Login banner: NijikaWrt renderer instead of `cat /etc/banner`.
 sed -i 's|^\[ -f /etc/banner \] && cat /etc/banner$|if [ -x /usr/libexec/nijika/banner ] \&\& [ -z "$FAILSAFE" ]; then /usr/libexec/nijika/banner; elif [ -f /etc/banner ]; then cat /etc/banner; fi|' \
@@ -87,11 +91,12 @@ sed -i "s|^DISTRIB_DESCRIPTION=.*|DISTRIB_DESCRIPTION='$release / OpenWrt $DISTR
 # Executable bits for everything we ship (git may not keep them).
 chmod 0755 "$R"/usr/sbin/nijika "$R"/usr/libexec/rtk/* "$R"/usr/libexec/rtk/post-boot.d/* \
 	"$R"/usr/libexec/nijika/* "$R"/usr/libexec/rpcd/nijika "$R"/etc/init.d/rtk-vendor \
-	"$R"/etc/init.d/nijika-housekeep "$R"/etc/uci-defaults/90-nijika-defaults "$R"/rtk/bin/ccom_linkkit "$R"/rtk/etc/nijika/rcS 2>/dev/null || true
+	"$R"/etc/init.d/nijika-housekeep "$R"/etc/init.d/nijika-doh "$R"/etc/uci-defaults/90-nijika-defaults \
+	"$R"/rtk/bin/ccom_linkkit "$R"/rtk/bin/dnsmasq "$R"/rtk/etc/nijika/rcS 2>/dev/null || true
 chmod 0755 "$R/rtk/var" "$R/rtk/run" "$R/rtk/proc" "$R/rtk/sys" "$R/rtk/dev"
 
 # Enable our services (IB only enables packages it installed itself).
-for svc in rtk-vendor nijika-housekeep; do
+for svc in rtk-vendor nijika-housekeep nijika-doh; do
 	start=$(sed -n 's/^START=//p' "$R/etc/init.d/$svc")
 	ln -sf "../init.d/$svc" "$R/etc/rc.d/S${start}$svc"
 done

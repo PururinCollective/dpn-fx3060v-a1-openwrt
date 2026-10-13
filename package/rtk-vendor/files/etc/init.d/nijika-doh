@@ -1,0 +1,32 @@
+#!/bin/sh /etc/rc.common
+# DNS over HTTPS for the LAN and the router itself: https-dns-proxy on
+# 127.0.0.1, used by the stock dnsmasq for every lookup except the ISP's own
+# domains (voice/IMS, TR-069), which keep going to the ISP's DNS.
+# Settings: nijika.doh (LuCI: PON > Settings, CLI: nijika doh).
+
+START=60
+USE_PROCD=1
+PROG=/usr/sbin/https-dns-proxy
+
+start_service() {
+	local en url boot port
+	config_load nijika
+	config_get_bool en doh enabled 1
+	config_get url doh resolver_url 'https://b.hitoha.moe/dns-query'
+	config_get boot doh bootstrap_dns '1.1.1.1,8.8.8.8'
+	config_get port doh listen_port 5053
+
+	if [ "$en" = 1 ] && [ -x "$PROG" ]; then
+		procd_open_instance
+		procd_set_param command "$PROG" -a 127.0.0.1 -p "$port" -b "$boot" -r "$url" -u nobody -g nogroup
+		procd_set_param respawn 3600 5 0
+		procd_set_param stdout 1
+		procd_set_param stderr 1
+		procd_close_instance
+	fi
+	/usr/libexec/rtk/doh-apply
+}
+
+service_triggers() {
+	procd_add_reload_trigger nijika
+}

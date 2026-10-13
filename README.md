@@ -36,11 +36,19 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   the VoIP configuration server, among others). It runs on ports 8080/443 and is
   firewalled to the router itself unless you set `nijika boa lan`; LuCI owns
   port 80.
+* **DNS over HTTPS** for the LAN and the router, on by default with
+  `https://b.hitoha.moe/dns-query`. The stock DNS server keeps serving the LAN
+  and sends every lookup to a local `https-dns-proxy`, except the ISP's own
+  domains (voice/IMS, TR-069), so phone and remote management keep working.
+* **The stock configuration as UCI**: `/etc/config/rtk` mirrors the flash MIB
+  (`uci get rtk.mib.LAN_IP_ADDR`, `uci get rtk.ATM_VC_TBL_0.vid`); a commit plus
+  `reload_config` (or LuCI "Save & Apply") writes the changed options back
+  with `flash set`.
+* **Quick Setup** (top menu, next to Log out): GPON serial, PLOAM, LOID,
+  PPPoE WAN (VLAN, priority, MTU, ISP presets), WiFi 2.4/5 GHz, VoIP lines 1/2.
 * **LuCI "PON" menu**
   * *ONT Status*: ONU state (O1..O7), RX/TX optical power, temperature,
     voltage, bias, alarms, OLT vendor, and whether the OLT withheld ME 84/171.
-  * *Quick Setup*: GPON serial, PLOAM, LOID, PPPoE WAN (VLAN, priority, MTU,
-    ISP presets), WiFi 2.4/5 GHz, VoIP lines 1/2.
   * *Provisioning*: what the OLT set up over OMCI, for troubleshooting: one
     line per service (VLAN path, what the ONT does with it, which stock WAN
     uses it), the VLAN rules (ME 171) in words, the provider's set-up drawn
@@ -193,6 +201,8 @@ nijika boot [status|0|1|toggle|try N] firmware bank selection
 nijika upgrade [--commit] <fw.bin>    write firmware to the other bank
 nijika mib get|set|def|all|chain      stock configuration database
 nijika boa [hidden|lan]               stock D-Link GUI on :8080: router-only or LAN
+nijika doh [on|off|url <URL>]         DNS over HTTPS status / switch / resolver
+nijika uci [sync|diff]                /etc/config/rtk against the stock flash
 nijika reset [--all]                  factory reset, keeps serial/PLOAM/MAC
 nijika banner | version | rtk [cmd]
 ```
@@ -208,6 +218,29 @@ nijika banner | version | rtk [cmd]
 | `banner.animate` | `ssh` | `always`, `ssh`, `never` (serial at 115200 is slow) |
 | `banner.color` | `auto` | `truecolor`, `256`, `16`, `none` |
 | `pon.cache_ttl` | `5` | PON status is read on demand (LuCI, `nijika info`, banner) and reused this many seconds |
+| `doh.enabled` | `1` | DNS over HTTPS for the LAN and the router |
+| `doh.resolver_url` | `https://b.hitoha.moe/dns-query` | RFC 8484 resolver |
+| `doh.bootstrap_dns` | `1.1.1.1,8.8.8.8` | plain DNS used only to look up the resolver's host name |
+| `doh.listen_port` | `5053` | local port of the proxy (127.0.0.1) |
+| `uci.tables` | `ATM_VC_TBL WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL` | chain tables mirrored into `/etc/config/rtk` |
+
+## The stock configuration as UCI (`/etc/config/rtk`)
+
+```
+uci get rtk.mib.LAN_IP_ADDR             # any scalar of `flash all`
+uci get rtk.ATM_VC_TBL_0.vid            # record 0 of a chain table
+uci set rtk.WLAN_MBSSIB_TBL_0.ssid='My WiFi'
+uci commit rtk && reload_config         # -> flash set WLAN_MBSSIB_TBL.0.ssid ...
+nijika uci diff                         # what the next sync would write
+```
+
+The file is rebuilt from flash after boot, every 10 minutes and after each
+apply: an option missing from UCI is filled in with its flash value, and
+`uci delete` brings the flash value back. Only options changed in UCI since the
+last sync are written, so a value the stock web GUI or TR-069 changed in the
+meantime is not overwritten. The stock services read their configuration when
+they start, so most changes need a reboot. The file holds the same secrets as
+the stock configuration (PPPoE, WiFi keys) and is readable by root only.
 
 ## Development
 

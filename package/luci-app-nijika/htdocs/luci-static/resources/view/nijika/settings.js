@@ -34,6 +34,24 @@ return view.extend({
 		o.default = 'br0';
 		o.depends('lan_mgmt', '1');
 
+		s = m.section(form.NamedSection, 'doh', 'doh', _('DNS over HTTPS'),
+			_('The stock DNS server (dnsmasq) sends every lookup of the LAN and the router to a local DNS over HTTPS proxy. Only the ISP\'s own domains (voice/IMS, TR-069 management) still go to the ISP\'s DNS, so phone and remote management keep working.'));
+		o = s.option(form.Flag, 'enabled', _('Enable'));
+		o.default = '1';
+		o.rmempty = false;
+		o = s.option(form.Value, 'resolver_url', _('Resolver URL'), _('RFC 8484 endpoint.'));
+		o.placeholder = 'https://b.hitoha.moe/dns-query';
+		o.default = 'https://b.hitoha.moe/dns-query';
+		o.validate = function(id, v) {
+			return /^https:\/\/[^\s\/]+\/\S*$/.test(v) ? true : _('Expected https://host/path');
+		};
+		o.depends('enabled', '1');
+		o = s.option(form.Value, 'bootstrap_dns', _('Bootstrap DNS'),
+			_('Plain DNS servers, comma separated, used only to look up the resolver\'s host name.'));
+		o.placeholder = '1.1.1.1,8.8.8.8';
+		o.default = '1.1.1.1,8.8.8.8';
+		o.depends('enabled', '1');
+
 		s = m.section(form.NamedSection, 'banner', 'banner', _('Login banner'));
 		o = s.option(form.ListValue, 'animate', _('Animation'));
 		o.value('ssh', _('SSH/telnet sessions only'));
