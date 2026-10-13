@@ -22,8 +22,9 @@ can therefore always be undone by booting the other bank.
   stock image has no board metadata).
 * `logread -e rtk`, `cat /tmp/log/rtk-boot.log`: vendor stack messages.
 * `rtk` opens a stock shell inside the chroot (stock `mib`, `diag`, … as usual).
-* `uci set nijika.vendor.boa=stock; uci commit; reload_config` gives the
-  D-Link GUI on `http://192.168.0.1:8080/`.
+* `nijika boa lan` opens the D-Link GUI on `http://192.168.0.1:8080/` to the
+  LAN (it always runs; by default only the router itself may reach it, e.g.
+  `ssh -L 8080:127.0.0.1:8080 root@192.168.0.1` then `http://127.0.0.1:8080/`).
 * OpenWrt failsafe: press `f` + Enter on the console when preinit prompts.
   This boots without the overlay; `firstboot -y` resets OpenWrt settings only.
 
@@ -41,28 +42,37 @@ passwords do not apply to LuCI or SSH.
 
 ## NijikaWrt does not boot (or no console)
 
-A trial boot (default for `nijika upgrade`/sysupgrade) falls back on its own:
-U-Boot armed a 60 s watchdog, and if the kernel/procd never comes up the
-board resets into `sw_commit`.
+A trial boot (default for `nijika upgrade`/sysupgrade and the stock web
+upgrade) falls back on its own once the new firmware has reached preinit:
+NijikaWrt marks the trial as used there (U-Boot's own `saveenv` does not
+persist on this board, see FLASH_LAYOUT.md), so a hang before rc35 followed by
+the 60 s watchdog or a power cycle brings back `sw_commit`.
 
-If NijikaWrt was committed (`--commit`, or the stock web upgrade committed it),
-interrupt U-Boot ("Hit any key to stop autoboot") on the console:
+If the kernel dies before preinit, or NijikaWrt was committed, boot the other
+bank by hand: interrupt U-Boot ("Hit any key to stop autoboot") on the console
+and run the bank's boot script directly, which needs no environment write:
 
 ```
-setenv sw_commit 1
-setenv sw_active 1
-setenv sw_tryactive 2
-saveenv
-reset
+run b2
 ```
 
-(use the bank number that still holds stock firmware).
+(`b1` = bank 0, `b2` = bank 1; use the bank that still holds stock firmware).
+Then make the choice permanent from the stock shell, whose `nv` writes do
+reach the flash:
+
+```
+nv setenv sw_commit 1
+nv setenv sw_active 1
+nv setenv sw_tryactive 2
+```
 
 ## Stock GUI upgrade fails with "ubiupdatevol … Device or resource busy"
 
-The stock GUI writes bank `1 - sw_active`. If a bank was booted by hand from
-U-Boot (`run b1`/`run b2`) without `saveenv`, `sw_active` no longer matches the
-running bank, and the GUI targets the firmware that is running right now.
+The stock GUI writes bank `1 - sw_active`. U-Boot updates `sw_active` only in
+memory (its `saveenv` does not persist on this board), so after a trial boot or
+a manual `run b1`/`run b2`, `sw_active` can name the wrong bank and the GUI
+targets the firmware that is running right now. NijikaWrt corrects
+`sw_active` on every boot; the stock firmware does not.
 NijikaWrt's `fwu.sh` detects this, writes nothing, corrects the environment
 (`sw_active=sw_commit=<running bank>`, `sw_tryactive=2`) and prints
 `[x] please upload the firmware again`. Uploading again then writes the other

@@ -1,23 +1,5 @@
 #!/bin/sh
-# Apply /etc/config/nijika vendor settings that can change at runtime.
-
-. /lib/functions.sh
-
-config_load nijika
-config_get boa vendor boa shim
-
-if grep -q " /rtk/var " /proc/mounts; then
-	mkdir -p /rtk/var/nijika
-	old=$(cat /rtk/var/nijika/boa.mode 2>/dev/null)
-	echo "$boa" > /rtk/var/nijika/boa.mode
-	if [ "$old" != "$boa" ]; then
-		# Restart boa in the new mode; the stock stack expects it running.
-		pid=$(cat /rtk/var/run/boa.pid 2>/dev/null)
-		[ -n "$pid" ] && kill "$pid" 2>/dev/null
-		killall boa.stock 2>/dev/null
-		sleep 1
-		/usr/libexec/rtk/run /bin/sh -c '/bin/boa >/dev/null 2>&1 &'
-	fi
-fi
-
-/usr/libexec/rtk/lan-mgmt
+# Apply /etc/config/nijika vendor settings at runtime (uci reload trigger).
+# The stock boa always runs; nijika.vendor.boa only decides who may reach
+# its web GUI, which is a firewall question.
+exec /usr/libexec/rtk/lan-mgmt

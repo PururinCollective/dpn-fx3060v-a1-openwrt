@@ -12,11 +12,11 @@ return view.extend({
 
 		s = m.section(form.NamedSection, 'vendor', 'vendor', _('Vendor stack'));
 
-		o = s.option(form.ListValue, 'boa', _('Stock web server (boa)'),
-			_('The stock daemons expect boa to be running. "Shim" only satisfies that; "Stock" runs the original D-Link web GUI on port 8080 for settings not covered by LuCI yet.'));
-		o.value('shim', _('Shim (no web GUI)'));
-		o.value('stock', _('Stock D-Link GUI on port 8080'));
-		o.default = 'shim';
+		o = s.option(form.ListValue, 'boa', _('Stock D-Link web GUI (ports 8080, 443)'),
+			_('The stock web server (boa) always runs, the stock stack needs it (it starts the VoIP configuration server, among others). This only decides who may open its GUI: the router itself (reach it with <code>ssh -L 8080:127.0.0.1:8080</code>) or the whole LAN.'));
+		o.value('hidden', _('Router only (hidden)'));
+		o.value('lan', _('Reachable from the LAN'));
+		o.default = 'hidden';
 
 		o = s.option(form.Flag, 'console', _('Vendor boot output on console'),
 			_('Show the stock boot messages on the serial console. When off they go to the system log (<code>logread -e rtk</code>). Applies on next boot.'));

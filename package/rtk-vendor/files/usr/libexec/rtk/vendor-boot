@@ -18,7 +18,6 @@ EARLY_TIMEOUT=150
 
 config_load nijika
 config_get_bool console vendor console 1
-config_get boa vendor boa shim
 
 mkdir -p "$RTK/var/nijika" /tmp/log
 
@@ -33,16 +32,13 @@ rc_out() {
 early() {
 	[ -f "$EARLY_DONE" ] && return 0
 
-	# Hand settings over to the vendor side before the rc chain starts boa.
-	echo "$boa" > "$RTK/var/nijika/boa.mode"
-
 	# Interfaces created by the Realtek drivers must not start IPv6 (MLD)
 	# before the driver has finished probing: ca_ne crashes transmitting
 	# through its not yet registered TX hook. Stock rc14 sets the same value
 	# later; the stock stack enables IPv6 per interface when configured.
 	echo 1 > /proc/sys/net/ipv6/conf/default/disable_ipv6
 
-	logger -t rtk-vendor "early phase: stock rc0..rc9 (boa=$boa)"
+	logger -t rtk-vendor "early phase: stock rc0..rc9"
 	/usr/libexec/rtk/run /bin/sh /etc/nijika/rcS 0 9 </dev/null >>"$(rc_out)" 2>&1 &
 	local pid=$! i=0
 	while kill -0 "$pid" 2>/dev/null; do

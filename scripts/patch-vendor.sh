@@ -41,10 +41,10 @@ comment_line "$RC/rc2" "mdev -s" "devtmpfs + procd create device nodes"
 # rc34: procd feeds /dev/watchdog (also armed by U-Boot for trial boots).
 [ -f "$RC/rc34" ] && comment_line "$RC/rc34" "rtk_watchdog" "procd owns /dev/watchdog"
 
-# boa: shim installed by package rtk-vendor; keep the original as boa.stock
-if [ -f "$RTKDIR/bin/boa" ] && ! grep -q "NijikaWrt boa shim" "$RTKDIR/bin/boa" 2>/dev/null; then
-	mv "$RTKDIR/bin/boa" "$RTKDIR/bin/boa.stock"
-fi
+# boa stays the real stock binary: besides the web GUI it starts the VoIP
+# flash server (voip_flash_server_start) that VoIP_maserati waits for. It
+# only moves to port 8080 (below); lan-mgmt firewalls it to localhost unless
+# nijika.vendor.boa=lan.
 
 # Alibaba Cloud Link Kit agent (iot-*.aliyuncs.com: cloud FOTA/COTA, remote
 # property/service calls, AWSS WiFi provisioning, ALCS LAN control). Removed
@@ -55,7 +55,7 @@ if [ -f "$RTKDIR/bin/ccom_linkkit" ] && ! grep -q "NijikaWrt placeholder" "$RTKD
 	log "removed bin/ccom_linkkit (Alibaba Cloud IoT agent)"
 fi
 
-# Stock GUI (boa mode "stock") moves to 8080, uhttpd/LuCI owns port 80.
+# Stock GUI moves to 8080, uhttpd/LuCI owns port 80.
 if [ -f "$RTKDIR/home/httpd/boa.conf" ]; then
 	sed -i 's/^Port 80$/Port 8080/' "$RTKDIR/home/httpd/boa.conf"
 fi

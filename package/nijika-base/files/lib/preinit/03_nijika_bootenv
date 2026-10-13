@@ -1,0 +1,46 @@
+# NijikaWrt: finish the A/B boot bookkeeping U-Boot leaves undone.
+#
+# U-Boot's boot_by_tryactive sets sw_tryactive=2 and sw_active=<bank>, then
+# saveenv - but on this board the saveenv never reaches the flash (both env
+# copies still hold the old values after a trial boot). Left alone, the
+# trial boot repeats on every reboot (no fallback if it fails), the stock
+# fw_loaded.sh never commits the new bank, and the stock web upgrade later
+# picks the running bank as "1 - sw_active" (ubiupdatevol busy).
+#
+# Write what U-Boot meant to write: the trial is consumed (sw_tryactive=2)
+# and sw_active names the running bank. Only changed values are written.
+
+nijika_nv() {
+	/usr/libexec/rtk/glibc /rtk/bin/nv "$@" 2>/dev/null
+}
+
+nijika_nv_get() {
+	nijika_nv getenv "$1" | sed -n "s/^$1=//p"
+}
+
+nijika_bootenv() {
+	local arg bank= try active
+
+	for arg in $(cat /proc/cmdline); do
+		case "$arg" in
+			root=31:8) bank=0 ;;
+			root=31:11) bank=1 ;;
+		esac
+	done
+	[ -n "$bank" ] && [ -x /rtk/bin/nv ] || return 0
+	mkdir -p /var/run
+
+	try=$(nijika_nv_get sw_tryactive)
+	active=$(nijika_nv_get sw_active)
+
+	if [ "$try" = "$bank" ]; then
+		echo "- nijika: trial boot of bank $bank, setting sw_tryactive=2 -"
+		nijika_nv setenv sw_tryactive 2
+	fi
+	if [ -n "$active" ] && [ "$active" != "$bank" ]; then
+		echo "- nijika: sw_active=$active but running bank $bank, fixing -"
+		nijika_nv setenv sw_active "$bank"
+	fi
+}
+
+boot_hook_add preinit_main nijika_bootenv

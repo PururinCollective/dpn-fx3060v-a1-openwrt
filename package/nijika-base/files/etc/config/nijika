@@ -1,8 +1,10 @@
 
 config vendor 'vendor'
-	# boa: 'shim' keeps the stock stack happy without serving anything,
-	#      'stock' runs the original D-Link web GUI on port 8080.
-	option boa 'shim'
+	# The stock web server (boa) always runs: the stock stack needs it (it
+	# starts the VoIP flash server, among others). Its D-Link GUI listens
+	# on port 8080:  'hidden' = only from the router itself (SSH tunnel),
+	#                'lan'    = also from the LAN.
+	option boa 'hidden'
 	# Print the stock vendor boot output on the serial console (1) or
 	# send it to the system log (0, see: logread -e rtk).
 	option console '1'

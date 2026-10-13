@@ -11,13 +11,13 @@ include $(INCLUDE_DIR)/package.mk
 define Package/rtk-vendor
   SECTION:=utils
   CATEGORY:=NijikaWrt
-  TITLE:=Stock Realtek userland integration (/rtk chroot, boa shim)
+  TITLE:=Stock Realtek userland integration (/rtk chroot)
   PKGARCH:=all
 endef
 
 define Package/rtk-vendor/description
  Starts the stock Realtek userland of the D-Link DPN-FX3060V inside the
- /rtk chroot (PON, OMCI, WAN, WiFi, VoIP), provides the boa shim and
+ /rtk chroot (PON, OMCI, WAN, WiFi, VoIP, stock boa on :8080) and provides
  wrappers for the stock tools (mib, flash, diag, omcicli, nv, ...).
  The /rtk tree itself comes from the stock firmware (see build.sh).
 endef

@@ -1,18 +1,59 @@
 #!/bin/sh
-# Ensure OpenWrt management services are reachable from the LAN bridge
-# through the stock iptables ruleset. Idempotent.
+# Keep the stock iptables ruleset (rebuilt by `startup` on WAN changes) in
+# line with NijikaWrt. Idempotent; run after vendor boot and every minute by
+# nijika-housekeep.
+#
+#  - SSH (22) and LuCI (80) reachable from the LAN bridge
+#  - stock web GUI (the real boa, needed by the stock stack: it starts the
+#    VoIP flash server among others) on its own port, 8080, plus its
+#    built-in HTTPS listener on 443 (not configurable in boa.conf):
+#      nijika.vendor.boa=hidden  only from the router itself (SSH tunnel)
+#      nijika.vendor.boa=lan     also from the LAN bridge
 
 . /lib/functions.sh
 
 config_load nijika
 config_get_bool enabled vendor lan_mgmt 1
 config_get lan vendor lan_ifname br0
-[ "$enabled" = 1 ] || exit 0
+config_get boa vendor boa hidden
 
-ipt() { /usr/libexec/rtk/run /bin/iptables "$@" 2>/dev/null; }
+ipt()  { /usr/libexec/rtk/run /bin/iptables "$@" 2>/dev/null; }
+ip6t() { /usr/libexec/rtk/run /bin/ip6tables "$@" 2>/dev/null; }
 
-for port in 22 80; do
-	ipt -C INPUT -i "$lan" -p tcp --dport "$port" -j ACCEPT ||
-		ipt -I INPUT 1 -i "$lan" -p tcp --dport "$port" -j ACCEPT
+# ensure <present|absent> <rule...>, for IPv4 and IPv6
+ensure() {
+	local want="$1" t
+	shift
+	for t in ipt ip6t; do
+		if [ "$want" = present ]; then
+			$t -C INPUT "$@" || $t -I INPUT 1 "$@"
+		else
+			while $t -C INPUT "$@"; do $t -D INPUT "$@" || break; done
+		fi
+	done
+}
+
+boa_port=$(sed -n 's/^Port[[:space:]]\+\([0-9]\+\).*/\1/p' /rtk/home/httpd/boa.conf 2>/dev/null)
+boa_ports="${boa_port:-8080} 443"
+
+case "$boa" in
+	lan|stock) boa_lan=1 ;;
+	*) boa_lan=0 ;;	# hidden (default), legacy "shim"
+esac
+
+if [ "$enabled" = 1 ]; then
+	for port in 22 80; do
+		ensure present -i "$lan" -p tcp --dport "$port" -j ACCEPT
+	done
+fi
+
+for port in $boa_ports; do
+	if [ "$boa_lan" = 1 ]; then
+		ensure absent ! -i lo -p tcp --dport "$port" -j DROP
+		[ "$enabled" = 1 ] && ensure present -i "$lan" -p tcp --dport "$port" -j ACCEPT
+	else
+		ensure absent -i "$lan" -p tcp --dport "$port" -j ACCEPT
+		ensure present ! -i lo -p tcp --dport "$port" -j DROP
+	fi
 done
 exit 0

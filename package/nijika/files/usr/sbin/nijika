@@ -415,15 +415,25 @@ nijika_mib() {
 # -------------------------------------------------------------- boa ----
 
 nijika_boa() {
-	case "$1" in
-		shim|stock)
-			uci set nijika.vendor.boa="$1"
+	local mode="$1"
+	case "$mode" in
+		shim) mode=hidden ;;
+		stock) mode=lan ;;
+	esac
+	case "$mode" in
+		hidden|lan)
+			uci set nijika.vendor.boa="$mode"
 			uci commit nijika
 			/usr/libexec/rtk/apply-settings
-			[ "$1" = stock ] && echo "Stock web GUI on http://<router>:8080/" || echo "boa shim active"
+			if [ "$mode" = lan ]; then
+				echo "Stock D-Link GUI reachable from the LAN: http://<router>:8080/"
+			else
+				echo "Stock D-Link GUI only from the router: ssh -L 8080:127.0.0.1:8080 root@<router>"
+			fi
 			;;
 		*)
-			echo "boa mode: $(uci -q get nijika.vendor.boa || echo shim) (nijika boa shim|stock)"
+			echo "stock GUI (boa, port 8080): $(uci -q get nijika.vendor.boa || echo hidden)"
+			echo "usage: nijika boa hidden|lan"
 			;;
 	esac
 }
@@ -500,7 +510,7 @@ System
                                   (NijikaWrt sysupgrade/factory or stock D-Link;
                                   refuses to replace stock without --replace-stock)
   mib get|set|def|all|chain ...   Stock configuration database
-  boa [shim|stock]                boa shim, or stock web GUI on :8080
+  boa [hidden|lan]                Stock D-Link GUI on :8080: router-only or LAN
   reset [--all]                   Factory reset (keeps PON identity)
   banner                          Show the login banner
   version                         Versions of all layers

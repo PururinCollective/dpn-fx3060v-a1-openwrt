@@ -32,9 +32,10 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   like the original from the first boot.
 * **No vendor cloud agent**: D-Link's Alibaba Cloud IoT agent (`ccom_linkkit`:
   cloud firmware/config push, remote control) is removed from the image.
-* **boa shim**: the stock daemons expect `boa` to be alive. A shim keeps that
-  contract while LuCI owns port 80. Optionally the original web GUI runs on
-  port 8080.
+* **Stock boa kept, but hidden**: the stock stack needs the real `boa` (it starts
+  the VoIP configuration server, among others). It runs on ports 8080/443 and is
+  firewalled to the router itself unless you set `nijika boa lan`; LuCI owns
+  port 80.
 * **LuCI "PON" menu**
   * *ONT Status*: ONU state (O1..O7), RX/TX optical power, temperature,
     voltage, bias, alarms, OLT vendor, and whether the OLT withheld ME 84/171.
@@ -145,7 +146,7 @@ First boot:
   stock OpenWrt: user `root` with **no password**. LuCI shows "No password
   set!"; set one under *System → Administration* (or `passwd` on the shell).
   The stock D-Link accounts (`tmadmin`, …) only apply to the stock GUI on port
-  8080 (`nijika boa stock`).
+  8080 and HTTPS 443 (router-only by default; `nijika boa lan` opens it to the LAN).
 * SSH: `ssh root@192.168.0.1`. Serial console (ttyS0): press Enter for a root
   shell; no login, like OpenWrt (`system.@system[0].ttylogin=0`).
 
@@ -160,7 +161,7 @@ First boot:
  │                                                                           │
  │   ┌──────────────── /rtk : stock D-Link rootfs (glibc 2.30) ───────────┐  │
  │   │ configd · startup · systemd(rtk) · omci_app · spppd · dnsmasq ·    │  │
- │   │ hostapd · VoIP · boa → shim (or boa.stock on :8080)                │  │
+ │   │ hostapd · VoIP · boa (:8080, firewalled to localhost)            │  │
  │   │ /var = own tmpfs, /var/config = UBI ubi_Config (stock MIB)         │  │
  │   └────────────────────────────────────────────────────────────────────┘  │
  └───────────────────────────────────────────────────────────────────────────┘
@@ -168,7 +169,7 @@ First boot:
 ```
 
 Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): boot sequence,
-chroot mounts, patched stock rc lines, path mirrors, the boa shim, the
+chroot mounts, patched stock rc lines, path mirrors, why boa must run, the
 sysupgrade A/B flow and the overlay handling.
 
 ## The `nijika` command
@@ -186,7 +187,7 @@ nijika isp [unifi|maxis|time|...]     ISP VLAN/priority/MTU preset for the Inter
 nijika boot [status|0|1|toggle|try N] firmware bank selection
 nijika upgrade [--commit] <fw.bin>    write firmware to the other bank
 nijika mib get|set|def|all|chain      stock configuration database
-nijika boa [shim|stock]               boa shim or stock GUI on :8080
+nijika boa [hidden|lan]               stock D-Link GUI on :8080: router-only or LAN
 nijika reset [--all]                  factory reset, keeps serial/PLOAM/MAC
 nijika banner | version | rtk [cmd]
 ```
@@ -195,7 +196,7 @@ nijika banner | version | rtk [cmd]
 
 | Option | Default | |
 |---|---|---|
-| `vendor.boa` | `shim` | `stock` runs the D-Link web GUI on port 8080 |
+| `vendor.boa` | `hidden` | stock D-Link GUI (always running on :8080): `hidden` = router only, `lan` = LAN too |
 | `vendor.console` | `1` | stock boot output on ttyS0 (`0` sends it to `logread -e rtk`) |
 | `vendor.inetd` | `0` | stock telnet (port 23) |
 | `vendor.lan_mgmt` | `1` | keep TCP 22/80 open on `br0` in the stock iptables |

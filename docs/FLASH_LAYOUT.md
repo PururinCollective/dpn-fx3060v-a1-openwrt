@@ -52,19 +52,29 @@ en_wdt=watchdog 60
 | variable | meaning |
 |---|---|
 | `sw_commit` | bank booted by default |
-| `sw_active` | bank booted this time (U-Boot keeps it in sync) |
+| `sw_active` | bank booted this time (U-Boot means to keep it in sync, see below) |
 | `sw_tryactive` | `0`/`1`: boot that bank **once** with a 60 s hardware watchdog; `2`: no trial |
 | `sw_version0/1` | version strings shown by the GUI (`fwu_ver`) |
 | `sw_valid0/1` | bank validity flags |
 | `sw_updater` | set by non-OMCI upgrades; stock `fw_loaded.sh` then commits the trial bank after a good boot |
+
+On this board the `saveenv` inside `boot_by_tryactive` / `set_act0/1` never
+reaches the flash: after a trial boot both env copies (`env`, `env2`) still
+hold `sw_tryactive=<bank>` and the old `sw_active` (seen on r6 and r7). Left
+alone, the trial repeats on every reboot, `fw_loaded.sh` compares against the
+stale `sw_active` and commits nothing, and the stock GUI later targets the
+running bank. NijikaWrt's preinit hook `03_nijika_bootenv` writes what U-Boot
+meant to: `sw_tryactive=2` when the running bank is the trial bank, and
+`sw_active=<running bank>` (only values that differ are written).
 
 NijikaWrt drives these through the stock `nv` tool:
 
 * `nijika upgrade` / sysupgrade / LuCI write the other bank and set
   `sw_updater=nijika`, `sw_tryactive=<bank>`. After the reboot, `fw_loaded.sh`
   (stock rc35, runs in the vendor chroot) commits the bank. If the new firmware
-  never gets that far, the watchdog resets the board and U-Boot boots
-  `sw_commit` again.
+  reaches preinit but not rc35, the watchdog or a reboot brings back
+  `sw_commit`. A kernel that dies before preinit keeps trial-booting (U-Boot
+  cannot record the attempt), see RECOVERY.md.
 * `nijika boot <n>` sets `sw_commit=sw_active=<n>`, `sw_tryactive=2`.
 
 The kernel identifies the running bank by `root=31:8` (bank 0) or `root=31:11`

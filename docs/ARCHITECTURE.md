@@ -31,7 +31,7 @@ trial-booted bank) and the WiFi tuning helpers `cmd`/`cmd1` are not found.
 │   ├── var           own tmpfs (stock rc2 used a ramfs)
 │   │   └── config    UBIFS ubi_Config, mounted by stock rc2: the MIB
 │   ├── run           tmpfs
-│   ├── bin/boa       NijikaWrt shim; bin/boa.stock = original
+│   ├── bin/boa       stock boa on port 8080 (firewalled, see below)
 │   └── etc/nijika/   patched copy of the stock rc chain
 ├── lib/firmware  ──► /rtk/lib/firmware   (kernel firmware loader)
 ├── etc/serdes    ──► /rtk/etc/serdes     (ca-pon SerDes tables)
@@ -97,8 +97,7 @@ comments out these lines (the originals stay in place):
 
 Other build-time changes to `/rtk`:
 
-* `bin/boa` → `bin/boa.stock`, shim installed as `bin/boa`
-* `home/httpd/boa.conf`: `Port 80` → `Port 8080` (used when `boa=stock`)
+* `home/httpd/boa.conf`: `Port 80` → `Port 8080` (uhttpd/LuCI owns port 80)
 * `etc/inetd.conf`: `ssh` line commented (OpenWrt dropbear owns port 22)
 * `bin/ccom_linkkit` **removed**: D-Link's Alibaba Cloud Link Kit agent
   (MQTT to `iot-*.aliyuncs.com`, cloud firmware/config push, remote
@@ -108,14 +107,29 @@ Other build-time changes to `/rtk`:
   talk to endpoints configured in the MIB (ISP ACS/controller, your DDNS
   provider) or when used.
 
-## boa shim
+## boa (stock web server)
 
-`startup`, `libmib`, `cwmpClient` and the Realtek `systemd` daemon track the
-web server through `/var/run/boa.pid` and signal it after config changes. The
-shim (`/rtk/bin/boa`, a busybox sh script) writes the pid file, ignores
-HUP/USR1/USR2 and sleeps. With `uci set nijika.vendor.boa=stock` it execs the
-original boa instead, which serves the D-Link GUI on port 8080. That's handy for
-settings LuCI doesn't cover yet.
+The stock `boa` is not just the D-Link GUI. At startup it also creates the
+**VoIP flash server** (`voip_flash_server_start`, SysV shared memory) that
+`VoIP_maserati` waits for. `startup`, `libmib`, `cwmpClient` and the Realtek
+`systemd` daemon also track it through `/var/run/boa.pid`. Boot 2 (r5/r6) ran a
+pid-only shim instead: `VoIP_maserati` waited forever (`waiting voip flash
+server init...`), GWDT killed and relaunched it every 30 s, and the phone ports
+never worked.
+
+So the **real boa always runs**, moved to port 8080 (`boa.conf`) because
+uhttpd/LuCI owns port 80. This boa build has no `Listen` directive and binds all
+addresses, so access is a firewall rule, kept by `lan-mgmt` for IPv4 and IPv6:
+
+boa also opens a built-in HTTPS listener on 443 (`bind_web_socket` in the boot
+log; not set in `boa.conf`), so both ports get the same rule:
+
+* `nijika.vendor.boa=hidden` (default): 8080 and 443 are dropped except on
+  `lo`. Reach the GUI with `ssh -L 8080:127.0.0.1:8080 root@<router>`.
+* `nijika.vendor.boa=lan`: 8080 and 443 are accepted from the LAN bridge.
+
+During boot the stock firewall is rebuilt, and the GUI can be briefly reachable
+until the post-boot hook runs; it still requires the stock login.
 
 ## Configuration bridge
 

@@ -115,7 +115,7 @@ def nijika_call(method, args):
 
 
 UCI = {'nijika': {
-    'vendor': {'.type': 'vendor', '.name': 'vendor', '.anonymous': False, 'boa': 'shim', 'console': '1', 'inetd': '0',
+    'vendor': {'.type': 'vendor', '.name': 'vendor', '.anonymous': False, 'boa': 'hidden', 'console': '1', 'inetd': '0',
                'lan_mgmt': '1', 'lan_ifname': 'br0'},
     'banner': {'.type': 'banner', '.name': 'banner', '.anonymous': False, 'animate': 'ssh', 'color': 'auto'},
     'pon': {'.type': 'pon', '.name': 'pon', '.anonymous': False, 'cache_ttl': '5'}}}

@@ -10,6 +10,12 @@ set uhttpd.main.rfc1918_filter='0'
 commit uhttpd
 EOF
 
+# r1..r6 knew a boa shim: shim -> hidden, stock -> lan (kept settings).
+case "$(uci -q get nijika.vendor.boa)" in
+	shim) uci -q set nijika.vendor.boa='hidden'; uci -q commit nijika ;;
+	stock) uci -q set nijika.vendor.boa='lan'; uci -q commit nijika ;;
+esac
+
 # Time comes from the stock stack.
 /etc/init.d/sysntpd disable 2>/dev/null
 
