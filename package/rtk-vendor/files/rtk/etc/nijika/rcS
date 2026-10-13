@@ -1,11 +1,18 @@
 #!/bin/sh
 # NijikaWrt vendor boot (runs inside the /rtk chroot).
 #
+#   rcS <first> <last> [mark]
+#
 # Same as the stock /etc/init.d/rcS, but iterates the patched copies in
-# /etc/nijika/rc.d. The copies are generated at build time from the stock
-# /etc/init.d/rcN by scripts/patch-vendor.sh, which comments out the lines
-# that would fight OpenWrt (ramfs on /var, mdev hotplug, the second
-# watchdog daemon, root remount).
+# /etc/nijika/rc.d and only the rc numbers <first>..<last>, so the host can
+# run the driver phase (rc0..rc9) synchronously before OpenWrt services
+# start and the rest (rc10..rc63) in the background. "mark" creates the
+# stock "system up" marker at the end.
+#
+# The copies are generated at build time from the stock /etc/init.d/rcN by
+# scripts/patch-vendor.sh, which comments out the lines that would fight
+# OpenWrt (ramfs on /var, mdev hotplug, the second watchdog daemon, root
+# remount).
 
 startRunFile="/var/run/.start_up_run_file"
 if [ -f $startRunFile ]; then
@@ -13,9 +20,12 @@ if [ -f $startRunFile ]; then
 	exit 1
 fi
 
-echo "=== NijikaWrt: starting stock rc0 ~ rc63 ==="
-i=0
-while [ "$i" != "64" ]
+first="${1:-0}"
+last="${2:-63}"
+
+echo "=== NijikaWrt: starting stock rc$first ~ rc$last ==="
+i=$first
+while [ "$i" -le "$last" ]
 do
 	rc_file=/etc/nijika/rc.d/rc$i
 	if [ -f "$rc_file" ]; then
@@ -25,4 +35,5 @@ do
 	i=$(($i+1))
 done
 
-touch $startRunFile
+[ "$3" = "mark" ] && touch $startRunFile
+exit 0

@@ -52,7 +52,9 @@ ln -sfn /rtk/var/config "$R/config"
 
 # armsr leftovers that assume an EFI disk / ACPI machine.
 rm -f "$R/lib/preinit/01_sysinfo_acpi" "$R/lib/preinit/79_move_config"
-rm -f "$R"/etc/board.d/*
+for f in "$R"/etc/board.d/*; do
+	case "${f##*/}" in *nijika*) ;; *) rm -f "$f" ;; esac
+done
 # Only the stock 5.10.70 kernel runs here.
 rm -rf "$R"/lib/modules/[0-9]*
 

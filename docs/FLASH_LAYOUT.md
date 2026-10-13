@@ -80,7 +80,7 @@ Plain GNU tar, same as D-Link's. The stock web GUI flashes it:
 
 | member | |
 |---|---|
-| `fwu.sh` | upgrade script run by the stock web GUI: `sh fwu.sh <bank> <tar>`. Also marks `rootfs_data` for a wipe (factory install = OpenWrt defaults) |
+| `fwu.sh` | upgrade script run by the stock web GUI: `sh fwu.sh <bank> <tar>`. Checks the running firmware is a DPN-FX3060V, never writes the running bank (from `root=`), verifies md5 and sizes against the target volumes (kernel ≤ 6 MiB) before writing, and marks `rootfs_data` for a wipe (factory install = OpenWrt defaults) |
 | `dtb` | device tree → `ubi_DTB<n>` |
 | `kimage` | FIT image (lzma kernel + fdt) → `ubi_k<n>` |
 | `rootfs` | squashfs (xz) → `ubi_r<n>`, max 73400320 bytes |

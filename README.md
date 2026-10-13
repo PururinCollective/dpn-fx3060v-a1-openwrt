@@ -200,6 +200,10 @@ nijika banner | version | rtk [cmd]
   (`COLOR=truecolor STATE=O3 RX=-28.4 tools/banner-preview.sh`).
 * `tools/luci-mock/server.py`: run the LuCI app in a browser against
   synthetic data (after `./build.sh rootfs assemble`).
+* `tools/fwu-dryrun.sh`: runs the factory installer (`firmware/fwu.sh`) on a PC
+  against stubbed stock tools through seven upgrade situations (fresh install,
+  reinstall, U-Boot env out of sync, corrupt upload, wrong device, oversized
+  rootfs, unknown running bank) and prints its log.
 * `tools/probe.sh`: **read-only** script for the router. It records the exact
   `diag`/`omcicli`/`flash`/`voipflashcmd` output formats and the layout NijikaWrt
   relies on. Secrets are redacted by default.

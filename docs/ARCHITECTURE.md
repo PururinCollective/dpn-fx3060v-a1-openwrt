@@ -55,12 +55,21 @@ resolve file paths against the root of PID 1, not the chroot.
    * `80_mount_root`: fstools mounts the overlay from `rootfs_data`.
 4. **procd init scripts**
    * `S10boot`, `S10system`, … (OpenWrt; netifd only manages loopback).
-   * **`S11rtk-vendor`**: mounts proc/sys/dev/var/run inside `/rtk`, points
-     `/proc/sys/kernel/modprobe` at the stock modprobe, and starts
-     `/usr/libexec/rtk/vendor-boot`. That runs the patched stock rc chain
-     (`/rtk/etc/nijika/rcS` → `rc.d/rc2..rc35`) in the chroot, waits for the stock
-     "system up" marker, then runs `post-boot.d` hooks (resolv.conf, LAN
-     management rules).
+   * **`S11rtk-vendor`**: mounts proc/sys/dev/var/run inside `/rtk` and points
+     `/proc/sys/kernel/modprobe` at the stock modprobe. It then runs the patched
+     stock rc chain (`/rtk/etc/nijika/rcS`) in the chroot in two phases:
+     * **early, synchronous** (`vendor-boot early`, rc0..rc9: stock rc2/rc3):
+       mounts `ubi_Config`, `configd`, DSP, all Realtek kernel drivers, OMCI.
+       procd does not start the next init script (netifd, rpcd, dropbear, …)
+       until this returns (150 s guard), so nothing touches the network devices
+       while `ca_ne` is still probing. Before it,
+       `net.ipv6.conf.default.disable_ipv6=1` (stock rc14's value) keeps new
+       interfaces from sending IPv6/MLD early. Boot 1 crashed without this: an
+       interface came up mid-probe and `ca_ni_start_xmit_check` jumped through
+       the not-yet-registered TX hook.
+     * **late, background** (`vendor-boot late`, rc10..rc63: sysctl, systemd,
+       `startup`, VoIP): waits for the stock "system up" marker, then runs the
+       `post-boot.d` hooks (resolv.conf, LAN management rules).
    * `S19dropbear`, `S50uhttpd`, `S12rpcd`: OpenWrt management.
    * **`S95nijika-ontd`**: refreshes `/tmp/nijika/pon.{env,json}` every 5 s for
      the banner, LuCI and `nijika info`; re-applies the LAN rules and `/var`

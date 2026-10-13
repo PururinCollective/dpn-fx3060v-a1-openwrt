@@ -58,6 +58,22 @@ reset
 
 (use the bank number that still holds stock firmware).
 
+## Stock GUI upgrade fails with "ubiupdatevol … Device or resource busy"
+
+The stock GUI writes bank `1 - sw_active`. If a bank was booted by hand from
+U-Boot (`run b1`/`run b2`) without `saveenv`, `sw_active` no longer matches the
+running bank, and the GUI targets the firmware that is running right now.
+NijikaWrt's `fwu.sh` detects this, writes nothing, corrects the environment
+(`sw_active=sw_commit=<running bank>`, `sw_tryactive=2`) and prints
+`[x] please upload the firmware again`. Uploading again then writes the other
+bank and trial-boots it.
+
+The installer logs every step on the serial console with tags: `[~]` in
+progress, `[+]` ok, `[-]` skipped, `[!]` warning, `[x]` failed, `[?]` unknown.
+A failure before `[~] writing …` means nothing was flashed.
+`/var/firmware_upgrade_status` is set like stock: 1 = invalid image, 3 = too
+big for the volume.
+
 ## Re-flashing a bank from U-Boot
 
 The stock environment ships TFTP helpers (server `serverip=192.168.1.7`,

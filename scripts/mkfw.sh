@@ -23,7 +23,8 @@ SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git -C "$TOPDIR" log -1 --format=%ct 2
 export SOURCE_DATE_EPOCH
 
 mkdir -p "$BIN_DIR"
-rm -f "$BIN_DIR/$name"-*.bin "$BIN_DIR/sha256sums"
+# Only the current build in bin/ (older revisions would be ambiguous).
+rm -f "$BIN_DIR/$NIJIKA_DISTRO"-*-"$BOARD"-*.bin "$BIN_DIR/sha256sums"
 
 # --- factory (stock web GUI) -------------------------------------------------
 work="$BUILD_DIR/fw-factory"

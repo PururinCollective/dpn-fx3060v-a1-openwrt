@@ -1,0 +1,14 @@
+#!/bin/sh
+# NijikaWrt board identity. No network/switch/LED defaults on purpose: the
+# stock Realtek stack owns the hardware (see /etc/config/network).
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+ucidef_set_board_id "dlink,dpn-fx3060v-a1"
+ucidef_set_model_name "D-Link DPN-FX3060V (A1)"
+
+board_config_flush
+
+exit 0

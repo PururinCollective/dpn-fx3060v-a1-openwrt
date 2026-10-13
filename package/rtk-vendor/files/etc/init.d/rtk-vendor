@@ -35,8 +35,12 @@ start_service() {
 	# Kernel module autoload must resolve against the stock module tree.
 	echo /usr/libexec/rtk/modprobe > /proc/sys/kernel/modprobe
 
+	# Driver phase in the foreground: the init sequence (netifd, rpcd,
+	# dropbear, ...) only continues once the Realtek drivers are up.
+	/usr/libexec/rtk/vendor-boot early
+
 	procd_open_instance vendor
-	procd_set_param command /usr/libexec/rtk/vendor-boot
+	procd_set_param command /usr/libexec/rtk/vendor-boot late
 	procd_close_instance
 
 	local inetd
