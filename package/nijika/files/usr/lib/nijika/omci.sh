@@ -42,9 +42,12 @@ _omci_get_unlocked() {
 		sleep 2
 	done
 	printf '%s\n' "$raw"
-	# a cut-off answer (no closing separator) is still being written
+	# A cut-off answer (it stops inside an instance) is still being written
+	# by omci_app: give it time before the next request. Complete answers end
+	# with a "=====" separator, or with the "XXXX" header when the class has
+	# no instance (nothing provisioned, e.g. without fibre).
 	case "$(printf '%s\n' "$raw" | grep -v '^[[:space:]]*$' | tail -n 1)" in
-		=*|'') ;;
+		=*|X*|'') ;;
 		*) sleep 2 ;;
 	esac
 }

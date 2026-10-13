@@ -120,8 +120,10 @@ def nijika_call(method, args):
         olt = DATA['olt']()
         return olt.get('me%d' % cls) or me(cls, 'Sample', [])
     if method == 'provision':
-        # real omci_map_json output from a TM Unifi (Nokia OLT) ONT
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'provision-unifi.json')) as f:
+        # real omci_map_json output: TM Unifi (Nokia OLT) at O5, or without
+        # fibre (MOCK_PROVISION=nofiber)
+        name = 'provision-%s.json' % os.environ.get('MOCK_PROVISION', 'unifi')
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', name)) as f:
             return json.load(f)
     if method == 'chain':
         return DATA['quick_get']()['wan'] if args.get('table') == 'ATM_VC_TBL' else {'table': args.get('table'), 'num': 0, 'records': []}

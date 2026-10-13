@@ -367,7 +367,8 @@ function portName(m, s) {
 
 function renderIdentity(d) {
 	var o = insts(d.me, 131)[0], t = insts(d.me, 256)[0];
-	var olt = o ? A(o, 'OltVendorId') : null, oltTxt = olt ? (nc.hexToAscii(olt) || olt) : '-';
+	var olt = o ? A(o, 'OltVendorId') : null,
+	    oltTxt = (olt && hexId(olt)) ? (nc.hexToAscii(olt) || olt) : _('not known yet');
 	var tm = t ? { 0: _('priority controlled'), 1: _('rate controlled'), 2: _('priority and rate controlled') }[A(t, 'TraffMgtOpt')] : null;
 	var eq = o ? (nc.hexToAscii(A(o, 'EquipId')) || String(A(o, 'EquipId') || '').trim()) : '';
 	var ver = o ? (nc.hexToAscii(A(o, 'Version')) || A(o, 'Version')) : '';
@@ -700,7 +701,8 @@ return view.extend({
 	load: function() {
 		return Promise.all([
 			nc.callProvision(),
-			L.resolveDefault(nc.callChain('ATM_VC_TBL'), null)
+			L.resolveDefault(nc.callChain('ATM_VC_TBL'), null),
+			L.resolveDefault(nc.callStatus(), null)
 		]);
 	},
 
@@ -710,7 +712,9 @@ return view.extend({
 			return E('div', {}, [ nc.style(), E('h2', {}, _('Provisioning')),
 				E('p', { 'class': 'alert-message warning' }, (d && d.error) || _('OMCI data not available')) ]);
 
-		var m = buildModel(d), svcs = buildServices(m, wans), issues = findIssues(m, svcs, wans);
+		var m = buildModel(d), svcs = buildServices(m, wans), issues = findIssues(m, svcs, wans),
+		    st = res[2] || {},
+		    empty = !Object.keys(m.gem).length && !Object.keys(m.bport).length;
 		var truncated = Object.keys(d.me || {}).filter(function(c) { return d.me[c].truncated; });
 
 		var section = function(title, intro, body) {
@@ -727,16 +731,20 @@ return view.extend({
 			]),
 			truncated.length ? E('p', { 'class': 'alert-message warning' }, _('omcicli cut off the answer for ME %s; that part may be incomplete.').format(truncated.join(', '))) : '',
 			renderIdentity(d),
-			issues.length ? section(_('Worth a look'), null, E('div', { 'class': 'nj-issues' }, issues.map(function(i) {
+			empty ? section(_('Nothing provisioned yet'), null, E('p', {}, [
+				_('ONU state'), ' ', nc.stateBadge(st.state, st.los), ' ',
+				_('The OLT has not set up a data path on this ONT. Services, VLAN rules and QoS show up here once the ONT is in operation (O5) and the OLT has configured it; without fibre that never happens.')
+			])) : '',
+			(!empty && issues.length) ? section(_('Worth a look'), null, E('div', { 'class': 'nj-issues' }, issues.map(function(i) {
 				return E('div', { 'class': 'nj-issue ' + i[0] }, [ E('span', { 'class': 'nj-ico' }, i[0] == 'warn' ? '⚠' : 'ⓘ'), E('span', {}, i[1]) ]);
 			}))) : '',
-			section(_('Services'), _('Each line is one VLAN path between a port of this ONT and the OLT. The middle label says what the ONT does with it (ME 84 VLAN filters + ME 171 VLAN rules).'),
+			empty ? '' : section(_('Services'), _('Each line is one VLAN path between a port of this ONT and the OLT. The middle label says what the ONT does with it (ME 84 VLAN filters + ME 171 VLAN rules).'),
 				renderServices(m, svcs)),
-			section(_('VLAN rules (ME 171) in words'), _('The extended VLAN tagging rules per port, upstream direction; downstream applies them in reverse.'),
+			empty ? '' : section(_('VLAN rules (ME 171) in words'), _('The extended VLAN tagging rules per port, upstream direction; downstream applies them in reverse.'),
 				renderRules(m)),
-			section(_('The provider\'s set-up'), _('Every ME on the data path, fibre on the left, ONT ports on the right. Dashed: downstream only.'),
+			empty ? '' : section(_('The provider\'s set-up'), _('Every ME on the data path, fibre on the left, ONT ports on the right. Dashed: downstream only.'),
 				renderSetup(m)),
-			section(_('Speeds and priorities (QoS)'), null, renderQos(m, svcs))
+			empty ? '' : section(_('Speeds and priorities (QoS)'), null, renderQos(m, svcs))
 		]);
 	},
 

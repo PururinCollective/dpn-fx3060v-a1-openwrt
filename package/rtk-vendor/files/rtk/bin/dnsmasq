@@ -32,6 +32,9 @@ if [ -n "$conf" ] && [ -f "$conf" ]; then
 			echo "# nijika-doh: generic lookups go to the DNS over HTTPS proxy $up"
 			echo "no-resolv"
 			echo "server=$up"
+			# every miss now costs an HTTPS round trip: cache more than the
+			# default 150 names (unless the stock config sets its own size)
+			grep -q '^cache-size=' "$conf.stock" || echo "cache-size=1000"
 			grep -v '^server=[^/]' "$conf.stock"
 		} > "$conf"
 	fi
