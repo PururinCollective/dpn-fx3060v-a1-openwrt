@@ -14,8 +14,8 @@ var BROWSE = [ 131, 256, 257, 263, 264, 2, 7, 6, 5, 11, 53, 329, 45, 47, 84, 130
                262, 268, 266, 277, 278, 280, 281, 309, 310, 134, 347, 136, 137, 138, 150, 153, 340 ];
 
 var DIAG = [
-	[ 'onu-state', _('ONU state') ], [ 'alarms', _('Alarm status') ],
-	[ 'transceiver', _('Transceiver') ], [ 'onu-info', _('ONU info') ],
+	[ 'onu-state', _('ONU state') ], [ 'counters', _('PON counters') ],
+	[ 'transceiver', _('Transceiver') ], [ 'onu-info', _('OMCC / T-CONT') ],
 	[ 'us-flow', _('Upstream flows') ], [ 'ds-flow', _('Downstream flows') ],
 	[ 'interfaces', _('Interfaces') ], [ 'routes', _('Routes') ],
 	[ 'bridge', _('Bridges') ], [ 'filter', _('iptables filter') ],
@@ -71,13 +71,17 @@ function renderMe171(me, o5) {
 	var rows = (me.instances || []).map(function(i) {
 		var rules = nc.extVlanRules(i), at = nc.attr(i, 'AssociationType'), mp = nc.attr(i, 'AssociatedMePoint');
 		var rcell = rules.length ? E('div', { 'class': 'nijika-vlan' }, rules.map(function(r) {
+			/* G.988 treatment "tags to remove": 0-2 tags popped, 3 = discard */
+			var rm = r.treatmentOuter && r.treatmentOuter.rm;
 			return E('div', {}, [
 				E('sup', { 'title': _('Filter outer') }, nc.fmtFilter(r.filterOuter)), '↘',
 				E('sub', { 'title': _('Filter inner') }, nc.fmtFilter(r.filterInner)),
-				' → ',
+				' → '
+			].concat(rm == '3' ? [ E('span', { 'class': 'drop', 'title': _('Frame is discarded') }, _('drop')) ] : [
+				(rm && rm != '0') ? E('span', { 'class': 'pop', 'title': _('Tags removed') }, _('pop %s').format(rm) + ' ') : '',
 				E('sup', { 'title': _('Treatment outer') }, nc.fmtTreat(r.treatmentOuter)), '↘',
 				E('sub', { 'title': _('Treatment inner') }, nc.fmtTreat(r.treatmentInner))
-			]);
+			]));
 		})) : E('em', {}, o5 ? _('Port is disabled by OLT') : '-');
 		var uni = nc.uniLabel(at, mp), type = nc.ASSOC_TYPES[at] || at || '?';
 		return [ nc.attr(i, 'EntityId') || '-', mp || '-',
@@ -128,7 +132,7 @@ return view.extend({
 			E('h4', {}, 'ME 84 — ' + nc.meName(84)), renderMe84(olt.me84 || {}),
 			E('h4', {}, 'ME 171 — ' + nc.meName(171)), renderMe171(olt.me171 || {}, o5),
 			E('p', { 'class': 'nijika-hint' },
-				_('Filter: "no tag" = untagged frames, "default" = default rule, "any" = any VID. Treatment: "copy inner/outer" keeps the received VID.'))
+				_('Filter: "no tag" = untagged frames, "default" = default rule, "any" = any VID. Treatment: "pop N" removes N received tags, "drop" discards the frame, "copy inner/outer" keeps the received VID.'))
 		]);
 	},
 

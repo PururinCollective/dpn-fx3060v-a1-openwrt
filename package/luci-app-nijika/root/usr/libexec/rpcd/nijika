@@ -59,13 +59,16 @@ m_diag() {
 	json_load "$1"
 	json_get_var cmd cmd
 	case "$cmd" in
-		onu-state)   out=$(diag gpon get onu-state) ;;
-		alarms)      out=$(diag gpon get alarm-status) ;;
+		# RTL9607DQ: GPON state and flows live under "diag rt_gpon"
+		onu-state)   out=$(pon_onu_state_raw) ;;
+		counters)    out=$(for k in phy plm omci gem; do
+		                     diag rt_gpon show counter global "$k"; done) ;;
 		transceiver) out=$(for k in temperature voltage bias-current tx-power rx-power; do
 		                     diag pon get transceiver "$k"; done) ;;
-		onu-info)    out=$(diag gpon show onu-info) ;;
-		us-flow)     out=$(diag gpon show us-flow) ;;
-		ds-flow)     out=$(diag gpon show ds-flow) ;;
+		onu-info)    out=$(diag rt_gpon get dbru-status; diag rt_gpon show omcc
+		                     diag rt_gpon show tcont) ;;
+		us-flow)     out=$(diag rt_gpon show us-flow) ;;
+		ds-flow)     out=$(diag rt_gpon show ds-flow) ;;
 		interfaces)  out=$(rtk /bin/ifconfig) ;;
 		routes)      out=$(rtk /bin/ip route; echo; rtk /bin/ip -6 route) ;;
 		nat)         out=$(rtk /bin/iptables -t nat -S) ;;

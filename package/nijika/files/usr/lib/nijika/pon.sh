@@ -1,32 +1,47 @@
 # shellcheck shell=ash
 # PON / ONT status collection. Requires common.sh.
 
-# Extract a number from a diag transceiver line and normalise the unit.
-#   "Rx Power: -19.70 dBm" / "0.0107 mW" / "10.7 uW"  -> dBm
-#   "Temperature: 45.5 C", "Voltage: 3.30 V", "Bias Current: 12.0 mA"
+# Extract a number from a diag transceiver line, normalise the unit and
+# round it to <decimals>.
+#   "Rx Power: -16.270880 dBm" / "-inf dBm" / "0.0107 mW" / "10.7 uW" -> dBm
+#   "Temperature: 25.949219 C", "Voltage: 3.276000 V", "Bias Current: 14.15 mA"
 _pon_num() {
-	awk -v kind="$1" '
+	awk -v kind="$1" -v dec="${2:-2}" '
 	function num(s,   v) { if (match(s, /-?[0-9]+(\.[0-9]+)?/)) return substr(s, RSTART, RLENGTH); return "" }
+	function out(v) { printf("%." dec "f\n", v); exit }
 	{
 		line = $0
 		p = index(line, ":"); if (p) line = substr(line, p + 1)
 		if (kind == "power") {
-			if (match(line, /-?[0-9]+(\.[0-9]+)? *dBm/)) { print num(substr(line, RSTART, RLENGTH)); exit }
+			if (line ~ /-inf/) { print "-inf"; exit }
+			if (match(line, /-?[0-9]+(\.[0-9]+)? *dBm/)) out(num(substr(line, RSTART, RLENGTH)))
 			if (match(line, /-?[0-9]+(\.[0-9]+)? *[mM][wW]/)) {
 				v = num(substr(line, RSTART, RLENGTH)) + 0
-				if (v > 0) printf "%.2f\n", 10 * log(v) / log(10); else print "-inf"; exit
+				if (v > 0) out(10 * log(v) / log(10)); print "-inf"; exit
 			}
 			if (match(line, /-?[0-9]+(\.[0-9]+)? *[uU][wW]/)) {
 				v = num(substr(line, RSTART, RLENGTH)) + 0
-				if (v > 0) printf "%.2f\n", 10 * log(v / 1000) / log(10); else print "-inf"; exit
+				if (v > 0) out(10 * log(v / 1000) / log(10)); print "-inf"; exit
 			}
 		}
-		v = num(line); if (v != "") { print v; exit }
+		v = num(line); if (v != "") out(v)
 	}'
+}
+
+# "ONU state: Initial State:Off-Sync(O1.1)". This SoC (RTL9607DQ) answers
+# through the rt_gpon API; the older "gpon" diag tree reports "driver not
+# found" here but is kept as a fallback for other Realtek ONUs.
+pon_onu_state_raw() {
+	local raw
+	raw=$(diag rt_gpon get onu-state)
+	case "$raw" in *"(O"[0-9]*) ;; *) raw=$(diag gpon get onu-state) ;; esac
+	printf '%s\n' "$raw"
 }
 
 pon_state_text() {
 	case "$1" in
+		O1.1) echo "initial (off-sync)" ;;
+		O1.2) echo "initial (profile learning)" ;;
 		O1*) echo "initial" ;;
 		O2*) echo "standby" ;;
 		O3*) echo "serial-number" ;;
@@ -42,17 +57,18 @@ pon_state_text() {
 pon_collect_env() {
 	local raw state rx tx temp volt bias olt_hex olt alarms los sn vendor
 
-	raw=$(diag gpon get onu-state)
+	raw=$(pon_onu_state_raw)
 	state=$(printf '%s\n' "$raw" | sed -n 's/.*(\(O[0-9][0-9.]*\)).*/\1/p' | head -n 1)
 
-	rx=$(diag pon get transceiver rx-power | _pon_num power)
-	tx=$(diag pon get transceiver tx-power | _pon_num power)
-	temp=$(diag pon get transceiver temperature | _pon_num plain)
-	volt=$(diag pon get transceiver voltage | _pon_num plain)
-	bias=$(diag pon get transceiver bias-current | _pon_num plain)
+	rx=$(diag pon get transceiver rx-power | _pon_num power 2)
+	tx=$(diag pon get transceiver tx-power | _pon_num power 2)
+	temp=$(diag pon get transceiver temperature | _pon_num plain 1)
+	volt=$(diag pon get transceiver voltage | _pon_num plain 2)
+	bias=$(diag pon get transceiver bias-current | _pon_num plain 1)
 
-	alarms=$(diag gpon get alarm-status | sed -n 's/^Alarm \(.*\), status: \(.*\)$/\1=\2/p' | tr '\n' ';')
-	case ";$alarms" in *";LOS=yes;"*) los=1 ;; *) los=0 ;; esac
+	# No alarm read-out on this SoC (rt_gpon has none); loss of signal is
+	# what the transceiver reports as no light.
+	case "$rx" in -inf|'') los=1; alarms="LOS=yes;" ;; *) los=0; alarms="LOS=no;" ;; esac
 
 	olt_hex=$(omcicli mib get 131 | awk -F': *' '/^OltVendorId/ { print $2; exit }')
 	[ -n "$olt_hex" ] && olt=$(hex_to_ascii "$olt_hex")

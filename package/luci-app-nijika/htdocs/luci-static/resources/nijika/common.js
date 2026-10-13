@@ -117,12 +117,13 @@ function extVlanRules(inst) {
 		    body = m[3],
 		    vid = (body.match(/VID\D{0,3}(\d+)/i) || [])[1],
 		    pri = (body.match(/Pri(?:ority)?\D{0,3}(\d+)/i) || [])[1],
-		    tpid = (body.match(/TPID\D{0,3}(0x[0-9a-f]+|\d+)/i) || [])[1];
+		    tpid = (body.match(/TPID\D{0,3}(0x[0-9a-f]+|\d+)/i) || [])[1],
+		    rm = (body.match(/RemoveTags\D{0,3}(\d+)/i) || [])[1];
 		if (kind == 'filterOuter' || !cur) {
 			cur = {};
 			rules.push(cur);
 		}
-		cur[kind] = { vid: vid, pri: pri, tpid: tpid, raw: body };
+		cur[kind] = { vid: vid, pri: pri, tpid: tpid, rm: rm, raw: body };
 	});
 	return rules;
 }
@@ -191,6 +192,7 @@ var CSS = '\
 .nijika-pre{white-space:pre-wrap;font-family:monospace;font-size:90%;max-height:40em;overflow:auto;background:rgba(127,127,127,.08);padding:.6em;border-radius:3px}\
 .nijika-mono{font-family:monospace}\
 .nijika-vlan sup{color:#2878ff}.nijika-vlan sub{color:#1f9d55}\
+.nijika-vlan .drop{color:#cc1f1a;font-weight:bold}.nijika-vlan .pop{opacity:.75}\
 .nijika-hint{opacity:.75;font-size:90%}';
 
 return baseclass.extend({

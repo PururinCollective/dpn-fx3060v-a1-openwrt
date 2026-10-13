@@ -92,11 +92,24 @@ ubi_vol_dev() {
 # --- output helpers ---------------------------------------------------------
 
 json_escape() {
-	# stdin -> JSON string body (no surrounding quotes)
-	awk 'BEGIN { ORS = "" } {
-		gsub(/\\/, "\\\\"); gsub(/"/, "\\\""); gsub(/\t/, "\\t"); gsub(/\r/, "")
-		if (NR > 1) printf "\\n"
-		printf "%s", $0
+	# stdin -> JSON string body (no surrounding quotes). No gsub() with
+	# backslashes: busybox 1.37 awk drops them from the replacement.
+	awk 'function esc(s,   o, i, c, n) {
+		if (s !~ /[\\"[:cntrl:]]/) return s
+		o = ""; n = length(s)
+		for (i = 1; i <= n; i++) {
+			c = substr(s, i, 1)
+			if (c == "\\") o = o "\\\\"
+			else if (c == "\"") o = o "\\\""
+			else if (c == "\t") o = o "\\t"
+			else if (c !~ /[[:cntrl:]]/) o = o c
+		}
+		return o
+	}
+	BEGIN { ORS = "" }
+	{
+		if (NR > 1) printf "%s", "\\n"
+		printf "%s", esc($0)
 	}'
 }
 

@@ -32,15 +32,21 @@ def me(cls, name, insts):
         for attrs, raw in insts]}
 
 
-RULES = '''ReceivedFrameVlanTaggingOperTable
-  Filter Outer: Priority 15, VID 4096, TPID 0x8100
-  Filter Inner: Priority 15, VID 4096, TPID 0x8100
-  Treatment Outer: Priority 15, VID 0, TPID 0x8100
-  Treatment Inner: Priority 0, VID 500, TPID 0x8100
-  Filter Outer: Priority 15, VID 4096, TPID 0x8100
-  Filter Inner: Priority 8, VID 600, TPID 0x8100
-  Treatment Outer: Priority 15, VID 0, TPID 0x8100
-  Treatment Inner: Priority 8, VID 4096, TPID 0x8100'''
+# Real `omcicli mib get 171` rule tables from a TM Unifi OLT (Nokia/ALCL).
+RULE = '''INDEX %d
+Filter Outer   : PRI %s,VID %s, TPID %s
+Filter Inner   : PRI %s,VID %s, TPID %s, EthType 0x00
+Treatment Outer   : PRI %s,VID %s, TPID %s, RemoveTags %s
+Treatment Inner   : PRI %s,VID %s, TPID %s'''
+DEFAULT_RULES = [('15', '4096', '0', '15', '0', '5', '15', '0', '0', '3', '15', '0', '2'),
+                 ('14', '4096', '5', '14', '4096', '0', '15', '0', '0', '3', '15', '4096', '3'),
+                 ('15', '4096', '0', '14', '4096', '5', '15', '0', '0', '3', '15', '4096', '2')]
+
+
+def rules(vids):
+    tagged = [('15', '4096', '0', '8', v, '5', '15', '0', '0', '1', '8', v, '2') for v in vids]
+    return 'ReceivedFrameVlanTaggingOperTable\n' + '\n'.join(
+        RULE % ((n,) + r) for n, r in enumerate(tagged + DEFAULT_RULES))
 
 DATA = {
     'status': lambda: {
@@ -58,8 +64,13 @@ DATA = {
                                    ('SerialNum', 'DLKI12345678'), ('TraffMgtOpt', '0'), ('AdminState', '0'), ('OpState', '0'), ('OntState', '5')], '')]),
         'me84': me(84, 'VlanTagFilterData', [([('EntityID', '0x1'), ('FilterTbl', '0x01f4'), ('FwdOp', '0x10'), ('NumOfEntries', '1')], ''),
                                              ([('EntityID', '0x2'), ('FilterTbl', '0x0258'), ('FwdOp', '0x10'), ('NumOfEntries', '1')], '')]),
-        'me171': me(171, 'ExtVlanTagOperCfgData', [([('EntityId', '0x101'), ('AssociationType', '10'), ('AssociatedMePoint', '0x1'),
-                                                     ('InputTPID', '0x8100'), ('OutputTPID', '0x8100'), ('DsMode', '0')], RULES)]),
+        'me171': me(171, 'ExtVlanTagOperCfgData', [
+            ([('EntityId', '0x101'), ('AssociationType', '2'), ('AssociatedMePoint', '0x101'),
+              ('InputTPID', '0x8100'), ('OutputTPID', '0x8100'), ('DsMode', '0')], rules(['209', '500'])),
+            ([('EntityId', '0x102'), ('AssociationType', '2'), ('AssociatedMePoint', '0x102'),
+              ('InputTPID', '0x8100'), ('OutputTPID', '0x8100'), ('DsMode', '0')], rules([])),
+            ([('EntityId', '0xe01'), ('AssociationType', '10'), ('AssociatedMePoint', '0x601'),
+              ('InputTPID', '0x8100'), ('OutputTPID', '0x8100'), ('DsMode', '0')], rules(['209', '400', '500']))]),
     },
     'quick_get': lambda: {
         'pon': {'sn': 'DLKI12345678', 'ploam': '0123456789', 'loid': '', 'loid_pw': ''},

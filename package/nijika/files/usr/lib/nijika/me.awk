@@ -6,10 +6,21 @@
 #
 # Usage: omcicli mib get 171 | awk -v class=171 -f me.awk
 
-function jstr(s) {
-	gsub(/\\/, "\\\\", s); gsub(/"/, "\\\"", s); gsub(/\t/, "\\t", s)
-	gsub(/\r/, "", s); gsub(/\n/, "\\n", s)
-	return "\"" s "\""
+# JSON string. A character loop on purpose: busybox 1.37 awk drops the
+# backslash from gsub() replacements ("\\\"" comes out as a bare quote).
+# Other control characters (ANSI colours from the stock tools) are dropped.
+function jstr(s,   o, i, c, n) {
+	if (s !~ /[\\"[:cntrl:]]/) return "\"" s "\""
+	o = ""; n = length(s)
+	for (i = 1; i <= n; i++) {
+		c = substr(s, i, 1)
+		if (c == "\\") o = o "\\\\"
+		else if (c == "\"") o = o "\\\""
+		else if (c == "\n") o = o "\\n"
+		else if (c == "\t") o = o "\\t"
+		else if (c !~ /[[:cntrl:]]/) o = o c
+	}
+	return "\"" o "\""
 }
 function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
 

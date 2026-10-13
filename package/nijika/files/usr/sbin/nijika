@@ -132,7 +132,7 @@ nijika_olt() {
 		omcicli mib get 84 | awk -v class=84 -f "$NIJIKA_LIB/me.awk" | tr -d '\n'
 		printf ',"me171":'
 		omcicli mib get 171 | awk -v class=171 -f "$NIJIKA_LIB/me.awk" | tr -d '\n'
-		printf ',"state":"%s"}\n' "$(diag gpon get onu-state | sed -n 's/.*(\(O[0-9][0-9.]*\)).*/\1/p' | head -n 1)"
+		printf ',"state":"%s"}\n' "$(pon_onu_state_raw | sed -n 's/.*(\(O[0-9][0-9.]*\)).*/\1/p' | head -n 1)"
 		return
 	fi
 

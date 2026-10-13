@@ -116,8 +116,15 @@ level_tag() {
 }
 rx_tag=$(level_tag "$PON_RX_DBM" -27 -8 1)
 tx_tag=$(level_tag "$PON_TX_DBM" 0.5 5 1)
-rx_txt="${PON_RX_DBM:-n/a}"; [ -n "$PON_RX_DBM" ] && rx_txt="$rx_txt dBm"
-tx_txt="${PON_TX_DBM:-n/a}"; [ -n "$PON_TX_DBM" ] && tx_txt="$tx_txt dBm"
+dbm_txt() {
+	case "$1" in
+		'') echo "n/a" ;;
+		*inf*) echo "no light" ;;
+		*) echo "$1 dBm" ;;
+	esac
+}
+rx_txt=$(dbm_txt "$PON_RX_DBM")
+tx_txt=$(dbm_txt "$PON_TX_DBM")
 
 owrt="OpenWrt ${DISTRIB_RELEASE:-?} ${DISTRIB_REVISION:-}"
 
