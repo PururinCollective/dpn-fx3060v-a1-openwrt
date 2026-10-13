@@ -94,7 +94,7 @@ DATA = {
                    {'id': 3502, 'name': 'WLAN1_MBSSIB_TBL', 'num': 6, 'max': 6}, {'id': 3009, 'name': 'SW_PORT_TBL', 'num': 5, 'max': 5}],
     },
     'fw_status': lambda: {'running': False, 'rc': 0, 'log': 'running bank: 1, writing bank: 0\n...'},
-    'fw_check': lambda: {'valid': True, 'format': 'sysupgrade', 'version': 'NijikaWrt_r2_25.12.5', 'size': 28364800, 'target': 0},
+    'fw_check': lambda: {'valid': True, 'format': 'sysupgrade', 'target_version': 'DPN-FX3060V_V1.1.2', 'target_stock': True, 'version': 'NijikaWrt_r2_25.12.5', 'size': 28364800, 'target': 0},
 }
 
 

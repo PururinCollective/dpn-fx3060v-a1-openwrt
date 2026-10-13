@@ -353,17 +353,19 @@ nijika_boot() {
 }
 
 nijika_upgrade() {
-	local mode=try reboot=1 img=""
+	local mode=try reboot=1 img="" replace=0
 	for a in "$@"; do
 		case "$a" in
 			--commit) mode=commit ;;
+			--replace-stock) replace=1 ;;
 			--no-switch) mode=none ;;
 			--no-reboot) reboot=0 ;;
 			-*) die "unknown option $a" ;;
 			*) img="$a" ;;
 		esac
 	done
-	[ -n "$img" ] || die "usage: nijika upgrade [--commit|--no-switch] [--no-reboot] <*-sysupgrade.bin|*-factory.bin|stock.bin>"
+	[ -n "$img" ] || die "usage: nijika upgrade [--commit|--no-switch] [--no-reboot] [--replace-stock] <*-sysupgrade.bin|*-factory.bin|stock.bin>"
+	fw_check_target "$replace" || die "upgrade refused"
 	fw_flash "$img" "$mode" || die "upgrade failed, nothing changed in the boot selection"
 	if [ "$reboot" = 1 ] && [ "$mode" != none ]; then
 		echo "Rebooting in 3 seconds..."
@@ -495,7 +497,8 @@ PON / OMCI
 System
   boot [status|0|1|toggle|try N]  Firmware bank selection (A/B)
   upgrade [--commit] <fw.bin>     Write firmware to the other bank
-                                  (NijikaWrt sysupgrade/factory or stock D-Link)
+                                  (NijikaWrt sysupgrade/factory or stock D-Link;
+                                  refuses to replace stock without --replace-stock)
   mib get|set|def|all|chain ...   Stock configuration database
   boa [shim|stock]                boa shim, or stock web GUI on :8080
   reset [--all]                   Factory reset (keeps PON identity)

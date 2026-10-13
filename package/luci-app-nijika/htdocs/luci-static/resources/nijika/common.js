@@ -212,7 +212,7 @@ return baseclass.extend({
 	callBootGet: rpc.declare({ object: 'nijika', method: 'boot_get' }),
 	callBootSet: rpc.declare({ object: 'nijika', method: 'boot_set', params: [ 'bank', 'mode' ] }),
 	callFwCheck: rpc.declare({ object: 'nijika', method: 'fw_check' }),
-	callFwFlash: rpc.declare({ object: 'nijika', method: 'fw_flash', params: [ 'mode' ] }),
+	callFwFlash: rpc.declare({ object: 'nijika', method: 'fw_flash', params: [ 'mode', 'replace_stock' ] }),
 	callFwStatus: rpc.declare({ object: 'nijika', method: 'fw_status' }),
 	callReboot: rpc.declare({ object: 'nijika', method: 'reboot' }),
 

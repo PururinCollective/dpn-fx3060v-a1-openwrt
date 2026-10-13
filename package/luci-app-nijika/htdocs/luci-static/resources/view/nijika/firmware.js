@@ -71,19 +71,28 @@ return view.extend({
 				E('option', { 'value': 'commit' }, _('Make it the boot default')),
 				E('option', { 'value': 'none' }, _('Only write it, do not change boot selection'))
 			]);
+			var replace = E('input', { 'type': 'checkbox', 'id': 'nijika-replace-stock' });
 			ui.showModal(_('Flash firmware'), [
 				nc.kvTable([
 					[ _('Image type'), res.format == 'sysupgrade' ? _('NijikaWrt sysupgrade') : _('Factory / stock D-Link') ],
 					[ _('Version'), E('span', { 'class': 'nijika-mono' }, res.version || '-') ],
 					[ _('Size'), '%1024mB'.format(res.size) ],
-					[ _('Target bank'), String(res.target) ]
+					[ _('Target bank'), '%d (%s)'.format(res.target, res.target_version || _('empty')) ]
 				]),
 				E('p', {}, _('The image is written to the other bank; the running firmware is not touched. OpenWrt settings on the overlay are kept.')),
+				res.target_stock ? E('div', { 'class': 'alert-message warning' }, [
+					E('p', {}, _('Bank %d holds the stock D-Link firmware (%s), your fallback. Flashing replaces it. To keep stock and NijikaWrt side by side, boot the stock bank and upload the -factory.bin image there instead.').format(res.target, res.target_version)),
+					E('label', {}, [ replace, ' ', _('Replace the stock firmware in bank %d').format(res.target) ])
+				]) : '',
 				mode,
 				E('div', { 'class': 'right', 'style': 'margin-top:1em' }, [
 					E('button', { 'class': 'btn', 'click': ui.hideModal }, _('Cancel')), ' ',
 					E('button', { 'class': 'btn cbi-button-positive important', 'click': function() {
-						self.flash(mode.value);
+						if (res.target_stock && !replace.checked) {
+							ui.addNotification(null, E('p', _('Tick "Replace the stock firmware" to overwrite the stock bank.')), 'warning');
+							return;
+						}
+						self.flash(mode.value, res.target_stock && replace.checked);
 					} }, _('Flash'))
 				])
 			]);
@@ -92,11 +101,16 @@ return view.extend({
 		});
 	},
 
-	flash: function(mode) {
+	flash: function(mode, replaceStock) {
 		var log = E('div', { 'class': 'nijika-pre' }, _('Starting…'));
 		ui.showModal(_('Flashing…'), [ E('p', { 'class': 'spinning' }, _('Writing UBI volumes, do not power off.')), log ]);
 		var self = this;
-		return nc.callFwFlash(mode).then(function() {
+		return nc.callFwFlash(mode, replaceStock ? true : false).then(function(r) {
+			if (r && r.error) {
+				ui.showModal(_('Flashing refused'), [ E('div', { 'class': 'nijika-pre' }, r.error),
+					E('div', { 'class': 'right' }, E('button', { 'class': 'btn', 'click': ui.hideModal }, _('Close'))) ]);
+				return;
+			}
 			var poll = function() {
 				return nc.callFwStatus().then(function(st) {
 					dom.content(log, st.log || '');

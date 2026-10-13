@@ -12,9 +12,12 @@ grep -q " $RTK/proc " /proc/mounts || {
 
 [ $# -gt 0 ] || set -- /bin/sh -l
 
+# Same environment the stock busybox init gives its rc scripts and daemons
+# (its compiled-in PATH includes /etc/scripts: fw_loaded.sh, cmd, cmd1, ...).
 exec env -i \
-	PATH=/bin:/sbin:/usr/bin:/usr/sbin \
+	PATH=/sbin:/usr/sbin:/bin:/usr/bin:/etc/scripts \
 	HOME=/ \
+	SHELL=/bin/sh \
+	USER=root \
 	TERM="${TERM:-vt102}" \
-	LANG=C \
 	chroot "$RTK" "$@"

@@ -102,6 +102,37 @@ fw_check() {
 	return 0
 }
 
+# fw_target_info -> sets FW_TARGET (bank written by fw_flash), FW_TARGET_VER
+# (its sw_version) and FW_TARGET_STOCK (1 when it holds non-NijikaWrt
+# firmware, i.e. the stock D-Link fallback).
+fw_target_info() {
+	case "$(running_bank)" in
+		0) FW_TARGET=1 ;;
+		1) FW_TARGET=0 ;;
+		*) FW_TARGET=""; return 1 ;;
+	esac
+	FW_TARGET_VER=$(nv_get "sw_version$FW_TARGET")
+	case "$FW_TARGET_VER" in
+		NijikaWrt*|"") FW_TARGET_STOCK=0 ;;
+		*) FW_TARGET_STOCK=1 ;;
+	esac
+	return 0
+}
+
+# fw_check_target [replace_stock] -- never overwrite the stock firmware kept
+# in the other bank unless explicitly allowed (sysupgrade -F, nijika upgrade
+# --replace-stock, LuCI confirmation).
+fw_check_target() {
+	fw_target_info || { echo "cannot determine the running bank"; return 1; }
+	if [ "$FW_TARGET_STOCK" = 1 ] && [ "$1" != 1 ]; then
+		echo "bank $FW_TARGET holds the stock firmware ($FW_TARGET_VER); flashing would replace it."
+		echo "To keep stock + NijikaWrt, update NijikaWrt from the stock bank with the -factory.bin image,"
+		echo "or confirm replacing stock (sysupgrade -F, nijika upgrade --replace-stock)."
+		return 1
+	fi
+	return 0
+}
+
 # Version string recorded as sw_version<n> (shown by the stock GUI too).
 fw_version() {
 	fw_detect "$1" >/dev/null || return 1

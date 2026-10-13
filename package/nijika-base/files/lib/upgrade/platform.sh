@@ -1,5 +1,9 @@
 # NijikaWrt sysupgrade for the D-Link DPN-FX3060V (A1).
 #
+# The image always goes to the OTHER bank. If that bank holds the stock
+# D-Link firmware, the check fails (forceable with -F) so stock is never
+# replaced by accident.
+#
 # Images: *-sysupgrade.bin (OpenWrt NAND sysupgrade tar with fwtool
 # metadata: board dlink,dpn-fx3060v-a1). The factory/stock D-Link tar is
 # accepted as well, but only forced (`sysupgrade -F`, LuCI "Force upgrade")
@@ -20,6 +24,9 @@ REQUIRE_IMAGE_METADATA=1
 platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 	fw_check "$1" || return 1
+	# The other bank may hold the stock D-Link fallback: only replace it when
+	# forced (sysupgrade -F / LuCI "Force upgrade").
+	fw_check_target || return 1
 	[ "$FW_FMT" = factory ] &&
 		v "Factory/stock image: it is written to the inactive bank like a sysupgrade image."
 	return 0

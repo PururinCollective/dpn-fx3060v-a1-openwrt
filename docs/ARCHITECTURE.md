@@ -19,6 +19,10 @@ The stock rootfs is glibc 2.30 and OpenWrt is musl. Their loaders differ
 **complete and unmodified** at `/rtk`, and its programs run with `chroot /rtk`.
 The chroot shares the kernel, PID space, network stack, `/proc`, `/sys` and
 `/dev` with OpenWrt, and SysV IPC (`configd` message queues) works across it.
+Everything runs with the environment the stock busybox init provides
+(`PATH=/sbin:/usr/sbin:/bin:/usr/bin:/etc/scripts`, `HOME=/`, `SHELL`,
+`USER`). Without `/etc/scripts`, stock rc35's `fw_loaded.sh` (which commits a
+trial-booted bank) and the WiFi tuning helpers `cmd`/`cmd1` are not found.
 
 ```
 /                     OpenWrt squashfs + overlay (UBI rootfs_data)
@@ -155,6 +159,10 @@ Two images come out of one build (see [FLASH_LAYOUT.md](FLASH_LAYOUT.md)):
 `/usr/lib/nijika/fw.sh` detects the format, and `/lib/upgrade/platform.sh`
 replaces the armsr disk logic:
 
+* Stock protection: `fw_check_target` refuses when the other bank's
+  `sw_version` is not `NijikaWrt*` (the stock D-Link fallback). Overrides:
+  `sysupgrade -F` (a failed `platform_check_image` stays forceable),
+  `nijika upgrade --replace-stock`, and the LuCI confirmation (`replace_stock`).
 * `REQUIRE_IMAGE_METADATA=1`: sysupgrade checks `supported_devices` against
   `dlink,dpn-fx3060v-a1`. Factory/stock tars have no metadata and need
   `-F`.

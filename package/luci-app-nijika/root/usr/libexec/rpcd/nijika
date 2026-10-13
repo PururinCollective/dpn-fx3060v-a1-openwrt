@@ -394,7 +394,10 @@ m_fw_check() {
 		json_add_string format "$FW_FMT"
 		json_add_string version "$(fw_version "$FW_PATH")"
 		json_add_int size "$(wc -c < "$FW_PATH")"
-		json_add_int target "$((1 - $(running_bank)))"
+		fw_target_info
+		json_add_int target "$FW_TARGET"
+		json_add_string target_version "$FW_TARGET_VER"
+		json_add_boolean target_stock "$FW_TARGET_STOCK"
 	else
 		json_add_boolean valid 0
 		json_add_string message "$msg"
@@ -403,11 +406,13 @@ m_fw_check() {
 }
 
 m_fw_flash() {
-	local mode
+	local mode replace msg
 	json_load "$1"
 	json_get_var mode mode
+	json_get_var replace replace_stock
 	case "$mode" in commit) ;; none) ;; *) mode=try ;; esac
 	[ -f "$FW_PATH" ] || err "no firmware uploaded"
+	msg=$(fw_check_target "${replace:-0}" 2>&1) || err "$msg"
 	rm -f "$FW_RC"
 	(
 		. /usr/lib/nijika/common.sh
@@ -459,7 +464,7 @@ case "$1" in
 	"boot_get": {},
 	"boot_set": { "bank": 0, "mode": "str" },
 	"fw_check": {},
-	"fw_flash": { "mode": "str" },
+	"fw_flash": { "mode": "str", "replace_stock": false },
 	"fw_status": {},
 	"reboot": {}
 }

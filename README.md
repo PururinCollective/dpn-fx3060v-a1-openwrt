@@ -116,12 +116,19 @@ never overwritten.
   Upgrade Firmware* in the D-Link web GUI. The stock `boa` runs our `fwu.sh`,
   which checks md5 and writes `ubi_{DTB,k,r}<n>`. The stock GUI rejects the
   sysupgrade image because it has no `fwu.sh`.
-* **Updates, from NijikaWrt: `-sysupgrade.bin`.** Use `sysupgrade -v
-  <file>` (add `-n` to drop settings), LuCI *System → Backup / Flash Firmware*,
-  LuCI *PON → Firmware Banks*, or `nijika upgrade <file>`. sysupgrade checks the
-  board (`dlink,dpn-fx3060v-a1`) and the image CRC from the fwtool metadata. By
-  default the new bank is tried once (U-Boot arms a 60 s watchdog) and committed
-  after a good boot; otherwise the router falls back to the previous bank.
+* **Keeping stock + NijikaWrt side by side (recommended): update from the stock
+  bank with `-factory.bin`.** There are only two banks. Boot the stock bank
+  (`nijika boot <stock bank>`), then upload the new `-factory.bin` in the stock
+  GUI. It replaces the old NijikaWrt in the other bank, and OpenWrt settings
+  start fresh.
+* **Updates from NijikaWrt: `-sysupgrade.bin`** (sysupgrade, LuCI *System →
+  Backup / Flash Firmware* or *PON → Firmware Banks*, `nijika upgrade`) always
+  write the **other** bank. If that bank holds the stock D-Link firmware, they
+  **refuse**, so stock is never lost by accident. Override with `sysupgrade -F`,
+  `nijika upgrade --replace-stock`, or the confirmation tick box in LuCI. With
+  NijikaWrt in both banks this is a normal A/B update. sysupgrade checks the
+  board (`dlink,dpn-fx3060v-a1`) and the image CRC from the fwtool metadata. The
+  new bank is tried once (60 s U-Boot watchdog) and committed after a good boot;
   OpenWrt settings are kept unless `-n` is given.
 * **Back to stock:** `nijika boot <bank>` if a bank still has D-Link firmware.
   You can also flash the D-Link `.bin` through *PON → Firmware Banks* or
