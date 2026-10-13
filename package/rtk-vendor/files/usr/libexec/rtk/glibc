@@ -1,0 +1,9 @@
+#!/bin/sh
+# Run a self-contained stock glibc tool straight from /rtk without the
+# chroot. Used where the chroot is not available: preinit (UBI overlay
+# setup) and sysupgrade stage2.
+#   /usr/libexec/rtk/glibc /rtk/bin/ubimkvol /dev/ubi0 -N rootfs_data -s 1MiB
+
+RTK="${RTK:-/rtk}"
+
+exec "$RTK/lib/ld-linux-aarch64.so.1" --library-path "$RTK/lib:$RTK/usr/lib" "$@"

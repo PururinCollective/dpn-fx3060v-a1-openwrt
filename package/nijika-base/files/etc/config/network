@@ -1,0 +1,8 @@
+# NijikaWrt: the stock Realtek stack (vendor chroot) owns LAN, WAN, PON,
+# WiFi and VoIP. netifd only manages loopback; do not add lan/wan here
+# unless you know what the stock stack does with br0/nas0/eth0.*.
+
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	list ipaddr '127.0.0.1/8'

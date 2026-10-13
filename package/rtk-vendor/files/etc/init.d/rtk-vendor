@@ -1,0 +1,65 @@
+#!/bin/sh /etc/rc.common
+# NijikaWrt: bring up the stock Realtek userland (PON, OMCI, WAN, WiFi,
+# VoIP) inside the /rtk chroot. The stock kernel drivers expect their own
+# daemons (configd, startup, systemd, boa...) so they run unmodified there.
+
+START=11
+USE_PROCD=1
+
+RTK=/rtk
+
+is_mounted() {
+	grep -q " $1 " /proc/mounts
+}
+
+mount_vendor() {
+	is_mounted "$RTK/proc" || mount -t proc proc "$RTK/proc"
+	is_mounted "$RTK/sys" || mount -t sysfs sysfs "$RTK/sys"
+	[ -d /sys/kernel/debug ] && ! is_mounted "$RTK/sys/kernel/debug" && \
+		mount -t debugfs debugfs "$RTK/sys/kernel/debug" 2>/dev/null
+	is_mounted "$RTK/dev" || mount -o rbind /dev "$RTK/dev"
+	# Stock rc2 mounts a ramfs on /var; the vendor gets its own tmpfs so its
+	# scripts can never touch OpenWrt's /var (= /tmp).
+	is_mounted "$RTK/var" || mount -t tmpfs -o mode=0755 tmpfs "$RTK/var"
+	is_mounted "$RTK/run" || mount -t tmpfs -o mode=0755 tmpfs "$RTK/run"
+}
+
+start_service() {
+	[ -x "$RTK/bin/busybox" ] || {
+		echo "rtk-vendor: $RTK is missing, vendor stack not started" >&2
+		return 1
+	}
+
+	mount_vendor
+
+	# Kernel module autoload must resolve against the stock module tree.
+	echo /usr/libexec/rtk/modprobe > /proc/sys/kernel/modprobe
+
+	procd_open_instance vendor
+	procd_set_param command /usr/libexec/rtk/vendor-boot
+	procd_close_instance
+
+	local inetd
+	config_load nijika
+	config_get_bool inetd vendor inetd 0
+	if [ "$inetd" = 1 ]; then
+		procd_open_instance inetd
+		procd_set_param command /usr/libexec/rtk/run /bin/inetd -f
+		procd_set_param respawn
+		procd_close_instance
+	fi
+}
+
+stop_service() {
+	# The vendor daemons own the PON/WAN data path and the kernel drivers
+	# cannot be re-initialised at runtime: stopping is a reboot.
+	return 0
+}
+
+service_triggers() {
+	procd_add_reload_trigger nijika
+}
+
+reload_service() {
+	/usr/libexec/rtk/apply-settings
+}

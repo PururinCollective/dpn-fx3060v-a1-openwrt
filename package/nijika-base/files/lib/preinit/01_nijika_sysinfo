@@ -1,0 +1,11 @@
+# NijikaWrt: the stock device tree says "Realtek Taurus ENG Board"; give
+# OpenWrt (LuCI, sysupgrade) the real board identity. Runs before
+# 02_sysinfo, which only fills in missing values.
+
+nijika_sysinfo() {
+	mkdir -p /tmp/sysinfo
+	echo "dlink,dpn-fx3060v-a1" > /tmp/sysinfo/board_name
+	echo "D-Link DPN-FX3060V (A1)" > /tmp/sysinfo/model
+}
+
+boot_hook_add preinit_main nijika_sysinfo

@@ -1,0 +1,23 @@
+{
+	"luci-app-nijika": {
+		"description": "Grant access to NijikaWrt PON / stock configuration management",
+		"read": {
+			"ubus": {
+				"nijika": [ "status", "olt", "me", "diag", "mib_all", "mib_get", "chain",
+				            "quick_get", "ident_get", "boot_get", "fw_status" ]
+			},
+			"uci": [ "nijika" ]
+		},
+		"write": {
+			"ubus": {
+				"nijika": [ "mib_set", "quick_set", "ident_set", "boot_set",
+				            "fw_check", "fw_flash", "reboot" ]
+			},
+			"uci": [ "nijika" ],
+			"cgi-io": [ "upload" ],
+			"file": {
+				"/tmp/nijika-fw.bin": [ "write" ]
+			}
+		}
+	}
+}

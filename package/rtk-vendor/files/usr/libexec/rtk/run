@@ -1,0 +1,20 @@
+#!/bin/sh
+# Run a command inside the stock Realtek chroot with the stock environment.
+#   /usr/libexec/rtk/run /bin/flash get GPON_SN
+# Without arguments an interactive stock shell is started.
+
+RTK=/rtk
+
+grep -q " $RTK/proc " /proc/mounts || {
+	echo "rtk: vendor chroot is not mounted (rtk-vendor not started?)" >&2
+	exit 127
+}
+
+[ $# -gt 0 ] || set -- /bin/sh -l
+
+exec env -i \
+	PATH=/bin:/sbin:/usr/bin:/usr/sbin \
+	HOME=/ \
+	TERM="${TERM:-vt102}" \
+	LANG=C \
+	chroot "$RTK" "$@"

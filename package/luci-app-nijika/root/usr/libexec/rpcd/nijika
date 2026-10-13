@@ -1,0 +1,492 @@
+#!/bin/sh
+# rpcd backend for luci-app-nijika (ubus object "nijika").
+# Bridges LuCI to the stock Realtek tools in the /rtk vendor chroot.
+
+. /usr/share/libubox/jshn.sh
+. /usr/lib/nijika/common.sh
+. /usr/lib/nijika/pon.sh
+. /usr/lib/nijika/fw.sh
+
+FW_PATH=/tmp/nijika-fw.bin
+FW_LOG=/tmp/nijika-fw.log
+FW_RC=/tmp/nijika-fw.rc
+
+err() {
+	json_init
+	json_add_string error "$1"
+	json_dump
+	exit 0
+}
+
+need_vendor() {
+	vendor_up || err "vendor stack is not running"
+}
+
+# --- small readers ---------------------------------------------------------
+
+voip_get() { # field chid proxy
+	rtk /bin/voipflashcmd get "$1" "$2" "$3" 2>/dev/null | sed -n "s/^$1: //p" | head -n 1
+}
+
+chain_field() { # table index field
+	mib_get "$1.$2.$3"
+}
+
+# --- methods ---------------------------------------------------------------
+
+m_status() {
+	need_vendor
+	pon_cached_env 5 | pon_env_to_json
+}
+
+m_olt() {
+	need_vendor
+	/usr/sbin/nijika olt --json
+}
+
+m_me() {
+	need_vendor
+	local class
+	json_load "$1"
+	json_get_var class class
+	case "$class" in ''|*[!0-9]*) err "invalid ME class" ;; esac
+	omcicli mib get "$class" | awk -v class="$class" -f "$NIJIKA_LIB/me.awk"
+}
+
+m_diag() {
+	need_vendor
+	local cmd out
+	json_load "$1"
+	json_get_var cmd cmd
+	case "$cmd" in
+		onu-state)   out=$(diag gpon get onu-state) ;;
+		alarms)      out=$(diag gpon get alarm-status) ;;
+		transceiver) out=$(for k in temperature voltage bias-current tx-power rx-power; do
+		                     diag pon get transceiver "$k"; done) ;;
+		onu-info)    out=$(diag gpon show onu-info) ;;
+		us-flow)     out=$(diag gpon show us-flow) ;;
+		ds-flow)     out=$(diag gpon show ds-flow) ;;
+		interfaces)  out=$(rtk /bin/ifconfig) ;;
+		routes)      out=$(rtk /bin/ip route; echo; rtk /bin/ip -6 route) ;;
+		nat)         out=$(rtk /bin/iptables -t nat -S) ;;
+		filter)      out=$(rtk /bin/iptables -S) ;;
+		bridge)      out=$(rtk /bin/brctl show) ;;
+		ppp)         out=$(cat /rtk/var/ppp/* 2>/dev/null; rtk /bin/ip addr show dev ppp0 2>&1) ;;
+		vendor-boot) out=$(logread -e rtk 2>/dev/null | tail -n 200) ;;
+		*) err "command not allowed" ;;
+	esac
+	printf '{"cmd":"%s","output":"%s"}\n' "$cmd" "$(printf '%s' "$out" | json_escape)"
+}
+
+m_mib_all() {
+	need_vendor
+	local tmp=/tmp/.nijika_mib_all.$$
+	rtk /bin/flash all > "$tmp" 2>/dev/null
+	printf '{"values":'
+	awk -f "$NIJIKA_LIB/kv.awk" "$tmp" | tr -d '\n'
+	# "MIB Chain Information" header: "  ID Name   size/record   Num   Max"
+	printf ',"chains":['
+	awk '$1 ~ /^[0-9]+$/ && $2 ~ /^[A-Z0-9_]+_TBL$/ && NF >= 5 && !seen[$2]++ {
+		printf "%s{\"id\":%d,\"name\":\"%s\",\"num\":%d,\"max\":%d}", (n++ ? "," : ""), $1, $2, $(NF-1), $NF
+	}' "$tmp"
+	printf ']}\n'
+	rm -f "$tmp"
+}
+
+m_mib_get() {
+	need_vendor
+	local keys k
+	json_load "$1"
+	json_get_values keys keys
+	json_init
+	json_add_object values
+	for k in $keys; do
+		json_add_string "$k" "$(mib_get "$k")"
+	done
+	json_close_object
+	json_dump
+}
+
+# {"values": [["KEY","VALUE"], ...]}
+m_mib_set() {
+	need_vendor
+	local i n k v ok=0 failed=""
+	json_load "$1"
+	json_select values || err "values missing"
+	json_get_keys n
+	for i in $n; do
+		json_select "$i"
+		json_get_var k 1
+		json_get_var v 2
+		json_select ..
+		case "$k" in ''|*[!A-Za-z0-9_.]*) failed="$failed $k"; continue ;; esac
+		if rtk /bin/flash set "$k" "$v" >/dev/null 2>&1; then ok=$((ok + 1)); else failed="$failed $k"; fi
+	done
+	json_init
+	json_add_int ok "$ok"
+	json_add_array failed
+	for k in $failed; do json_add_string "" "$k"; done
+	json_close_array
+	json_dump
+}
+
+m_chain() {
+	need_vendor
+	local table
+	json_load "$1"
+	json_get_var table table
+	case "$table" in ''|*[!A-Z0-9_]*) err "invalid table" ;; esac
+	rtk /bin/flash get "$table" 2>/dev/null | awk -v table="$table" -f "$NIJIKA_LIB/chain.awk"
+}
+
+# --- Quick Setup -----------------------------------------------------------
+
+wifi_radio() { # idx(0|1) -> object
+	local p chain band
+	if [ "$1" = 0 ]; then p=""; chain=WLAN_MBSSIB_TBL; band=$(mib_get WLAN_PHY_BAND_SELECT)
+	else p=WLAN1_; chain=WLAN1_MBSSIB_TBL; band=$(mib_get WLAN1_PHY_BAND_SELECT); fi
+	local ssid psk dis
+	ssid=$(chain_field "$chain" 0 ssid); [ -n "$ssid" ] || ssid=$(mib_get "${p}SSID")
+	psk=$(chain_field "$chain" 0 wpaPSK); [ -n "$psk" ] || psk=$(mib_get "${p:-WLAN_}WPA_PSK")
+	dis=$(mib_get "${p:-WLAN_}DISABLED")
+	json_add_object
+	json_add_int radio "$1"
+	json_add_string band "$([ "$band" = 2 ] && echo 5g || echo 2g)"
+	json_add_string ssid "$ssid"
+	json_add_string key "$psk"
+	json_add_boolean enabled "$([ "$dis" = 1 ] && echo 0 || echo 1)"
+	json_close_object
+}
+
+m_quick_get() {
+	need_vendor
+	local chid
+	json_init
+
+	json_add_object pon
+	json_add_string sn "$(mib_get GPON_SN)"
+	json_add_string ploam "$(mib_get GPON_PLOAM_PASSWD)"
+	json_add_string loid "$(mib_get LOID)"
+	json_add_string loid_pw "$(mib_get LOID_PASSWD)"
+	json_close_object
+
+	json_add_array wifi
+	wifi_radio 0
+	wifi_radio 1
+	json_close_array
+
+	json_add_array voip
+	for chid in 0 1; do
+		json_add_object
+		json_add_int line "$chid"
+		json_add_boolean enable "$(voip_get enable "$chid" 0 | grep -q '^1' && echo 1 || echo 0)"
+		json_add_string addr "$(voip_get addr "$chid" 0)"
+		json_add_string port "$(voip_get port "$chid" 0)"
+		json_add_string domain "$(voip_get domain_name "$chid" 0)"
+		json_add_string number "$(voip_get number "$chid" 0)"
+		json_add_string login "$(voip_get login_id "$chid" 0)"
+		json_add_string password "$(voip_get password "$chid" 0)"
+		json_add_string display "$(voip_get display_name "$chid" 0)"
+		json_close_object
+	done
+	json_close_array
+
+	json_dump | sed 's/}$//'
+	# WAN records come straight from the chain parser.
+	printf ',"wan":'
+	rtk /bin/flash get ATM_VC_TBL 2>/dev/null | awk -v table=ATM_VC_TBL -f "$NIJIKA_LIB/chain.awk" | tr -d '\n'
+	printf ',"isp":['
+	grep -v '^#' "$NIJIKA_SHARE/isp-presets.tsv" | awk -F'\t' '
+		{ printf "%s{\"id\":\"%s\",\"label\":\"%s\",\"vid\":%d,\"prio\":%d,\"mtu\":%d}", (n++ ? "," : ""), $1, $2, $3, $4, $5 }'
+	printf ']}\n'
+}
+
+set_if() { # key value  (only when value given)
+	[ -n "$2" ] || return 0
+	mib_set "$1" "$2"
+}
+
+m_quick_set() {
+	need_vendor
+	local v idx user pass vid prio mtu i radio ssid key chain p line
+	json_load "$1"
+
+	# PON authentication
+	if json_select pon 2>/dev/null; then
+		json_get_var v sn; [ -n "$v" ] && mib_set GPON_SN "$v"
+		json_get_var v ploam; json_get_var p ploam_set
+		[ "$p" = 1 ] && mib_set GPON_PLOAM_PASSWD "$v"
+		json_get_var v loid; json_get_var p loid_set
+		[ "$p" = 1 ] && mib_set LOID "$v"
+		json_get_var v loid_pw
+		[ "$p" = 1 ] && mib_set LOID_PASSWD "$v"
+		json_select ..
+	fi
+
+	# Internet WAN (PPPoE)
+	if json_select wan 2>/dev/null; then
+		json_get_var idx index
+		json_get_var user user
+		json_get_var pass pass
+		json_get_var vid vid
+		json_get_var prio prio
+		json_get_var mtu mtu
+		case "$idx" in ''|*[!0-9]*) ;; *)
+			set_if "ATM_VC_TBL.$idx.pppUser" "$user"
+			set_if "ATM_VC_TBL.$idx.pppPasswd" "$pass"
+			if [ -n "$vid" ] && [ "$vid" -gt 0 ] 2>/dev/null; then
+				mib_set "ATM_VC_TBL.$idx.vlan" 1
+				mib_set "ATM_VC_TBL.$idx.vid" "$vid"
+			elif [ "$vid" = 0 ]; then
+				mib_set "ATM_VC_TBL.$idx.vlan" 0
+			fi
+			set_if "ATM_VC_TBL.$idx.vprio" "$prio"
+			set_if "ATM_VC_TBL.$idx.MTU" "$mtu"
+			;;
+		esac
+		json_select ..
+	fi
+
+	# WiFi: write both the root BSS chain record and the legacy scalars.
+	if json_select wifi 2>/dev/null; then
+		json_get_keys i
+		for line in $i; do
+			json_select "$line"
+			json_get_var radio radio
+			json_get_var ssid ssid
+			json_get_var key key
+			json_select ..
+			if [ "$radio" = 0 ]; then chain=WLAN_MBSSIB_TBL; p=""; else chain=WLAN1_MBSSIB_TBL; p=WLAN1_; fi
+			if [ -n "$ssid" ]; then
+				mib_set "$chain.0.ssid" "$ssid"
+				mib_set "${p}SSID" "$ssid"
+			fi
+			if [ -n "$key" ]; then
+				[ ${#key} -ge 8 ] && [ ${#key} -le 64 ] || err "WiFi key must be 8..64 characters"
+				mib_set "$chain.0.wpaPSK" "$key"
+				mib_set "${p:-WLAN_}WPA_PSK" "$key"
+			fi
+		done
+		json_select ..
+	fi
+
+	# VoIP lines (primary proxy)
+	if json_select voip 2>/dev/null; then
+		json_get_keys i
+		for line in $i; do
+			json_select "$line"
+			local chid en addr port dom num login pw disp
+			json_get_var chid line
+			json_get_var en enable
+			json_get_var addr addr
+			json_get_var port port
+			json_get_var dom domain
+			json_get_var num number
+			json_get_var login login
+			json_get_var pw password
+			json_get_var disp display
+			json_select ..
+			case "$chid" in 0|1) ;; *) continue ;; esac
+			rtk /bin/voipflashcmd set enable "${en:-0}" "$chid" 0 >/dev/null 2>&1
+			# A disabled line keeps its stored account (fields are hidden in the UI).
+			[ "$en" = 1 ] || continue
+			[ -n "$addr" ] && rtk /bin/voipflashcmd set addr "$addr" "$chid" 0 >/dev/null 2>&1
+			[ -n "$port" ] && rtk /bin/voipflashcmd set port "$port" "$chid" 0 >/dev/null 2>&1
+			rtk /bin/voipflashcmd set domain_name "$dom" "$chid" 0 >/dev/null 2>&1
+			rtk /bin/voipflashcmd set number "$num" "$chid" 0 >/dev/null 2>&1
+			rtk /bin/voipflashcmd set login_id "$login" "$chid" 0 >/dev/null 2>&1
+			[ -n "$pw" ] && rtk /bin/voipflashcmd set password "$pw" "$chid" 0 >/dev/null 2>&1
+			rtk /bin/voipflashcmd set display_name "$disp" "$chid" 0 >/dev/null 2>&1
+		done
+		json_select ..
+	fi
+
+	json_init
+	json_add_boolean ok 1
+	json_add_boolean reboot_required 1
+	json_dump
+}
+
+# --- identity ----------------------------------------------------------------
+
+IDENT_KEYS="PON_VENDOR_ID GPON_ONU_MODEL HW_CWMP_PRODUCTCLASS HW_CWMP_MANUFACTURER HW_HWVER OMCI_OLT_MODE OMCI_SW_VER1 OMCI_SW_VER2 OMCI_VENDOR_PRODUCT_CODE OMCI_TM_OPT OUI HW_SERIAL_NO OMCI_CUSTOM_BDP OMCI_CUSTOM_RDP OMCI_CUSTOM_ME"
+
+m_ident_get() {
+	need_vendor
+	local k
+	json_init
+	json_add_object current
+	for k in $IDENT_KEYS; do json_add_string "$k" "$(mib_get "$k")"; done
+	json_close_object
+	json_add_object defaults
+	for k in $IDENT_KEYS; do json_add_string "$k" "$(mib_get_def "$k")"; done
+	json_close_object
+	json_add_array presets
+	grep -v '^#' "$NIJIKA_SHARE/ont-presets.tsv" | while IFS="$(printf '\t')" read -r id label rest; do
+		printf '%s\t%s\n' "$id" "$label"
+	done > /tmp/.nijika_presets
+	while IFS="$(printf '\t')" read -r id label; do
+		json_add_object
+		json_add_string id "$id"
+		json_add_string label "$label"
+		json_close_object
+	done < /tmp/.nijika_presets
+	rm -f /tmp/.nijika_presets
+	json_close_array
+	json_dump
+}
+
+m_ident_set() {
+	need_vendor
+	local preset out
+	json_load "$1"
+	json_get_var preset preset
+	case "$preset" in ''|*[!a-z0-9-]*) err "invalid preset" ;; esac
+	out=$(/usr/sbin/nijika ont "$preset" 2>&1) || err "$out"
+	json_init
+	json_add_boolean ok 1
+	json_add_string message "$out"
+	json_dump
+}
+
+# --- boot banks / firmware ------------------------------------------------
+
+m_boot_get() {
+	local b
+	json_init
+	json_add_int running "$(running_bank)"
+	json_add_string active "$(nv_get sw_active)"
+	json_add_string commit "$(nv_get sw_commit)"
+	json_add_string tryactive "$(nv_get sw_tryactive)"
+	json_add_array banks
+	for b in 0 1; do
+		json_add_object
+		json_add_int bank "$b"
+		json_add_string version "$(nv_get sw_version$b)"
+		json_add_string valid "$(nv_get sw_valid$b)"
+		json_close_object
+	done
+	json_close_array
+	json_dump
+}
+
+m_boot_set() {
+	local bank mode out
+	json_load "$1"
+	json_get_var bank bank
+	json_get_var mode mode
+	case "$bank" in 0|1) ;; *) err "bank must be 0 or 1" ;; esac
+	case "$mode" in
+		try) out=$(/usr/sbin/nijika boot try "$bank" 2>&1) ;;
+		*) out=$(/usr/sbin/nijika boot "$bank" 2>&1) ;;
+	esac
+	json_init
+	json_add_boolean ok 1
+	json_add_string message "$out"
+	json_dump
+}
+
+m_fw_check() {
+	local msg
+	json_init
+	if msg=$(fw_check "$FW_PATH" 2>&1); then
+		json_add_boolean valid 1
+		json_add_string format "$FW_FMT"
+		json_add_string version "$(fw_version "$FW_PATH")"
+		json_add_int size "$(wc -c < "$FW_PATH")"
+		json_add_int target "$((1 - $(running_bank)))"
+	else
+		json_add_boolean valid 0
+		json_add_string message "$msg"
+	fi
+	json_dump
+}
+
+m_fw_flash() {
+	local mode
+	json_load "$1"
+	json_get_var mode mode
+	case "$mode" in commit) ;; none) ;; *) mode=try ;; esac
+	[ -f "$FW_PATH" ] || err "no firmware uploaded"
+	rm -f "$FW_RC"
+	(
+		. /usr/lib/nijika/common.sh
+		. /usr/lib/nijika/fw.sh
+		fw_flash "$FW_PATH" "$mode" > "$FW_LOG" 2>&1
+		echo $? > "$FW_RC"
+		rm -f "$FW_PATH"
+	) </dev/null >/dev/null 2>&1 &
+	json_init
+	json_add_boolean started 1
+	json_dump
+}
+
+m_fw_status() {
+	json_init
+	if [ -f "$FW_RC" ]; then
+		json_add_boolean running 0
+		json_add_int rc "$(cat "$FW_RC")"
+	else
+		json_add_boolean running "$([ -f "$FW_LOG" ] && echo 1 || echo 0)"
+	fi
+	json_add_string log "$(cat "$FW_LOG" 2>/dev/null)"
+	json_dump
+}
+
+m_reboot() {
+	( sleep 2; reboot ) </dev/null >/dev/null 2>&1 &
+	echo '{"ok":true}'
+}
+
+# --- dispatcher --------------------------------------------------------------
+
+case "$1" in
+	list)
+		cat <<'EOF'
+{
+	"status": {},
+	"olt": {},
+	"me": { "class": 0 },
+	"diag": { "cmd": "str" },
+	"mib_all": {},
+	"mib_get": { "keys": [] },
+	"mib_set": { "values": [] },
+	"chain": { "table": "str" },
+	"quick_get": {},
+	"quick_set": { "pon": {}, "wan": {}, "wifi": [], "voip": [] },
+	"ident_get": {},
+	"ident_set": { "preset": "str" },
+	"boot_get": {},
+	"boot_set": { "bank": 0, "mode": "str" },
+	"fw_check": {},
+	"fw_flash": { "mode": "str" },
+	"fw_status": {},
+	"reboot": {}
+}
+EOF
+		;;
+	call)
+		read -r input
+		case "$2" in
+			status) m_status ;;
+			olt) m_olt ;;
+			me) m_me "$input" ;;
+			diag) m_diag "$input" ;;
+			mib_all) m_mib_all ;;
+			mib_get) m_mib_get "$input" ;;
+			mib_set) m_mib_set "$input" ;;
+			chain) m_chain "$input" ;;
+			quick_get) m_quick_get ;;
+			quick_set) m_quick_set "$input" ;;
+			ident_get) m_ident_get ;;
+			ident_set) m_ident_set "$input" ;;
+			boot_get) m_boot_get ;;
+			boot_set) m_boot_set "$input" ;;
+			fw_check) m_fw_check ;;
+			fw_flash) m_fw_flash "$input" ;;
+			fw_status) m_fw_status ;;
+			reboot) m_reboot ;;
+			*) err "unknown method" ;;
+		esac
+		;;
+esac

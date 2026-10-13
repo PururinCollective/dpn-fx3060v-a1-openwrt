@@ -1,0 +1,52 @@
+# NijikaWrt: make sure the UBI volume "rootfs_data" exists before
+# mount_root looks for it, and process a pending wipe left by sysupgrade.
+#
+# The stock UBI layout leaves ~32 MiB of free PEBs; rootfs_data takes them
+# (minus a small reserve) with a high volume id so the gluebi mtd numbers
+# of the stock volumes (root=31:8 / 31:11) never shift.
+
+NIJIKA_DATA_VOL=rootfs_data
+NIJIKA_DATA_ID=120
+NIJIKA_DATA_RESERVE=8
+
+nijika_ubi_has_vol() {
+	local d
+	for d in /sys/class/ubi/ubi0_*; do
+		[ "$(cat "$d/name" 2>/dev/null)" = "$1" ] && return 0
+	done
+	return 1
+}
+
+nijika_rootfs_data() {
+	local glibc=/usr/libexec/rtk/glibc mnt=/tmp/.nijika_data avail leb size
+
+	[ -c /dev/ubi0 ] || return 0
+
+	if ! nijika_ubi_has_vol "$NIJIKA_DATA_VOL"; then
+		avail=$(cat /sys/class/ubi/ubi0/avail_eraseblocks 2>/dev/null)
+		leb=$(cat /sys/class/ubi/ubi0/eraseblock_size 2>/dev/null)
+		[ -n "$avail" ] && [ -n "$leb" ] || return 0
+		if [ "$avail" -le $((NIJIKA_DATA_RESERVE + 16)) ]; then
+			echo "- nijika: only $avail free PEBs, no persistent overlay -"
+			return 0
+		fi
+		size=$(( (avail - NIJIKA_DATA_RESERVE) * leb ))
+		echo "- nijika: creating UBI volume $NIJIKA_DATA_VOL ($((size / 1048576)) MiB) -"
+		$glibc /rtk/bin/ubimkvol /dev/ubi0 -n $NIJIKA_DATA_ID -N $NIJIKA_DATA_VOL -s $size || return 0
+		# Let UBIFS lay down an empty filesystem so fstools recognises it.
+		mkdir -p $mnt
+		mount -t ubifs ubi0:$NIJIKA_DATA_VOL $mnt && umount $mnt
+	fi
+
+	mkdir -p $mnt
+	mount -t ubifs ubi0:$NIJIKA_DATA_VOL $mnt 2>/dev/null || return 0
+	if [ -f $mnt/.nijika_wipe ]; then
+		echo "- nijika: firmware changed, resetting overlay -"
+		[ -f $mnt/.nijika_keep.tgz ] && gzip -dc $mnt/.nijika_keep.tgz > /tmp/sysupgrade.tar
+		rm -rf $mnt/* $mnt/.[!.]* 2>/dev/null
+		sync
+	fi
+	umount $mnt
+}
+
+boot_hook_add preinit_main nijika_rootfs_data

@@ -1,0 +1,13 @@
+
+config system
+	option hostname 'NijikaWrt'
+	option timezone 'MYT-8'
+	option zonename 'Asia/Kuala Lumpur'
+	option ttylogin '0'
+	option log_size '128'
+	option urandom_seed '0'
+
+# Time is kept by the stock stack (vsntp, MIB NTP_* settings).
+config timeserver 'ntp'
+	option enabled '0'
+	option enable_server '0'

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Multi-call wrapper: /usr/bin/<tool> -> this script runs /bin/<tool> of
+# the stock Realtek userland (mib, flash, diag, omcicli, nv, ...).
+exec /usr/libexec/rtk/run "/bin/${0##*/}" "$@"

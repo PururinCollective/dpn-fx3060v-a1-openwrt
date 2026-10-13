@@ -1,0 +1,20 @@
+#!/bin/sh
+# NijikaWrt first boot defaults.
+
+# uhttpd: HTTP only (no TLS stack shipped), LuCI on port 80 of every
+# interface; the stock firewall decides who may reach it.
+uci -q batch <<'EOF'
+delete uhttpd.main.listen_https
+set uhttpd.main.redirect_https='0'
+set uhttpd.main.rfc1918_filter='0'
+commit uhttpd
+EOF
+
+# Time comes from the stock stack.
+/etc/init.d/sysntpd disable 2>/dev/null
+
+# Interfaces are not managed by OpenWrt, packet steering would fight the
+# stock RPS settings (rps.sh).
+/etc/init.d/packet_steering disable 2>/dev/null
+
+exit 0

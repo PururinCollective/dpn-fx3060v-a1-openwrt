@@ -1,0 +1,5 @@
+#!/bin/sh
+# OpenWrt runs no dnsmasq of its own: point the host resolver at the one
+# the stock stack maintains (/var/resolv.conf inside the chroot).
+[ -e /rtk/var/resolv.conf ] || exit 0
+ln -sf /rtk/var/resolv.conf /tmp/resolv.conf

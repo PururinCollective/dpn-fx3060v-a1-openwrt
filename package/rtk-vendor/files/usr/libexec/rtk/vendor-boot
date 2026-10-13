@@ -1,0 +1,57 @@
+#!/bin/sh
+# Run the (patched) stock rc chain inside /rtk, then the NijikaWrt
+# post-boot hooks. Started once per boot by /etc/init.d/rtk-vendor.
+
+. /lib/functions.sh
+
+RTK=/rtk
+MARK="$RTK/var/run/.start_up_run_file"
+LOG=/tmp/log/rtk-boot.log
+
+if [ -f "$MARK" ]; then
+	logger -t rtk-vendor "vendor stack already up"
+	exit 0
+fi
+
+config_load nijika
+config_get_bool console vendor console 1
+config_get boa vendor boa shim
+
+# Hand settings over to the vendor side before the rc chain starts boa.
+mkdir -p "$RTK/var/nijika" "$RTK/var/config" /tmp/log
+echo "$boa" > "$RTK/var/nijika/boa.mode"
+/usr/libexec/rtk/var-mirror
+
+logger -t rtk-vendor "starting stock Realtek userland (boa=$boa)"
+
+# The rc chain backgrounds long running daemons that keep stdout open, so
+# the chain itself runs in the background and completion is detected via
+# the stock "system up" marker.
+if [ "$console" = 1 ]; then
+	/usr/libexec/rtk/run /bin/sh /etc/nijika/rcS </dev/null >/dev/console 2>&1 &
+else
+	( /usr/libexec/rtk/run /bin/sh /etc/nijika/rcS </dev/null 2>&1 | logger -t rtk ) &
+fi
+
+i=0
+while [ ! -f "$MARK" ] && [ $i -lt 300 ]; do
+	sleep 1
+	i=$((i + 1))
+	/usr/libexec/rtk/var-mirror
+done
+
+if [ -f "$MARK" ]; then
+	logger -t rtk-vendor "stock userland up after ${i}s"
+	echo "up ${i}s" > "$LOG"
+else
+	logger -t rtk-vendor "stock rc chain did not finish within ${i}s"
+	echo "timeout ${i}s" > "$LOG"
+fi
+
+for hook in /usr/libexec/rtk/post-boot.d/*; do
+	[ -x "$hook" ] || continue
+	logger -t rtk-vendor "post-boot: ${hook##*/}"
+	"$hook" 2>&1 | logger -t rtk-vendor
+done
+
+exit 0

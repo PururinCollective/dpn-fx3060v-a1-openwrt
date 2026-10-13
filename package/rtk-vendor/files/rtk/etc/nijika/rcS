@@ -1,0 +1,28 @@
+#!/bin/sh
+# NijikaWrt vendor boot (runs inside the /rtk chroot).
+#
+# Same as the stock /etc/init.d/rcS, but iterates the patched copies in
+# /etc/nijika/rc.d. The copies are generated at build time from the stock
+# /etc/init.d/rcN by scripts/patch-vendor.sh, which comments out the lines
+# that would fight OpenWrt (ramfs on /var, mdev hotplug, the second
+# watchdog daemon, root remount).
+
+startRunFile="/var/run/.start_up_run_file"
+if [ -f $startRunFile ]; then
+	echo "*********** SYSTEM ALREADY UP *************"
+	exit 1
+fi
+
+echo "=== NijikaWrt: starting stock rc0 ~ rc63 ==="
+i=0
+while [ "$i" != "64" ]
+do
+	rc_file=/etc/nijika/rc.d/rc$i
+	if [ -f "$rc_file" ]; then
+		echo "----- do_rc [$rc_file] -----"
+		sh $rc_file
+	fi
+	i=$(($i+1))
+done
+
+touch $startRunFile

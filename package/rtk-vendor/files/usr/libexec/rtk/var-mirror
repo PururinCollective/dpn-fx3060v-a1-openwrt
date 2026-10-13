@@ -1,0 +1,18 @@
+#!/bin/sh
+# Mirror the vendor /var (/rtk/var) into the host /var (= /tmp) so kernel
+# threads of the stock drivers, which resolve paths against the host root,
+# find /var/config, /var/run/solar_control.fifo etc. Never overrides host
+# entries. Called repeatedly during vendor boot and by nijika-ontd.
+
+for e in /rtk/var/*; do
+	[ -e "$e" ] || continue
+	n=${e##*/}
+	[ -e "/tmp/$n" ] || [ -L "/tmp/$n" ] || ln -s "$e" "/tmp/$n"
+done
+
+for e in /rtk/var/run/*.fifo /rtk/var/run/*.usock; do
+	[ -e "$e" ] || continue
+	n=${e##*/}
+	[ -e "/tmp/run/$n" ] || [ -L "/tmp/run/$n" ] || ln -s "$e" "/tmp/run/$n"
+done
+exit 0

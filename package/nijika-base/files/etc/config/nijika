@@ -1,0 +1,23 @@
+
+config vendor 'vendor'
+	# boa: 'shim' keeps the stock stack happy without serving anything,
+	#      'stock' runs the original D-Link web GUI on port 8080.
+	option boa 'shim'
+	# Print the stock vendor boot output on the serial console (1) or
+	# send it to the system log (0, see: logread -e rtk).
+	option console '1'
+	# Stock inetd (telnet on 23). OpenWrt's dropbear serves SSH on 22.
+	option inetd '0'
+	# Keep SSH/LuCI reachable from the LAN through the stock firewall.
+	option lan_mgmt '1'
+	option lan_ifname 'br0'
+
+config banner 'banner'
+	# ssh | always | never
+	option animate 'ssh'
+	# auto | truecolor | 256 | 16 | none
+	option color 'auto'
+
+config ontd 'ontd'
+	option enabled '1'
+	option interval '5'

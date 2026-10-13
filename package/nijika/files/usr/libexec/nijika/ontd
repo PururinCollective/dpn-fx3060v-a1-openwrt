@@ -1,0 +1,31 @@
+#!/bin/sh
+# nijika-ontd: keeps /tmp/nijika/pon.{env,json} fresh for the login banner,
+# LuCI and `nijika info`, and re-applies LAN management access after the
+# stock stack rebuilds its firewall.
+
+. /lib/functions.sh
+. /usr/lib/nijika/common.sh
+. /usr/lib/nijika/pon.sh
+
+config_load nijika
+config_get interval ontd interval 5
+
+# Wait for the vendor stack (diag needs the PON drivers loaded).
+while [ ! -f "$RTK/var/run/.start_up_run_file" ]; do
+	sleep 2
+done
+
+step=$((60 / interval))
+[ "$step" -ge 1 ] || step=1
+
+n=0
+while :; do
+	pon_refresh_cache
+	# every ~60 s
+	if [ $((n % step)) -eq 0 ]; then
+		/usr/libexec/rtk/lan-mgmt
+		/usr/libexec/rtk/var-mirror
+	fi
+	n=$((n + 1))
+	sleep "$interval"
+done

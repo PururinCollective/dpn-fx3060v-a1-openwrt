@@ -1,0 +1,528 @@
+#!/bin/sh
+# NIJIKA utility for NijikaWrt on the D-Link DPN-FX3060V (A1)
+# Created by Anime4000; OpenWrt port.
+#
+# One front end for the stock Realtek tools (diag, omcicli, flash/mib, nv)
+# running in the /rtk vendor chroot. `--json` output feeds LuCI (rpcd).
+
+. /usr/lib/nijika/common.sh
+. /usr/lib/nijika/pon.sh
+. /usr/lib/nijika/fw.sh
+
+CMD="$1"
+[ $# -gt 0 ] && shift
+
+has_flag() {
+	local f="$1"; shift
+	for a in "$@"; do [ "$a" = "$f" ] && return 0; done
+	return 1
+}
+
+need_vendor() {
+	vendor_up || die "vendor stack is not running (see: logread -e rtk)"
+}
+
+# ---------------------------------------------------------------- info ----
+
+nijika_info() {
+	need_vendor
+	local env
+	if has_flag --live "$@"; then
+		pon_refresh_cache
+	fi
+	env=$(pon_cached_env 10)
+
+	if has_flag --json "$@"; then
+		printf '%s\n' "$env" | pon_env_to_json
+		return
+	fi
+	if has_flag --env "$@"; then
+		printf '%s\n' "$env"
+		return
+	fi
+
+	eval "$env"
+	if has_flag --short "$@"; then
+		printf 'PON %s %s | RX %s dBm | TX %s dBm\n' \
+			"${PON_STATE:-?}" "${PON_STATE_TEXT:-}" "${PON_RX_DBM:-n/a}" "${PON_TX_DBM:-n/a}"
+		return
+	fi
+
+	cat <<EOF
+ONU state      : ${PON_STATE:-unknown} (${PON_STATE_TEXT:-unknown})
+Loss of signal : $([ "$PON_LOS" = 1 ] && echo yes || echo no)
+RX power       : ${PON_RX_DBM:-n/a} dBm
+TX power       : ${PON_TX_DBM:-n/a} dBm
+Temperature    : ${PON_TEMP_C:-n/a} C
+Voltage        : ${PON_VOLTAGE_V:-n/a} V
+Bias current   : ${PON_BIAS_MA:-n/a} mA
+Serial number  : ${PON_SN:-n/a}
+Vendor ID      : ${PON_VENDOR_ID:-n/a}
+OLT vendor     : ${PON_OLT_VENDOR:-n/a} ${PON_OLT_VENDOR_HEX:+($PON_OLT_VENDOR_HEX)}
+Alarms         : $(printf '%s' "$PON_ALARMS" | tr ';' ' ')
+EOF
+}
+
+# ------------------------------------------------------------------ me ----
+
+me_class() {
+	case "$1" in
+		ont-data|ontdata) echo 2 ;;
+		cardholder) echo 5 ;;
+		circuit-pack) echo 6 ;;
+		sw-image|software) echo 7 ;;
+		pptp|uni-eth) echo 11 ;;
+		bridge) echo 45 ;;
+		bridge-port) echo 47 ;;
+		pots) echo 53 ;;
+		vlan|vtfd) echo 84 ;;
+		mapper) echo 130 ;;
+		olt|oltg) echo 131 ;;
+		iphost) echo 134 ;;
+		extvlan|evtocd) echo 171 ;;
+		ont|ontg) echo 256 ;;
+		ont2) echo 257 ;;
+		tcont) echo 262 ;;
+		ani|anig) echo 263 ;;
+		uni|unig) echo 264 ;;
+		gem-iw) echo 266 ;;
+		gem|gemport) echo 268 ;;
+		pq|queue) echo 277 ;;
+		td|traffic) echo 280 ;;
+		mcast-gem) echo 281 ;;
+		mcast) echo 309 ;;
+		veip) echo 329 ;;
+		*[!0-9]*|"") return 1 ;;
+		*) echo "$1" ;;
+	esac
+}
+
+nijika_me() {
+	need_vendor
+	local class
+	class=$(me_class "$1") || {
+		cat <<'EOF'
+Usage: nijika me <class-id|name> [--json]
+
+Names: olt(131) ont(256) ont2(257) ani(263) uni(264) vlan(84) extvlan(171)
+       bridge(45) bridge-port(47) mapper(130) tcont(262) gem(268)
+       gem-iw(266) pq(277) td(280) mcast(309) mcast-gem(281) veip(329)
+       pptp(11) pots(53) iphost(134) sw-image(7) circuit-pack(6)
+EOF
+		return 1
+	}
+	if has_flag --json "$@"; then
+		omcicli mib get "$class" | awk -v class="$class" -f "$NIJIKA_LIB/me.awk"
+	else
+		omcicli mib get "$class"
+	fi
+}
+
+# OLT provisioning summary: ME 131 (OLT-G), 256 (ONT-G), 84 (VLAN filter),
+# 171 (extended VLAN). An OLT can bring the ONU to O5 but withhold 84/171.
+nijika_olt() {
+	need_vendor
+	if has_flag --json "$@"; then
+		printf '{"me131":'
+		omcicli mib get 131 | awk -v class=131 -f "$NIJIKA_LIB/me.awk" | tr -d '\n'
+		printf ',"me256":'
+		omcicli mib get 256 | awk -v class=256 -f "$NIJIKA_LIB/me.awk" | tr -d '\n'
+		printf ',"me84":'
+		omcicli mib get 84 | awk -v class=84 -f "$NIJIKA_LIB/me.awk" | tr -d '\n'
+		printf ',"me171":'
+		omcicli mib get 171 | awk -v class=171 -f "$NIJIKA_LIB/me.awk" | tr -d '\n'
+		printf ',"state":"%s"}\n' "$(diag gpon get onu-state | sed -n 's/.*(\(O[0-9][0-9.]*\)).*/\1/p' | head -n 1)"
+		return
+	fi
+
+	local hex
+	hex=$(omcicli mib get 131 | awk -F': *' '/^OltVendorId/ { print $2; exit }')
+	echo "== ME 131 OLT-G =="
+	omcicli mib get 131 | grep -E '^(EntityId|OltVendorId|EquipId|Version|ToDInfo)'
+	[ -n "$hex" ] && echo "OLT vendor (decoded): $(hex_to_ascii "$hex")"
+	echo
+	echo "== ME 256 ONT-G =="
+	omcicli mib get 256 | grep -E '^(EntityID|VID|Version|SerialNum|TraffMgtOpt|AdminState|OpState|OntState)'
+	echo
+	echo "== ME 84 VLAN tagging filter =="
+	omcicli mib get 84 | awk -F': ' '
+		/^EntityID/ { id = $2 }
+		/^FwdOp/ { op = $2 }
+		/^FilterTbl/ { v = $NF; gsub(/[^0-9]+/, "", v); vids[id] = (vids[id] == "" ? "" : vids[id] ",") (v + 0) }
+		/^NumOfEntries/ { printf "  entity %-8s fwdop %-6s vids %s\n", id, op, vids[id]; n++ }
+		END { if (!n) print "  (none - OLT has not provisioned ME 84)" }'
+	echo
+	echo "== ME 171 Extended VLAN tagging =="
+	omcicli mib get 171 | awk '
+		/^EntityId/ { id = $2 }
+		/^AssociatedMePoint/ { mp = $2; printf "  entity %-8s me-point %s\n", id, mp; n++ }
+		/Filter Outer|Filter Inner|Treatment Outer|Treatment Inner/ { sub(/^[ \t]+/, ""); print "      " $0 }
+		END { if (!n) print "  (none - OLT has not provisioned ME 171)" }'
+}
+
+# ------------------------------------------------------- ONT identity ----
+
+IDENT_KEYS="PON_VENDOR_ID GPON_ONU_MODEL HW_CWMP_PRODUCTCLASS HW_CWMP_MANUFACTURER HW_HWVER OMCI_OLT_MODE OMCI_SW_VER1 OMCI_SW_VER2 OMCI_VENDOR_PRODUCT_CODE OMCI_TM_OPT OUI"
+
+# OUI is stored as "aa,bb,cc" on this platform, presets use "aabbcc".
+oui_to_mib() {
+	echo "$1" | sed 's/^\(..\)\(..\)\(..\)$/\1,\2,\3/'
+}
+
+nijika_ont() {
+	need_vendor
+	local id="$1" line k v i
+	case "$id" in
+		""|list|help)
+			echo "ONT identity presets (nijika ont <id>):"
+			echo "  factory        restore stock D-Link identity (flash defaults)"
+			grep -v '^#' "$NIJIKA_SHARE/ont-presets.tsv" | awk -F'\t' '{ printf "  %-14s %s\n", $1, $2 }'
+			echo
+			echo "Current:"
+			for k in $IDENT_KEYS; do printf '  %-26s %s\n' "$k" "$(mib_get "$k")"; done
+			return 0
+			;;
+		factory)
+			for k in $IDENT_KEYS; do
+				v=$(mib_get_def "$k")
+				mib_set "$k" "$v"
+			done
+			echo "Stock identity restored. Reboot to take effect."
+			return 0
+			;;
+	esac
+
+	line=$(grep -v '^#' "$NIJIKA_SHARE/ont-presets.tsv" | awk -F'\t' -v id="$id" '$1 == id')
+	[ -n "$line" ] || die "unknown preset '$id' (see: nijika ont)"
+
+	echo "Emulating $(echo "$line" | cut -f2)"
+	i=3
+	for k in $IDENT_KEYS; do
+		v=$(echo "$line" | cut -f$i)
+		[ "$k" = OUI ] && v=$(oui_to_mib "$v")
+		mib_set "$k" "$v"
+		i=$((i + 1))
+	done
+	echo "Done! Reboot to take effect."
+}
+
+# ---------------------------------------------------------- ONU mode ----
+# OMCI_CUSTOM_* feature bits of the Realtek OMCI stack (from NIJIKA
+# onu_mode.sh). On this HGU the factory values are D-Link tuned; "factory"
+# puts them back.
+
+nijika_mode() {
+	need_vendor
+	local bdp rdp me
+	case "$1" in
+		factory) bdp=$(mib_get_def OMCI_CUSTOM_BDP); rdp=$(mib_get_def OMCI_CUSTOM_RDP); me=$(mib_get_def OMCI_CUSTOM_ME) ;;
+		0|hgu) bdp=136; rdp=0; me=36928 ;;
+		1|sfu1) bdp=258; rdp=0; me=65536 ;;
+		2|sfu2) bdp=258; rdp=4; me=65536 ;;
+		3|compat|bridge) bdp=258; rdp=6; me=1179648 ;;
+		4|manage|vlan) bdp=266; rdp=6; me=1179648 ;;
+		*)
+			cat <<EOF
+Usage: nijika mode <mode>
+  factory   stock D-Link values (BDP=$(mib_get_def OMCI_CUSTOM_BDP) RDP=$(mib_get_def OMCI_CUSTOM_RDP) ME=$(mib_get_def OMCI_CUSTOM_ME))
+  0 | hgu      Home Gateway Unit (ignore ext-vlan drop, gen VTFD)
+  1 | sfu1     Single Family Unit (VEIP to SFU)
+  2 | sfu2     SFU, bridge all LANs
+  3 | compat   Compatibility / bridge all VLANs
+  4 | manage   VLAN managed bridge-only
+Current: BDP=$(mib_get OMCI_CUSTOM_BDP) RDP=$(mib_get OMCI_CUSTOM_RDP) ME=$(mib_get OMCI_CUSTOM_ME)
+EOF
+			return 0
+			;;
+	esac
+	mib_set OMCI_CUSTOM_BDP "$bdp"
+	mib_set OMCI_CUSTOM_RDP "$rdp"
+	mib_set OMCI_CUSTOM_ME "$me"
+	echo "OMCI_CUSTOM_BDP=$bdp RDP=$rdp ME=$me. Reboot to take effect."
+}
+
+# --------------------------------------------------- PON credentials ----
+
+nijika_ploam() {
+	need_vendor
+	if [ -n "$1" ]; then
+		[ ${#1} -le 36 ] || die "PLOAM password too long"
+		mib_set GPON_PLOAM_PASSWD "$1"
+		echo "PLOAM password set. Reboot to re-register."
+	else
+		echo "GPON_PLOAM_PASSWD=$(mib_get GPON_PLOAM_PASSWD)"
+	fi
+}
+
+nijika_sn() {
+	need_vendor
+	if [ -n "$1" ]; then
+		echo "$1" | grep -qE '^[A-Za-z0-9]{4}[0-9A-Fa-f]{8}$' ||
+			die "serial must be 4 vendor chars + 8 hex digits (e.g. DLKI34615A2E)"
+		mib_set GPON_SN "$(echo "$1" | awk '{ print toupper(substr($0,1,4)) toupper(substr($0,5)) }')"
+		echo "GPON serial set. Reboot to re-register."
+	else
+		echo "GPON_SN=$(mib_get GPON_SN)"
+	fi
+}
+
+nijika_loid() {
+	need_vendor
+	if [ $# -ge 1 ]; then
+		mib_set LOID "$1"
+		[ $# -ge 2 ] && mib_set LOID_PASSWD "$2"
+		echo "LOID set. Reboot to re-register."
+	else
+		echo "LOID=$(mib_get LOID)"
+		echo "LOID_PASSWD=$(mib_get LOID_PASSWD)"
+	fi
+}
+
+# ------------------------------------------------------- ISP preset ----
+
+nijika_isp() {
+	need_vendor
+	local id="$1" line idx vid prio mtu
+	if [ -z "$id" ] || [ "$id" = help ]; then
+		echo "ISP presets (sets VLAN/priority/MTU of the Internet PPPoE WAN):"
+		grep -v '^#' "$NIJIKA_SHARE/isp-presets.tsv" |
+			awk -F'\t' '{ printf "  %-10s %-32s inet %s/p%s voip %s/p%s\n", $1, $2, $3, $4, $6, $7 }'
+		echo
+		echo "Example: nijika isp unifi [wan-index]"
+		return 0
+	fi
+	line=$(grep -v '^#' "$NIJIKA_SHARE/isp-presets.tsv" | awk -F'\t' -v id="$id" '$1 == id')
+	[ -n "$line" ] || die "unknown ISP '$id'"
+	idx="${2:-$(wan_internet_index)}"
+	vid=$(echo "$line" | cut -f3); prio=$(echo "$line" | cut -f4); mtu=$(echo "$line" | cut -f5)
+	mib_set "ATM_VC_TBL.$idx.vlan" 1
+	mib_set "ATM_VC_TBL.$idx.vid" "$vid"
+	mib_set "ATM_VC_TBL.$idx.vprio" "$prio"
+	mib_set "ATM_VC_TBL.$idx.MTU" "$mtu"
+	echo "WAN $idx: VLAN $vid priority $prio MTU $mtu ($(echo "$line" | cut -f2))."
+	echo "Set PPPoE credentials with Quick Setup or 'nijika mib set', then reboot."
+}
+
+# Index of the first PPPoE WAN (ChannelMode 2), else 0.
+wan_internet_index() {
+	rtk /bin/flash get ATM_VC_TBL 2>/dev/null | awk '
+		{ l = $0; sub(/\r$/, "", l); sub(/^[ \t]+/, "", l) }
+		l ~ /\.[0-9]+:$/ { idx = l; sub(/:$/, "", idx); sub(/.*\./, "", idx); next }
+		l == "ChannelMode=2" && idx != "" { print idx; found = 1; exit }
+		END { if (!found) print 0 }'
+}
+
+# ------------------------------------------------------------- boot ----
+
+nijika_boot() {
+	local cur commit act try
+	cur=$(running_bank)
+	case "$1" in
+		""|status)
+			commit=$(nv_get sw_commit); act=$(nv_get sw_active); try=$(nv_get sw_tryactive)
+			echo "running bank : $cur"
+			echo "sw_active    : $act"
+			echo "sw_commit    : $commit (boot default)"
+			echo "sw_tryactive : $try $([ "$try" = 2 ] && echo '(no trial pending)' || echo '(trial boot pending)')"
+			echo "bank 0       : $(nv_get sw_version0) (valid=$(nv_get sw_valid0))"
+			echo "bank 1       : $(nv_get sw_version1) (valid=$(nv_get sw_valid1))"
+			return 0
+			;;
+		0|1)
+			nv_set sw_commit "$1"
+			nv_set sw_active "$1"
+			nv_set sw_tryactive 2
+			echo "Boot bank set to $1. Reboot is required to apply the change."
+			;;
+		toggle)
+			nijika_boot "$((1 - cur))"
+			;;
+		try)
+			case "$2" in 0|1) ;; *) die "usage: nijika boot try <0|1>" ;; esac
+			nv_set sw_updater nijika
+			nv_set sw_tryactive "$2"
+			echo "Bank $2 will be tried once on next boot (60 s watchdog);"
+			echo "it is committed automatically after a good boot."
+			;;
+		*)
+			echo "Usage: nijika boot [status|0|1|toggle|try <0|1>]"
+			return 1
+			;;
+	esac
+}
+
+nijika_upgrade() {
+	local mode=try reboot=1 img=""
+	for a in "$@"; do
+		case "$a" in
+			--commit) mode=commit ;;
+			--no-switch) mode=none ;;
+			--no-reboot) reboot=0 ;;
+			-*) die "unknown option $a" ;;
+			*) img="$a" ;;
+		esac
+	done
+	[ -n "$img" ] || die "usage: nijika upgrade [--commit|--no-switch] [--no-reboot] <*-sysupgrade.bin|*-factory.bin|stock.bin>"
+	fw_flash "$img" "$mode" || die "upgrade failed, nothing changed in the boot selection"
+	if [ "$reboot" = 1 ] && [ "$mode" != none ]; then
+		echo "Rebooting in 3 seconds..."
+		sleep 3
+		reboot
+	fi
+}
+
+# -------------------------------------------------------------- mib ----
+
+nijika_mib() {
+	need_vendor
+	local sub="$1"; shift
+	case "$sub" in
+		get)
+			for k in "$@"; do echo "$k=$(mib_get "$k")"; done
+			;;
+		set)
+			[ $# -ge 2 ] || die "usage: nijika mib set KEY VALUE"
+			rtk /bin/flash set "$1" "$2"
+			;;
+		all)
+			if has_flag --json "$@"; then
+				rtk /bin/flash all 2>/dev/null | awk -f "$NIJIKA_LIB/kv.awk"
+			else
+				rtk /bin/flash all
+			fi
+			;;
+		chain)
+			[ -n "$1" ] || die "usage: nijika mib chain <TABLE> [--json]"
+			if has_flag --json "$@"; then
+				rtk /bin/flash get "$1" 2>/dev/null | awk -v table="$1" -f "$NIJIKA_LIB/chain.awk"
+			else
+				rtk /bin/flash get "$1"
+			fi
+			;;
+		def)
+			for k in "$@"; do echo "$k=$(mib_get_def "$k")"; done
+			;;
+		*)
+			echo "Usage: nijika mib get KEY... | set KEY VALUE | def KEY... | all [--json] | chain TABLE [--json]"
+			return 1
+			;;
+	esac
+}
+
+# -------------------------------------------------------------- boa ----
+
+nijika_boa() {
+	case "$1" in
+		shim|stock)
+			uci set nijika.vendor.boa="$1"
+			uci commit nijika
+			/usr/libexec/rtk/apply-settings
+			[ "$1" = stock ] && echo "Stock web GUI on http://<router>:8080/" || echo "boa shim active"
+			;;
+		*)
+			echo "boa mode: $(uci -q get nijika.vendor.boa || echo shim) (nijika boa shim|stock)"
+			;;
+	esac
+}
+
+# ------------------------------------------------------------ reset ----
+
+nijika_reset() {
+	need_vendor
+	local all=0 confirm
+	[ "$1" = "--all" ] && all=1
+	echo "[Warning] This resets the stock configuration (WAN, WiFi, VoIP) to"
+	echo "factory defaults, keeping PON serial, PLOAM password, MAC and key."
+	[ "$all" = 1 ] && echo "The OpenWrt overlay (/etc/config, packages) is wiped too."
+	printf "Continue? [y/N]: "
+	read -r confirm
+	case "$confirm" in
+		[yY]|[yY][eE][sS]) ;;
+		*) echo "[FAIL] Reset cancelled."; return 1 ;;
+	esac
+
+	local ploam sn mac key
+	ploam=$(mib_get GPON_PLOAM_PASSWD); sn=$(mib_get GPON_SN)
+	mac=$(mib_get ELAN_MAC_ADDR); key=$(mib_get MAC_KEY)
+
+	echo "[INFO] Resetting stock configuration..."
+	rtk /bin/flash default hs
+	rtk /bin/flash default cs
+
+	echo "[INFO] Restoring PON credentials and hardware identity..."
+	mib_set GPON_PLOAM_PASSWD "$ploam"
+	mib_set GPON_SN "$sn"
+	[ -n "$mac" ] && mib_set ELAN_MAC_ADDR "$mac"
+	[ -n "$key" ] && mib_set MAC_KEY "$key"
+
+	if [ "$all" = 1 ]; then
+		echo "[INFO] Wiping OpenWrt overlay..."
+		firstboot -y
+	fi
+	echo "[ OK ] Factory reset done. Reboot to take effect."
+}
+
+# -------------------------------------------------------------- misc ----
+
+nijika_version() {
+	. /etc/openwrt_release
+	. /etc/nijika_release
+	echo "$NIJIKA_DISTRO $NIJIKA_REVISION${NIJIKA_CODENAME:+ ($NIJIKA_CODENAME)} [$NIJIKA_GITHASH]"
+	echo "OpenWrt $DISTRIB_RELEASE $DISTRIB_REVISION"
+	echo "Linux $(uname -r) (stock Realtek kernel)"
+	echo "Bank $(running_bank): $(nv_get sw_version$(running_bank))"
+}
+
+show_usage() {
+	cat <<'EOF'
+NIJIKA utility for NijikaWrt (D-Link DPN-FX3060V A1) by Anime4000
+
+Usage: nijika <command> [args]
+
+PON / OMCI
+  info [--json|--short|--live]  ONU state, optical power, OLT vendor
+  olt [--json]                  OLT provisioning (ME 131/256/84/171)
+  me <class|name> [--json]      Dump any OMCI managed entity
+  ploam [password]              Show/set GPON PLOAM password
+  sn [serial]                   Show/set GPON serial number
+  loid [id [password]]          Show/set LOID authentication
+  ont [preset|factory]          ONT identity emulation for OLT compatibility
+  mode [mode|factory]           OMCI VLAN handling mode (OMCI_CUSTOM_*)
+  isp [preset [wan-index]]      Apply ISP VLAN preset to the Internet WAN
+
+System
+  boot [status|0|1|toggle|try N]  Firmware bank selection (A/B)
+  upgrade [--commit] <fw.bin>     Write firmware to the other bank
+                                  (NijikaWrt sysupgrade/factory or stock D-Link)
+  mib get|set|def|all|chain ...   Stock configuration database
+  boa [shim|stock]                boa shim, or stock web GUI on :8080
+  reset [--all]                   Factory reset (keeps PON identity)
+  banner                          Show the login banner
+  version                         Versions of all layers
+
+Stock tools are also available directly: diag, omcicli, flash, mib, nv,
+voipflashcmd, smuxctl. `nijika rtk` opens a stock (vendor) shell.
+EOF
+}
+
+case "$CMD" in
+	info) nijika_info "$@" ;;
+	olt) nijika_olt "$@" ;;
+	me) nijika_me "$@" ;;
+	ploam) nijika_ploam "$@" ;;
+	sn) nijika_sn "$@" ;;
+	loid) nijika_loid "$@" ;;
+	ont) nijika_ont "$@" ;;
+	mode) nijika_mode "$@" ;;
+	isp|vlan) nijika_isp "$@" ;;
+	boot) nijika_boot "$@" ;;
+	upgrade) nijika_upgrade "$@" ;;
+	mib) nijika_mib "$@" ;;
+	boa) nijika_boa "$@" ;;
+	reset) nijika_reset "$@" ;;
+	banner) NIJIKA_BANNER_FORCE=1 exec /usr/libexec/nijika/banner ;;
+	version|-v|--version) nijika_version ;;
+	rtk) exec /usr/libexec/rtk/run "$@" ;;
+	diag|omcicli|flash|nv) exec /usr/libexec/rtk/run "/bin/$CMD" "$@" ;;
+	*) show_usage ;;
+esac

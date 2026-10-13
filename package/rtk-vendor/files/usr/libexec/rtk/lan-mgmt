@@ -1,0 +1,18 @@
+#!/bin/sh
+# Ensure OpenWrt management services are reachable from the LAN bridge
+# through the stock iptables ruleset. Idempotent.
+
+. /lib/functions.sh
+
+config_load nijika
+config_get_bool enabled vendor lan_mgmt 1
+config_get lan vendor lan_ifname br0
+[ "$enabled" = 1 ] || exit 0
+
+ipt() { /usr/libexec/rtk/run /bin/iptables "$@" 2>/dev/null; }
+
+for port in 22 80; do
+	ipt -C INPUT -i "$lan" -p tcp --dport "$port" -j ACCEPT ||
+		ipt -I INPUT 1 -i "$lan" -p tcp --dport "$port" -j ACCEPT
+done
+exit 0

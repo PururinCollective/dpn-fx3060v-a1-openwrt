@@ -1,0 +1,4 @@
+#!/bin/sh
+# Kernel module autoload helper (/proc/sys/kernel/modprobe). The running
+# kernel is the stock 5.10.70, so modules come from the stock tree in /rtk.
+exec /usr/libexec/rtk/run /sbin/modprobe "$@"

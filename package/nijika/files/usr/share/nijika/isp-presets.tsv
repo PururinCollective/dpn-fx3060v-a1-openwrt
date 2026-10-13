@@ -1,0 +1,14 @@
+# ISP WAN presets (ported from NIJIKA set_vlan.sh; MTU adjusted for a
+# PPPoE router WAN instead of the SFP bridge).
+# Columns (TAB separated):
+# id	label	internet_vid	internet_prio	mtu	voip_vid	voip_prio	iptv_vid
+unifi	TM Unifi (Malaysia)	500	1	1492	400	5	600
+maxis	TM HSBB - Maxis (Malaysia)	621	1	1492	822	5	0
+celcom	TM HSBB - Celcom (Malaysia)	623	1	1492	400	5	0
+digi	TM HSBB - DiGi (Malaysia)	629	1	1492	400	5	0
+maxis2	Maxis own infra (Malaysia)	11	1	1492	14	5	0
+time	TIME dotCom (Malaysia)	499	1	1492	140	5	0
+allo	Allo (Malaysia)	990	1	1492	992	1	0
+indihome	IndiHome (Indonesia)	100	1	1492	200	1	0
+nethome	NetHome (Indonesia)	901	1	1492	88	1	0
+byfly	byfly (Belarus)	10	3	1492	50	6	0

@@ -1,0 +1,140 @@
+#!/bin/sh
+# NijikaWrt login banner (called from /etc/profile instead of `cat /etc/banner`).
+#
+# uci: nijika.banner.animate = ssh (default) | always | never
+#      nijika.banner.color   = auto (default) | truecolor | 256 | 16 | none
+# Animation is skipped on the serial console by default: at 115200 baud a
+# few frames of colour escapes take seconds to draw.
+
+[ -t 1 ] || [ -n "$NIJIKA_BANNER_FORCE" ] || exit 0
+
+# NIJIKA_BANNER_ROOT lets tools/banner-preview.sh render this on a PC.
+R="${NIJIKA_BANNER_ROOT:-}"
+uci_get() {
+	if [ -n "$R" ]; then
+		case "$1" in
+			*.animate) echo "$NIJIKA_BANNER_ANIMATE" ;;
+			*.color) echo "$NIJIKA_BANNER_COLOR" ;;
+		esac
+		return 0
+	fi
+	uci -q get "$1"
+}
+
+animate=$(uci_get nijika.banner.animate)
+color=$(uci_get nijika.banner.color)
+: "${animate:=ssh}" "${color:=auto}"
+
+case "$color" in
+	truecolor|tc|24bit) mode=tc ;;
+	256) mode=256 ;;
+	16) mode=16 ;;
+	none|off|0) mode=none ;;
+	*)
+		case "$COLORTERM" in
+			truecolor|24bit) mode=tc ;;
+			*)
+				case "$TERM" in
+					""|dumb) mode=none ;;
+					*direct*|*truecolor*|xterm-kitty|alacritty*|foot*|wezterm*) mode=tc ;;
+					*256color*) mode=256 ;;
+					*) mode=16 ;;
+				esac
+				;;
+		esac
+		;;
+esac
+
+tty=$(readlink /proc/self/fd/1 2>/dev/null)
+frames=1
+case "$animate" in
+	always) frames=18 ;;
+	ssh) case "$tty" in /dev/pts/*) frames=18 ;; esac ;;
+esac
+[ "$mode" = none ] && frames=1
+
+delay=""
+if [ "$frames" -gt 1 ]; then
+	if [ -n "$NIJIKA_BANNER_SLEEP" ]; then
+		delay="$NIJIKA_BANNER_SLEEP"
+	elif [ -x /usr/bin/sleep ] && /usr/bin/sleep 0 2>/dev/null; then
+		delay="/usr/bin/sleep 0.028"
+	elif [ -x /rtk/bin/busybox ]; then
+		delay="/usr/libexec/rtk/glibc /rtk/bin/busybox usleep 22000"
+	else
+		frames=1
+	fi
+fi
+
+# ---- data -------------------------------------------------------------------
+
+. "$R/etc/openwrt_release" 2>/dev/null
+. "$R/etc/nijika_release" 2>/dev/null
+
+NIJIKA_DISTRO="${NIJIKA_DISTRO:-NijikaWrt}"
+NIJIKA_REVISION="${NIJIKA_REVISION:-r0}"
+release="$NIJIKA_DISTRO $NIJIKA_REVISION${NIJIKA_CODENAME:+ ($NIJIKA_CODENAME)}"
+NIJIKA_TAGLINE="${NIJIKA_TAGLINE:-O P E N  P O N  F O U N D A T I O N}"
+
+PON_STATE=""; PON_STATE_TEXT=""; PON_RX_DBM=""; PON_TX_DBM=""; PON_LOS=0; PON_UPDATED=0
+if [ -f "$R/tmp/nijika/pon.env" ]; then
+	. "$R/tmp/nijika/pon.env"
+fi
+now=$(date +%s)
+up=$(awk '{
+	s = int($1); d = int(s / 86400); h = int((s % 86400) / 3600); m = int((s % 3600) / 60)
+	if (d > 0) printf "%dd %dh %dm", d, h, m; else if (h > 0) printf "%dh %dm", h, m; else printf "%dm", m
+}' "${NIJIKA_BANNER_UPTIME:-/proc/uptime}")
+
+if [ -z "$PON_STATE" ] || [ $((now - ${PON_UPDATED:-0})) -gt 120 ]; then
+	st_tag=dim; st_txt="status pending"
+	[ -n "$PON_STATE" ] && st_txt="$PON_STATE (stale)"
+else
+	case "$PON_STATE" in
+		O5*) st_tag=ok ;;
+		O7*) st_tag=bad ;;
+		*) st_tag=warn ;;
+	esac
+	[ "$PON_LOS" = 1 ] && st_tag=bad
+	st_txt="$PON_STATE $PON_STATE_TEXT"
+	[ "$PON_LOS" = 1 ] && st_txt="$PON_STATE no signal (LOS)"
+fi
+
+# Receiver sensitivity class B+ GPON: -8 .. -27 dBm is healthy.
+level_tag() {
+	awk -v v="$1" -v lo="$2" -v hi="$3" -v slack="$4" 'BEGIN {
+		if (v == "" || v ~ /inf/) { print "dim"; exit }
+		v += 0
+		if (v >= lo && v <= hi) print "ok"
+		else if (v >= lo - slack && v <= hi + slack) print "warn"
+		else print "bad"
+	}'
+}
+rx_tag=$(level_tag "$PON_RX_DBM" -27 -8 1)
+tx_tag=$(level_tag "$PON_TX_DBM" 0.5 5 1)
+rx_txt="${PON_RX_DBM:-n/a}"; [ -n "$PON_RX_DBM" ] && rx_txt="$rx_txt dBm"
+tx_txt="${PON_TX_DBM:-n/a}"; [ -n "$PON_TX_DBM" ] && tx_txt="$tx_txt dBm"
+
+owrt="OpenWrt ${DISTRIB_RELEASE:-?} ${DISTRIB_REVISION:-}"
+
+# ---- layout (art by the NijikaWrt project, tabs expanded) --------------------
+
+{
+	cat <<'EOF'
+                 _______ __ __ __ __           ________        __
+                |    |  |__|__|__|  |--.---.-.|  |  |  |.----.|  |_
+                |       |  |  |  |    <|  _  ||  |  |  ||   _||   _|
+                |__|____|__|  |__|__|__|___._||________||__|  |____|
+EOF
+	printf '                           |___|     %s\n' "$NIJIKA_TAGLINE"
+	echo ""
+	echo ' <---------------------------------------------------------- {lbl}TX 1310 nm{grad} ---'
+	printf '  {hi}%s{dim}  |  {txt}%s{dim}  |  {txt}Linux %s\n' \
+		"$release" "$owrt" "${NIJIKA_BANNER_KERNEL:-$(uname -r)}"
+	printf '  {dim}PON {%s}%s{dim}  |  RX {%s}%s{dim}  |  TX {%s}%s{dim}  |  {txt}up %s\n' \
+		"$st_tag" "$st_txt" "$rx_tag" "$rx_txt" "$tx_tag" "$tx_txt" "$up"
+	echo ' --- {lbl}RX 1490 nm{grad} ---------------------------------------------------------->'
+} | awk -v mode="$mode" -v frames="$frames" -v delay="$delay" -v width=76 \
+	-f "$R/usr/lib/nijika/banner.awk"
+
+echo
