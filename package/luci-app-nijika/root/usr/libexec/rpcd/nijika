@@ -4,6 +4,7 @@
 
 . /usr/share/libubox/jshn.sh
 . /usr/lib/nijika/common.sh
+. /usr/lib/nijika/omci.sh
 . /usr/lib/nijika/pon.sh
 . /usr/lib/nijika/fw.sh
 
@@ -50,7 +51,17 @@ m_me() {
 	json_load "$1"
 	json_get_var class class
 	case "$class" in ''|*[!0-9]*) err "invalid ME class" ;; esac
-	omcicli mib get "$class" | awk -v class="$class" -f "$NIJIKA_LIB/me.awk"
+	omci_me_json "$class"
+}
+
+# Provider set-up for the Provisioning page: the OMCI MEs of the data path
+# plus omci_app's own queue map, cached for OMCI_MAP_TTL seconds.
+m_provision() {
+	need_vendor
+	local out
+	out=$(omci_map_json)
+	[ -n "$out" ] || err "OMCI data not available"
+	printf '%s\n' "$out"
 }
 
 m_diag() {
@@ -456,6 +467,7 @@ case "$1" in
 	"status": {},
 	"olt": {},
 	"me": { "class": 0 },
+	"provision": {},
 	"diag": { "cmd": "str" },
 	"mib_all": {},
 	"mib_get": { "keys": [] },
@@ -480,6 +492,7 @@ EOF
 			status) m_status ;;
 			olt) m_olt ;;
 			me) m_me "$input" ;;
+			provision) m_provision ;;
 			diag) m_diag "$input" ;;
 			mib_all) m_mib_all ;;
 			mib_get) m_mib_get "$input" ;;

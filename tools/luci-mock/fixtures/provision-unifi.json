@@ -1,0 +1,6152 @@
+{
+ "updated": 1791920731,
+ "me": {
+  "131": {
+   "class": 131,
+   "name": "OltG",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x00"
+      ],
+      [
+       "OltVendorId",
+       "0x414c434c"
+      ],
+      [
+       "EquipId",
+       ""
+      ],
+      [
+       "Version",
+       ""
+      ],
+      [
+       "ToDInfo",
+       "Sequence number of GEM superframe: 0x0\nTimestamp: secs 0, nanosecs 0"
+      ]
+     ],
+     "raw": "EntityId: 0x00\nOltVendorId: 0x414c434c\nEquipId:                     \nVersion: \nToDInfo:\n\tSequence number of GEM superframe: 0x0\n\tTimestamp: secs 0, nanosecs 0"
+    }
+   ],
+   "truncated": false
+  },
+  "256": {
+   "class": 256,
+   "name": "Ontg",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x00"
+      ],
+      [
+       "VID",
+       "DLNK"
+      ],
+      [
+       "Version",
+       "A1"
+      ],
+      [
+       "SerialNum",
+       "DLKI12345678"
+      ],
+      [
+       "TraffMgtOpt",
+       "0"
+      ],
+      [
+       "AtmCCOpt",
+       "0"
+      ],
+      [
+       "BatteryBack",
+       "0"
+      ],
+      [
+       "AdminState",
+       "0"
+      ],
+      [
+       "OpState",
+       "0"
+      ],
+      [
+       "OnuSurvivalTime",
+       "0"
+      ],
+      [
+       "LogicalOnuID",
+       ""
+      ],
+      [
+       "LogicalPassword",
+       ""
+      ],
+      [
+       "CredentialsStatus",
+       "0"
+      ],
+      [
+       "ExtendedTcLayerOptions",
+       "0x0"
+      ],
+      [
+       "OntState",
+       "1"
+      ]
+     ],
+     "raw": "EntityID: 0x00\nVID: DLNK\nVersion: A1\nSerialNum: DLKI12345678\nTraffMgtOpt: 0\nAtmCCOpt: 0\nBatteryBack: 0\nAdminState: 0\nOpState: 0\nOnuSurvivalTime: 0\nLogicalOnuID: \nLogicalPassword: \nCredentialsStatus: 0\nExtendedTcLayerOptions: 0x0\nOntState: 1"
+    }
+   ],
+   "truncated": false
+  },
+  "262": {
+   "class": 262,
+   "name": "Tcont",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8000"
+      ],
+      [
+       "AllocID",
+       "0x0107"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8000\nAllocID: 0x0107\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8001"
+      ],
+      [
+       "AllocID",
+       "0x0108"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8001\nAllocID: 0x0108\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8002"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8002\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8003"
+      ],
+      [
+       "AllocID",
+       "0x011c"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8003\nAllocID: 0x011c\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8004"
+      ],
+      [
+       "AllocID",
+       "0x011d"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8004\nAllocID: 0x011d\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8005"
+      ],
+      [
+       "AllocID",
+       "0x011e"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8005\nAllocID: 0x011e\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8006"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8006\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8007"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8007\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8008"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8008\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8009"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8009\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x800a"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x800a\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x800b"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x800b\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x800c"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x800c\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x800d"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x800d\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x800e"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x800e\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x800f"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x800f\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8010"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8010\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8011"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8011\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8012"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8012\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8013"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8013\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8014"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8014\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8015"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8015\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8016"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8016\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8017"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8017\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8018"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8018\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x8019"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x8019\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x801a"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x801a\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x801b"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x801b\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x801c"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x801c\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x801d"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x801d\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x801e"
+      ],
+      [
+       "AllocID",
+       "0x00ff"
+      ],
+      [
+       "ModeInd",
+       "1"
+      ],
+      [
+       "Policy",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x801e\nAllocID: 0x00ff\nModeInd: 1\nPolicy: 0"
+    }
+   ],
+   "truncated": false
+  },
+  "268": {
+   "class": 268,
+   "name": "GemPortCtp",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x0107"
+      ],
+      [
+       "PortID",
+       "263"
+      ],
+      [
+       "TcAdapterPtr",
+       "0x8000"
+      ],
+      [
+       "Direction",
+       "3"
+      ],
+      [
+       "UsTraffMgmtPtr",
+       "0x8000"
+      ],
+      [
+       "UsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "UniCounter",
+       "0"
+      ],
+      [
+       "DsPriQPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionState",
+       "0"
+      ],
+      [
+       "DsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionKeyRing",
+       "0"
+      ]
+     ],
+     "raw": "EntityId: 0x0107\nPortID: 263\nTcAdapterPtr: 0x8000\nDirection: 3\nUsTraffMgmtPtr: 0x8000\nUsTraffDescPtr: 0x0000\nUniCounter: 0\nDsPriQPtr: 0x0000\nEncryptionState: 0\nDsTraffDescPtr: 0x0000\nEncryptionKeyRing: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x0108"
+      ],
+      [
+       "PortID",
+       "264"
+      ],
+      [
+       "TcAdapterPtr",
+       "0x8001"
+      ],
+      [
+       "Direction",
+       "3"
+      ],
+      [
+       "UsTraffMgmtPtr",
+       "0x8001"
+      ],
+      [
+       "UsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "UniCounter",
+       "0"
+      ],
+      [
+       "DsPriQPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionState",
+       "0"
+      ],
+      [
+       "DsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionKeyRing",
+       "0"
+      ]
+     ],
+     "raw": "EntityId: 0x0108\nPortID: 264\nTcAdapterPtr: 0x8001\nDirection: 3\nUsTraffMgmtPtr: 0x8001\nUsTraffDescPtr: 0x0000\nUniCounter: 0\nDsPriQPtr: 0x0000\nEncryptionState: 0\nDsTraffDescPtr: 0x0000\nEncryptionKeyRing: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x011b"
+      ],
+      [
+       "PortID",
+       "283"
+      ],
+      [
+       "TcAdapterPtr",
+       "0x8003"
+      ],
+      [
+       "Direction",
+       "3"
+      ],
+      [
+       "UsTraffMgmtPtr",
+       "0x8003"
+      ],
+      [
+       "UsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "UniCounter",
+       "0"
+      ],
+      [
+       "DsPriQPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionState",
+       "0"
+      ],
+      [
+       "DsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionKeyRing",
+       "0"
+      ]
+     ],
+     "raw": "EntityId: 0x011b\nPortID: 283\nTcAdapterPtr: 0x8003\nDirection: 3\nUsTraffMgmtPtr: 0x8003\nUsTraffDescPtr: 0x0000\nUniCounter: 0\nDsPriQPtr: 0x0000\nEncryptionState: 0\nDsTraffDescPtr: 0x0000\nEncryptionKeyRing: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x011c"
+      ],
+      [
+       "PortID",
+       "284"
+      ],
+      [
+       "TcAdapterPtr",
+       "0x8004"
+      ],
+      [
+       "Direction",
+       "3"
+      ],
+      [
+       "UsTraffMgmtPtr",
+       "0x8004"
+      ],
+      [
+       "UsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "UniCounter",
+       "0"
+      ],
+      [
+       "DsPriQPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionState",
+       "0"
+      ],
+      [
+       "DsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionKeyRing",
+       "0"
+      ]
+     ],
+     "raw": "EntityId: 0x011c\nPortID: 284\nTcAdapterPtr: 0x8004\nDirection: 3\nUsTraffMgmtPtr: 0x8004\nUsTraffDescPtr: 0x0000\nUniCounter: 0\nDsPriQPtr: 0x0000\nEncryptionState: 0\nDsTraffDescPtr: 0x0000\nEncryptionKeyRing: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x011d"
+      ],
+      [
+       "PortID",
+       "285"
+      ],
+      [
+       "TcAdapterPtr",
+       "0x8005"
+      ],
+      [
+       "Direction",
+       "3"
+      ],
+      [
+       "UsTraffMgmtPtr",
+       "0x8005"
+      ],
+      [
+       "UsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "UniCounter",
+       "0"
+      ],
+      [
+       "DsPriQPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionState",
+       "0"
+      ],
+      [
+       "DsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionKeyRing",
+       "0"
+      ]
+     ],
+     "raw": "EntityId: 0x011d\nPortID: 285\nTcAdapterPtr: 0x8005\nDirection: 3\nUsTraffMgmtPtr: 0x8005\nUsTraffDescPtr: 0x0000\nUniCounter: 0\nDsPriQPtr: 0x0000\nEncryptionState: 0\nDsTraffDescPtr: 0x0000\nEncryptionKeyRing: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x07fe"
+      ],
+      [
+       "PortID",
+       "2046"
+      ],
+      [
+       "TcAdapterPtr",
+       "0x0000"
+      ],
+      [
+       "Direction",
+       "2"
+      ],
+      [
+       "UsTraffMgmtPtr",
+       "0x0000"
+      ],
+      [
+       "UsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "UniCounter",
+       "0"
+      ],
+      [
+       "DsPriQPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionState",
+       "0"
+      ],
+      [
+       "DsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionKeyRing",
+       "0"
+      ]
+     ],
+     "raw": "EntityId: 0x07fe\nPortID: 2046\nTcAdapterPtr: 0x0000\nDirection: 2\nUsTraffMgmtPtr: 0x0000\nUsTraffDescPtr: 0x0000\nUniCounter: 0\nDsPriQPtr: 0x0000\nEncryptionState: 0\nDsTraffDescPtr: 0x0000\nEncryptionKeyRing: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x07ff"
+      ],
+      [
+       "PortID",
+       "2047"
+      ],
+      [
+       "TcAdapterPtr",
+       "0x0000"
+      ],
+      [
+       "Direction",
+       "2"
+      ],
+      [
+       "UsTraffMgmtPtr",
+       "0x0000"
+      ],
+      [
+       "UsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "UniCounter",
+       "0"
+      ],
+      [
+       "DsPriQPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionState",
+       "0"
+      ],
+      [
+       "DsTraffDescPtr",
+       "0x0000"
+      ],
+      [
+       "EncryptionKeyRing",
+       "0"
+      ]
+     ],
+     "raw": "EntityId: 0x07ff\nPortID: 2047\nTcAdapterPtr: 0x0000\nDirection: 2\nUsTraffMgmtPtr: 0x0000\nUsTraffDescPtr: 0x0000\nUniCounter: 0\nDsPriQPtr: 0x0000\nEncryptionState: 0\nDsTraffDescPtr: 0x0000\nEncryptionKeyRing: 0"
+    }
+   ],
+   "truncated": false
+  },
+  "266": {
+   "class": 266,
+   "name": "GemIwTp",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0107"
+      ],
+      [
+       "GemCtpPtr",
+       "0x0107"
+      ],
+      [
+       "IwOpt",
+       "5"
+      ],
+      [
+       "ServProPtr",
+       "0x1102"
+      ],
+      [
+       "IwTpPtr",
+       "0x0000"
+      ],
+      [
+       "PptpCounter",
+       "0"
+      ],
+      [
+       "OpState",
+       "0"
+      ],
+      [
+       "GalProfPtr",
+       "0x0001"
+      ],
+      [
+       "GalLoopbackCfg",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x0107\nGemCtpPtr: 0x0107\nIwOpt: 5\nServProPtr: 0x1102\nIwTpPtr: 0x0000\nPptpCounter: 0\nOpState: 0\nGalProfPtr: 0x0001\nGalLoopbackCfg: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0108"
+      ],
+      [
+       "GemCtpPtr",
+       "0x0108"
+      ],
+      [
+       "IwOpt",
+       "5"
+      ],
+      [
+       "ServProPtr",
+       "0xe102"
+      ],
+      [
+       "IwTpPtr",
+       "0x0000"
+      ],
+      [
+       "PptpCounter",
+       "0"
+      ],
+      [
+       "OpState",
+       "0"
+      ],
+      [
+       "GalProfPtr",
+       "0x0001"
+      ],
+      [
+       "GalLoopbackCfg",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x0108\nGemCtpPtr: 0x0108\nIwOpt: 5\nServProPtr: 0xe102\nIwTpPtr: 0x0000\nPptpCounter: 0\nOpState: 0\nGalProfPtr: 0x0001\nGalLoopbackCfg: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x011b"
+      ],
+      [
+       "GemCtpPtr",
+       "0x011b"
+      ],
+      [
+       "IwOpt",
+       "5"
+      ],
+      [
+       "ServProPtr",
+       "0xe103"
+      ],
+      [
+       "IwTpPtr",
+       "0x0000"
+      ],
+      [
+       "PptpCounter",
+       "0"
+      ],
+      [
+       "OpState",
+       "0"
+      ],
+      [
+       "GalProfPtr",
+       "0x0001"
+      ],
+      [
+       "GalLoopbackCfg",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x011b\nGemCtpPtr: 0x011b\nIwOpt: 5\nServProPtr: 0xe103\nIwTpPtr: 0x0000\nPptpCounter: 0\nOpState: 0\nGalProfPtr: 0x0001\nGalLoopbackCfg: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x011c"
+      ],
+      [
+       "GemCtpPtr",
+       "0x011c"
+      ],
+      [
+       "IwOpt",
+       "5"
+      ],
+      [
+       "ServProPtr",
+       "0x1103"
+      ],
+      [
+       "IwTpPtr",
+       "0x0000"
+      ],
+      [
+       "PptpCounter",
+       "0"
+      ],
+      [
+       "OpState",
+       "0"
+      ],
+      [
+       "GalProfPtr",
+       "0x0001"
+      ],
+      [
+       "GalLoopbackCfg",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x011c\nGemCtpPtr: 0x011c\nIwOpt: 5\nServProPtr: 0x1103\nIwTpPtr: 0x0000\nPptpCounter: 0\nOpState: 0\nGalProfPtr: 0x0001\nGalLoopbackCfg: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x011d"
+      ],
+      [
+       "GemCtpPtr",
+       "0x011d"
+      ],
+      [
+       "IwOpt",
+       "5"
+      ],
+      [
+       "ServProPtr",
+       "0xe104"
+      ],
+      [
+       "IwTpPtr",
+       "0x0000"
+      ],
+      [
+       "PptpCounter",
+       "0"
+      ],
+      [
+       "OpState",
+       "0"
+      ],
+      [
+       "GalProfPtr",
+       "0x0001"
+      ],
+      [
+       "GalLoopbackCfg",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x011d\nGemCtpPtr: 0x011d\nIwOpt: 5\nServProPtr: 0xe104\nIwTpPtr: 0x0000\nPptpCounter: 0\nOpState: 0\nGalProfPtr: 0x0001\nGalLoopbackCfg: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x07fe"
+      ],
+      [
+       "GemCtpPtr",
+       "0x07fe"
+      ],
+      [
+       "IwOpt",
+       "6"
+      ],
+      [
+       "ServProPtr",
+       "0x0000"
+      ],
+      [
+       "IwTpPtr",
+       "0x0000"
+      ],
+      [
+       "PptpCounter",
+       "0"
+      ],
+      [
+       "OpState",
+       "0"
+      ],
+      [
+       "GalProfPtr",
+       "0x0000"
+      ],
+      [
+       "GalLoopbackCfg",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x07fe\nGemCtpPtr: 0x07fe\nIwOpt: 6\nServProPtr: 0x0000\nIwTpPtr: 0x0000\nPptpCounter: 0\nOpState: 0\nGalProfPtr: 0x0000\nGalLoopbackCfg: 0"
+    }
+   ],
+   "truncated": false
+  },
+  "281": {
+   "class": 281,
+   "name": "MultiGemIwTp",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "01"
+      ],
+      [
+       "GemCtpPtr",
+       "7ff"
+      ],
+      [
+       "IwOpt",
+       "0"
+      ],
+      [
+       "ServProPtr",
+       "00"
+      ],
+      [
+       "PptpCounter",
+       "0"
+      ],
+      [
+       "OpState",
+       "0"
+      ],
+      [
+       "GalProfPtr",
+       "00"
+      ],
+      [
+       "Ipv4MCastAddrTable",
+       ""
+      ],
+      [
+       "*************************************",
+       ""
+      ],
+      [
+       "INDEX",
+       "0"
+      ],
+      [
+       "Gem Port Id",
+       "2047"
+      ],
+      [
+       "Sec Key",
+       "0"
+      ],
+      [
+       "DIP Start",
+       "224.0.0.0"
+      ],
+      [
+       "DIP Stop",
+       "239.255.255.255"
+      ],
+      [
+       "Ipv6MCastAddrTable",
+       ""
+      ]
+     ],
+     "raw": "EntityID:\t 01\nGemCtpPtr:\t 7ff\nIwOpt:\t 0\nServProPtr:\t 00\nPptpCounter:\t 0\nOpState:\t 0\nGalProfPtr:\t 00\n\n\nIpv4MCastAddrTable:\n*************************************\nINDEX:\t 0\nGem Port Id:\t 2047\nSec Key:\t 0\nDIP Start: 224.0.0.0\nDIP Stop: 239.255.255.255\n\n\nIpv6MCastAddrTable:"
+    }
+   ],
+   "truncated": false
+  },
+  "130": {
+   "class": 130,
+   "name": "Map8021pServProf",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "1102"
+      ],
+      [
+       "TpPtr",
+       "ffff"
+      ],
+      [
+       "IwTpPtrPbit0",
+       "107"
+      ],
+      [
+       "IwTpPtrPbit1",
+       "107"
+      ],
+      [
+       "IwTpPtrPbit2",
+       "107"
+      ],
+      [
+       "IwTpPtrPbit3",
+       "107"
+      ],
+      [
+       "IwTpPtrPbit4",
+       "107"
+      ],
+      [
+       "IwTpPtrPbit5",
+       "107"
+      ],
+      [
+       "IwTpPtrPbit6",
+       "107"
+      ],
+      [
+       "IwTpPtrPbit7",
+       "107"
+      ],
+      [
+       "UnmarkFrmOpt",
+       "0"
+      ],
+      [
+       "DscpMap2Pbit",
+       "0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000"
+      ],
+      [
+       "DefPbitMark",
+       "0"
+      ],
+      [
+       "TPType",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 1102\nTpPtr: ffff\nIwTpPtrPbit0: 107\nIwTpPtrPbit1: 107\nIwTpPtrPbit2: 107\nIwTpPtrPbit3: 107\nIwTpPtrPbit4: 107\nIwTpPtrPbit5: 107\nIwTpPtrPbit6: 107\nIwTpPtrPbit7: 107\nUnmarkFrmOpt: 0\nDscpMap2Pbit:\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\nDefPbitMark: 0\nTPType: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "1103"
+      ],
+      [
+       "TpPtr",
+       "ffff"
+      ],
+      [
+       "IwTpPtrPbit0",
+       "11c"
+      ],
+      [
+       "IwTpPtrPbit1",
+       "11c"
+      ],
+      [
+       "IwTpPtrPbit2",
+       "11c"
+      ],
+      [
+       "IwTpPtrPbit3",
+       "11c"
+      ],
+      [
+       "IwTpPtrPbit4",
+       "11c"
+      ],
+      [
+       "IwTpPtrPbit5",
+       "11c"
+      ],
+      [
+       "IwTpPtrPbit6",
+       "11c"
+      ],
+      [
+       "IwTpPtrPbit7",
+       "11c"
+      ],
+      [
+       "UnmarkFrmOpt",
+       "0"
+      ],
+      [
+       "DscpMap2Pbit",
+       "0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000"
+      ],
+      [
+       "DefPbitMark",
+       "0"
+      ],
+      [
+       "TPType",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 1103\nTpPtr: ffff\nIwTpPtrPbit0: 11c\nIwTpPtrPbit1: 11c\nIwTpPtrPbit2: 11c\nIwTpPtrPbit3: 11c\nIwTpPtrPbit4: 11c\nIwTpPtrPbit5: 11c\nIwTpPtrPbit6: 11c\nIwTpPtrPbit7: 11c\nUnmarkFrmOpt: 0\nDscpMap2Pbit:\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\nDefPbitMark: 0\nTPType: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "e102"
+      ],
+      [
+       "TpPtr",
+       "ffff"
+      ],
+      [
+       "IwTpPtrPbit0",
+       "108"
+      ],
+      [
+       "IwTpPtrPbit1",
+       "108"
+      ],
+      [
+       "IwTpPtrPbit2",
+       "108"
+      ],
+      [
+       "IwTpPtrPbit3",
+       "108"
+      ],
+      [
+       "IwTpPtrPbit4",
+       "108"
+      ],
+      [
+       "IwTpPtrPbit5",
+       "108"
+      ],
+      [
+       "IwTpPtrPbit6",
+       "108"
+      ],
+      [
+       "IwTpPtrPbit7",
+       "108"
+      ],
+      [
+       "UnmarkFrmOpt",
+       "0"
+      ],
+      [
+       "DscpMap2Pbit",
+       "0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000"
+      ],
+      [
+       "DefPbitMark",
+       "0"
+      ],
+      [
+       "TPType",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: e102\nTpPtr: ffff\nIwTpPtrPbit0: 108\nIwTpPtrPbit1: 108\nIwTpPtrPbit2: 108\nIwTpPtrPbit3: 108\nIwTpPtrPbit4: 108\nIwTpPtrPbit5: 108\nIwTpPtrPbit6: 108\nIwTpPtrPbit7: 108\nUnmarkFrmOpt: 0\nDscpMap2Pbit:\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\nDefPbitMark: 0\nTPType: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "e103"
+      ],
+      [
+       "TpPtr",
+       "ffff"
+      ],
+      [
+       "IwTpPtrPbit0",
+       "11b"
+      ],
+      [
+       "IwTpPtrPbit1",
+       "11b"
+      ],
+      [
+       "IwTpPtrPbit2",
+       "11b"
+      ],
+      [
+       "IwTpPtrPbit3",
+       "11b"
+      ],
+      [
+       "IwTpPtrPbit4",
+       "11b"
+      ],
+      [
+       "IwTpPtrPbit5",
+       "11b"
+      ],
+      [
+       "IwTpPtrPbit6",
+       "11b"
+      ],
+      [
+       "IwTpPtrPbit7",
+       "11b"
+      ],
+      [
+       "UnmarkFrmOpt",
+       "0"
+      ],
+      [
+       "DscpMap2Pbit",
+       "0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000"
+      ],
+      [
+       "DefPbitMark",
+       "0"
+      ],
+      [
+       "TPType",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: e103\nTpPtr: ffff\nIwTpPtrPbit0: 11b\nIwTpPtrPbit1: 11b\nIwTpPtrPbit2: 11b\nIwTpPtrPbit3: 11b\nIwTpPtrPbit4: 11b\nIwTpPtrPbit5: 11b\nIwTpPtrPbit6: 11b\nIwTpPtrPbit7: 11b\nUnmarkFrmOpt: 0\nDscpMap2Pbit:\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\nDefPbitMark: 0\nTPType: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "e104"
+      ],
+      [
+       "TpPtr",
+       "ffff"
+      ],
+      [
+       "IwTpPtrPbit0",
+       "11d"
+      ],
+      [
+       "IwTpPtrPbit1",
+       "11d"
+      ],
+      [
+       "IwTpPtrPbit2",
+       "11d"
+      ],
+      [
+       "IwTpPtrPbit3",
+       "11d"
+      ],
+      [
+       "IwTpPtrPbit4",
+       "11d"
+      ],
+      [
+       "IwTpPtrPbit5",
+       "11d"
+      ],
+      [
+       "IwTpPtrPbit6",
+       "11d"
+      ],
+      [
+       "IwTpPtrPbit7",
+       "11d"
+      ],
+      [
+       "UnmarkFrmOpt",
+       "0"
+      ],
+      [
+       "DscpMap2Pbit",
+       "0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000\n0x000000"
+      ],
+      [
+       "DefPbitMark",
+       "0"
+      ],
+      [
+       "TPType",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: e104\nTpPtr: ffff\nIwTpPtrPbit0: 11d\nIwTpPtrPbit1: 11d\nIwTpPtrPbit2: 11d\nIwTpPtrPbit3: 11d\nIwTpPtrPbit4: 11d\nIwTpPtrPbit5: 11d\nIwTpPtrPbit6: 11d\nIwTpPtrPbit7: 11d\nUnmarkFrmOpt: 0\nDscpMap2Pbit:\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\n\t0x000000\nDefPbitMark: 0\nTPType: 0"
+    }
+   ],
+   "truncated": false
+  },
+  "47": {
+   "class": 47,
+   "name": "MacBriPortCfgData",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0101"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0101"
+      ],
+      [
+       "PortNum",
+       "1"
+      ],
+      [
+       "TPType",
+       "1"
+      ],
+      [
+       "TPPointer",
+       "0x0101"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "16"
+      ]
+     ],
+     "raw": "EntityID: 0x0101\nBridgeIdPtr: 0x0101\nPortNum: 1\nTPType: 1\nTPPointer: 0x0101\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 16"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0102"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0102"
+      ],
+      [
+       "PortNum",
+       "1"
+      ],
+      [
+       "TPType",
+       "1"
+      ],
+      [
+       "TPPointer",
+       "0x0102"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "16"
+      ]
+     ],
+     "raw": "EntityID: 0x0102\nBridgeIdPtr: 0x0102\nPortNum: 1\nTPType: 1\nTPPointer: 0x0102\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 16"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0103"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0103"
+      ],
+      [
+       "PortNum",
+       "1"
+      ],
+      [
+       "TPType",
+       "1"
+      ],
+      [
+       "TPPointer",
+       "0x0103"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "16"
+      ]
+     ],
+     "raw": "EntityID: 0x0103\nBridgeIdPtr: 0x0103\nPortNum: 1\nTPType: 1\nTPPointer: 0x0103\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 16"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0104"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0104"
+      ],
+      [
+       "PortNum",
+       "1"
+      ],
+      [
+       "TPType",
+       "1"
+      ],
+      [
+       "TPPointer",
+       "0x0104"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "16"
+      ]
+     ],
+     "raw": "EntityID: 0x0104\nBridgeIdPtr: 0x0104\nPortNum: 1\nTPType: 1\nTPPointer: 0x0104\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 16"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0e01"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0e01"
+      ],
+      [
+       "PortNum",
+       "1"
+      ],
+      [
+       "TPType",
+       "11"
+      ],
+      [
+       "TPPointer",
+       "0x0601"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "16"
+      ]
+     ],
+     "raw": "EntityID: 0x0e01\nBridgeIdPtr: 0x0e01\nPortNum: 1\nTPType: 11\nTPPointer: 0x0601\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 16"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x1102"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0101"
+      ],
+      [
+       "PortNum",
+       "2"
+      ],
+      [
+       "TPType",
+       "3"
+      ],
+      [
+       "TPPointer",
+       "0x1102"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x1102\nBridgeIdPtr: 0x0101\nPortNum: 2\nTPType: 3\nTPPointer: 0x1102\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x1103"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0101"
+      ],
+      [
+       "PortNum",
+       "3"
+      ],
+      [
+       "TPType",
+       "3"
+      ],
+      [
+       "TPPointer",
+       "0x1103"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x1103\nBridgeIdPtr: 0x0101\nPortNum: 3\nTPType: 3\nTPPointer: 0x1103\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x110b"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0101"
+      ],
+      [
+       "PortNum",
+       "11"
+      ],
+      [
+       "TPType",
+       "5"
+      ],
+      [
+       "TPPointer",
+       "0x07fe"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x110b\nBridgeIdPtr: 0x0101\nPortNum: 11\nTPType: 5\nTPPointer: 0x07fe\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0xe102"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0e01"
+      ],
+      [
+       "PortNum",
+       "2"
+      ],
+      [
+       "TPType",
+       "3"
+      ],
+      [
+       "TPPointer",
+       "0xe102"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0xe102\nBridgeIdPtr: 0x0e01\nPortNum: 2\nTPType: 3\nTPPointer: 0xe102\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0xe103"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0e01"
+      ],
+      [
+       "PortNum",
+       "3"
+      ],
+      [
+       "TPType",
+       "3"
+      ],
+      [
+       "TPPointer",
+       "0xe103"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0xe103\nBridgeIdPtr: 0x0e01\nPortNum: 3\nTPType: 3\nTPPointer: 0xe103\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0xe104"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0e01"
+      ],
+      [
+       "PortNum",
+       "4"
+      ],
+      [
+       "TPType",
+       "3"
+      ],
+      [
+       "TPPointer",
+       "0xe104"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0xe104\nBridgeIdPtr: 0x0e01\nPortNum: 4\nTPType: 3\nTPPointer: 0xe104\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0xe10b"
+      ],
+      [
+       "BridgeIdPtr",
+       "0x0e01"
+      ],
+      [
+       "PortNum",
+       "11"
+      ],
+      [
+       "TPType",
+       "5"
+      ],
+      [
+       "TPPointer",
+       "0x07fe"
+      ],
+      [
+       "PortPriority",
+       "0"
+      ],
+      [
+       "PortPathCost",
+       "1"
+      ],
+      [
+       "PortSpanTreeInd",
+       "0"
+      ],
+      [
+       "EncapMethod",
+       "0"
+      ],
+      [
+       "LanFCSInd",
+       "0"
+      ],
+      [
+       "PortMacAddr",
+       "0x000000000000"
+      ],
+      [
+       "OutboundTD",
+       "0x0000"
+      ],
+      [
+       "InboundTD",
+       "0x0000"
+      ],
+      [
+       "NumOfAllowedMac",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0xe10b\nBridgeIdPtr: 0x0e01\nPortNum: 11\nTPType: 5\nTPPointer: 0x07fe\nPortPriority: 0\nPortPathCost: 1\nPortSpanTreeInd: 0\nEncapMethod: 0\nLanFCSInd: 0\nPortMacAddr: 0x000000000000\nOutboundTD: 0x0000\nInboundTD: 0x0000\nNumOfAllowedMac: 0"
+    }
+   ],
+   "truncated": false
+  },
+  "45": {
+   "class": 45,
+   "name": "MacBriServProf",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0101"
+      ],
+      [
+       "SpanTreeInd",
+       "0"
+      ],
+      [
+       "LearningInd",
+       "0"
+      ],
+      [
+       "AtmBriInd",
+       "0"
+      ],
+      [
+       "Priority",
+       "32768"
+      ],
+      [
+       "MaxAge",
+       "5120"
+      ],
+      [
+       "HelloTime",
+       "512"
+      ],
+      [
+       "ForwardDelay",
+       "3840"
+      ],
+      [
+       "DiscardUnknow",
+       "0"
+      ],
+      [
+       "MacLearningDepth",
+       "0"
+      ],
+      [
+       "DynamicFilteringAgeingTime",
+       "0"
+      ],
+      [
+       "BridgeIdx",
+       "1"
+      ]
+     ],
+     "raw": "EntityID: 0x0101\nSpanTreeInd: 0\nLearningInd: 0\nAtmBriInd: 0\nPriority: 32768\nMaxAge: 5120\nHelloTime: 512\nForwardDelay: 3840\nDiscardUnknow: 0\nMacLearningDepth: 0\nDynamicFilteringAgeingTime: 0\nBridgeIdx: 1"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0102"
+      ],
+      [
+       "SpanTreeInd",
+       "0"
+      ],
+      [
+       "LearningInd",
+       "0"
+      ],
+      [
+       "AtmBriInd",
+       "0"
+      ],
+      [
+       "Priority",
+       "32768"
+      ],
+      [
+       "MaxAge",
+       "5120"
+      ],
+      [
+       "HelloTime",
+       "512"
+      ],
+      [
+       "ForwardDelay",
+       "3840"
+      ],
+      [
+       "DiscardUnknow",
+       "0"
+      ],
+      [
+       "MacLearningDepth",
+       "0"
+      ],
+      [
+       "DynamicFilteringAgeingTime",
+       "0"
+      ],
+      [
+       "BridgeIdx",
+       "2"
+      ]
+     ],
+     "raw": "EntityID: 0x0102\nSpanTreeInd: 0\nLearningInd: 0\nAtmBriInd: 0\nPriority: 32768\nMaxAge: 5120\nHelloTime: 512\nForwardDelay: 3840\nDiscardUnknow: 0\nMacLearningDepth: 0\nDynamicFilteringAgeingTime: 0\nBridgeIdx: 2"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0103"
+      ],
+      [
+       "SpanTreeInd",
+       "0"
+      ],
+      [
+       "LearningInd",
+       "0"
+      ],
+      [
+       "AtmBriInd",
+       "0"
+      ],
+      [
+       "Priority",
+       "32768"
+      ],
+      [
+       "MaxAge",
+       "5120"
+      ],
+      [
+       "HelloTime",
+       "512"
+      ],
+      [
+       "ForwardDelay",
+       "3840"
+      ],
+      [
+       "DiscardUnknow",
+       "0"
+      ],
+      [
+       "MacLearningDepth",
+       "0"
+      ],
+      [
+       "DynamicFilteringAgeingTime",
+       "0"
+      ],
+      [
+       "BridgeIdx",
+       "3"
+      ]
+     ],
+     "raw": "EntityID: 0x0103\nSpanTreeInd: 0\nLearningInd: 0\nAtmBriInd: 0\nPriority: 32768\nMaxAge: 5120\nHelloTime: 512\nForwardDelay: 3840\nDiscardUnknow: 0\nMacLearningDepth: 0\nDynamicFilteringAgeingTime: 0\nBridgeIdx: 3"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0104"
+      ],
+      [
+       "SpanTreeInd",
+       "0"
+      ],
+      [
+       "LearningInd",
+       "0"
+      ],
+      [
+       "AtmBriInd",
+       "0"
+      ],
+      [
+       "Priority",
+       "32768"
+      ],
+      [
+       "MaxAge",
+       "5120"
+      ],
+      [
+       "HelloTime",
+       "512"
+      ],
+      [
+       "ForwardDelay",
+       "3840"
+      ],
+      [
+       "DiscardUnknow",
+       "0"
+      ],
+      [
+       "MacLearningDepth",
+       "0"
+      ],
+      [
+       "DynamicFilteringAgeingTime",
+       "0"
+      ],
+      [
+       "BridgeIdx",
+       "4"
+      ]
+     ],
+     "raw": "EntityID: 0x0104\nSpanTreeInd: 0\nLearningInd: 0\nAtmBriInd: 0\nPriority: 32768\nMaxAge: 5120\nHelloTime: 512\nForwardDelay: 3840\nDiscardUnknow: 0\nMacLearningDepth: 0\nDynamicFilteringAgeingTime: 0\nBridgeIdx: 4"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0e01"
+      ],
+      [
+       "SpanTreeInd",
+       "0"
+      ],
+      [
+       "LearningInd",
+       "0"
+      ],
+      [
+       "AtmBriInd",
+       "0"
+      ],
+      [
+       "Priority",
+       "32768"
+      ],
+      [
+       "MaxAge",
+       "5120"
+      ],
+      [
+       "HelloTime",
+       "512"
+      ],
+      [
+       "ForwardDelay",
+       "3840"
+      ],
+      [
+       "DiscardUnknow",
+       "0"
+      ],
+      [
+       "MacLearningDepth",
+       "0"
+      ],
+      [
+       "DynamicFilteringAgeingTime",
+       "0"
+      ],
+      [
+       "BridgeIdx",
+       "5"
+      ]
+     ],
+     "raw": "EntityID: 0x0e01\nSpanTreeInd: 0\nLearningInd: 0\nAtmBriInd: 0\nPriority: 32768\nMaxAge: 5120\nHelloTime: 512\nForwardDelay: 3840\nDiscardUnknow: 0\nMacLearningDepth: 0\nDynamicFilteringAgeingTime: 0\nBridgeIdx: 5"
+    }
+   ],
+   "truncated": false
+  },
+  "84": {
+   "class": 84,
+   "name": "VlanTagFilterData",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x1102"
+      ],
+      [
+       "FilterTbl[0]",
+       "PRI 0,CFI 0, VID 500"
+      ],
+      [
+       "FwdOp",
+       "0x10"
+      ],
+      [
+       "NumOfEntries",
+       "1"
+      ]
+     ],
+     "raw": "EntityID: 0x1102\nFilterTbl[0]: PRI 0,CFI 0, VID 500\nFwdOp:  0x10\nNumOfEntries: 1"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x1103"
+      ],
+      [
+       "FilterTbl[0]",
+       "PRI 0,CFI 0, VID 209"
+      ],
+      [
+       "FwdOp",
+       "0x10"
+      ],
+      [
+       "NumOfEntries",
+       "1"
+      ]
+     ],
+     "raw": "EntityID: 0x1103\nFilterTbl[0]: PRI 0,CFI 0, VID 209\nFwdOp:  0x10\nNumOfEntries: 1"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x110b"
+      ],
+      [
+       "FilterTbl[0]",
+       "PRI 0,CFI 0, VID 209"
+      ],
+      [
+       "FilterTbl[2]",
+       "PRI 0,CFI 0, VID 500"
+      ],
+      [
+       "FwdOp",
+       "0x10"
+      ],
+      [
+       "NumOfEntries",
+       "2"
+      ]
+     ],
+     "raw": "EntityID: 0x110b\nFilterTbl[0]: PRI 0,CFI 0, VID 209\nFilterTbl[2]: PRI 0,CFI 0, VID 500\nFwdOp:  0x10\nNumOfEntries: 2"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0xe102"
+      ],
+      [
+       "FilterTbl[0]",
+       "PRI 0,CFI 0, VID 500"
+      ],
+      [
+       "FwdOp",
+       "0x10"
+      ],
+      [
+       "NumOfEntries",
+       "1"
+      ]
+     ],
+     "raw": "EntityID: 0xe102\nFilterTbl[0]: PRI 0,CFI 0, VID 500\nFwdOp:  0x10\nNumOfEntries: 1"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0xe103"
+      ],
+      [
+       "FilterTbl[0]",
+       "PRI 0,CFI 0, VID 400"
+      ],
+      [
+       "FwdOp",
+       "0x10"
+      ],
+      [
+       "NumOfEntries",
+       "1"
+      ]
+     ],
+     "raw": "EntityID: 0xe103\nFilterTbl[0]: PRI 0,CFI 0, VID 400\nFwdOp:  0x10\nNumOfEntries: 1"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0xe104"
+      ],
+      [
+       "FilterTbl[0]",
+       "PRI 0,CFI 0, VID 209"
+      ],
+      [
+       "FwdOp",
+       "0x10"
+      ],
+      [
+       "NumOfEntries",
+       "1"
+      ]
+     ],
+     "raw": "EntityID: 0xe104\nFilterTbl[0]: PRI 0,CFI 0, VID 209\nFwdOp:  0x10\nNumOfEntries: 1"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0xe10b"
+      ],
+      [
+       "FilterTbl[0]",
+       "PRI 0,CFI 0, VID 209"
+      ],
+      [
+       "FilterTbl[2]",
+       "PRI 0,CFI 0, VID 400"
+      ],
+      [
+       "FilterTbl[4]",
+       "PRI 0,CFI 0, VID 500"
+      ],
+      [
+       "FwdOp",
+       "0x10"
+      ],
+      [
+       "NumOfEntries",
+       "3"
+      ]
+     ],
+     "raw": "EntityID: 0xe10b\nFilterTbl[0]: PRI 0,CFI 0, VID 209\nFilterTbl[2]: PRI 0,CFI 0, VID 400\nFilterTbl[4]: PRI 0,CFI 0, VID 500\nFwdOp:  0x10\nNumOfEntries: 3"
+    }
+   ],
+   "truncated": false
+  },
+  "171": {
+   "class": 171,
+   "name": "ExtVlanTagOperCfgData",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x101"
+      ],
+      [
+       "AssociationType",
+       "2"
+      ],
+      [
+       "ReceivedFrameVlanTagOperTableMaxSize",
+       "0"
+      ],
+      [
+       "InputTPID",
+       "0x8100"
+      ],
+      [
+       "OutputTPID",
+       "0x8100"
+      ],
+      [
+       "DsMode",
+       "0"
+      ],
+      [
+       "ReceivedFrameVlanTaggingOperTable",
+       ""
+      ],
+      [
+       "INDEX 0",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 8,VID 209, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 1"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 8,VID 209, TPID 2"
+      ],
+      [
+       "INDEX 1",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 8,VID 500, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 1"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 8,VID 500, TPID 2"
+      ],
+      [
+       "INDEX 2",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 15,VID 0, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 0, TPID 2"
+      ],
+      [
+       "INDEX 3",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 14,VID 4096, TPID 5"
+      ],
+      [
+       "Filter Inner",
+       "PRI 14,VID 4096, TPID 0, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 4096, TPID 3"
+      ],
+      [
+       "INDEX 4",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 14,VID 4096, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 4096, TPID 2"
+      ],
+      [
+       "AssociatedMePoint",
+       "0x101"
+      ],
+      [
+       "DscpToPbitMapping",
+       "0x000000\n0x249249\n0x492492\n0x6db6db\n0x924924\n0xb6db6d\n0xdb6db6\n0xffffff"
+      ],
+      [
+       "Parsed DscpToPbitMapping",
+       ""
+      ],
+      [
+       "dscp",
+       "0 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "1 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "2 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "3 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "4 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "5 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "6 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "7 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "8 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "9 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "10 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "11 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "12 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "13 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "14 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "15 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "16 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "17 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "18 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "19 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "20 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "21 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "22 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "23 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "24 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "25 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "26 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "27 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "28 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "29 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "30 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "31 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "32 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "33 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "34 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "35 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "36 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "37 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "38 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "39 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "40 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "41 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "42 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "43 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "44 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "45 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "46 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "47 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "48 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "49 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "50 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "51 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "52 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "53 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "54 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "55 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "56 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "57 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "58 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "59 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "60 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "61 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "62 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "63 => pbit: 7"
+      ]
+     ],
+     "raw": "EntityId: 0x101\nAssociationType: 2\nReceivedFrameVlanTagOperTableMaxSize: 0\nInputTPID: 0x8100\nOutputTPID: 0x8100\nDsMode: 0\nReceivedFrameVlanTaggingOperTable\nINDEX 0\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 8,VID 209, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 1\nTreatment Inner   : PRI 8,VID 209, TPID 2\nINDEX 1\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 8,VID 500, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 1\nTreatment Inner   : PRI 8,VID 500, TPID 2\nINDEX 2\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 15,VID 0, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 0, TPID 2\nINDEX 3\nFilter Outer   : PRI 14,VID 4096, TPID 5\nFilter Inner   : PRI 14,VID 4096, TPID 0, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 4096, TPID 3\nINDEX 4\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 14,VID 4096, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 4096, TPID 2\nAssociatedMePoint: 0x101\nDscpToPbitMapping:\n\t0x000000\n\t0x249249\n\t0x492492\n\t0x6db6db\n\t0x924924\n\t0xb6db6d\n\t0xdb6db6\n\t0xffffff\n\n\nParsed DscpToPbitMapping:\ndscp: 0 => pbit: 0\ndscp: 1 => pbit: 0\ndscp: 2 => pbit: 0\ndscp: 3 => pbit: 0\ndscp: 4 => pbit: 0\ndscp: 5 => pbit: 0\ndscp: 6 => pbit: 0\ndscp: 7 => pbit: 0\ndscp: 8 => pbit: 1\ndscp: 9 => pbit: 1\ndscp: 10 => pbit: 1\ndscp: 11 => pbit: 1\ndscp: 12 => pbit: 1\ndscp: 13 => pbit: 1\ndscp: 14 => pbit: 1\ndscp: 15 => pbit: 1\ndscp: 16 => pbit: 2\ndscp: 17 => pbit: 2\ndscp: 18 => pbit: 2\ndscp: 19 => pbit: 2\ndscp: 20 => pbit: 2\ndscp: 21 => pbit: 2\ndscp: 22 => pbit: 2\ndscp: 23 => pbit: 2\ndscp: 24 => pbit: 3\ndscp: 25 => pbit: 3\ndscp: 26 => pbit: 3\ndscp: 27 => pbit: 3\ndscp: 28 => pbit: 3\ndscp: 29 => pbit: 3\ndscp: 30 => pbit: 3\ndscp: 31 => pbit: 3\ndscp: 32 => pbit: 4\ndscp: 33 => pbit: 4\ndscp: 34 => pbit: 4\ndscp: 35 => pbit: 4\ndscp: 36 => pbit: 4\ndscp: 37 => pbit: 4\ndscp: 38 => pbit: 4\ndscp: 39 => pbit: 4\ndscp: 40 => pbit: 5\ndscp: 41 => pbit: 5\ndscp: 42 => pbit: 5\ndscp: 43 => pbit: 5\ndscp: 44 => pbit: 5\ndscp: 45 => pbit: 5\ndscp: 46 => pbit: 5\ndscp: 47 => pbit: 5\ndscp: 48 => pbit: 6\ndscp: 49 => pbit: 6\ndscp: 50 => pbit: 6\ndscp: 51 => pbit: 6\ndscp: 52 => pbit: 6\ndscp: 53 => pbit: 6\ndscp: 54 => pbit: 6\ndscp: 55 => pbit: 6\ndscp: 56 => pbit: 7\ndscp: 57 => pbit: 7\ndscp: 58 => pbit: 7\ndscp: 59 => pbit: 7\ndscp: 60 => pbit: 7\ndscp: 61 => pbit: 7\ndscp: 62 => pbit: 7\ndscp: 63 => pbit: 7"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x102"
+      ],
+      [
+       "AssociationType",
+       "2"
+      ],
+      [
+       "ReceivedFrameVlanTagOperTableMaxSize",
+       "0"
+      ],
+      [
+       "InputTPID",
+       "0x8100"
+      ],
+      [
+       "OutputTPID",
+       "0x8100"
+      ],
+      [
+       "DsMode",
+       "0"
+      ],
+      [
+       "ReceivedFrameVlanTaggingOperTable",
+       ""
+      ],
+      [
+       "INDEX 0",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 15,VID 0, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 0, TPID 2"
+      ],
+      [
+       "INDEX 1",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 14,VID 4096, TPID 5"
+      ],
+      [
+       "Filter Inner",
+       "PRI 14,VID 4096, TPID 0, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 4096, TPID 3"
+      ],
+      [
+       "INDEX 2",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 14,VID 4096, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 4096, TPID 2"
+      ],
+      [
+       "AssociatedMePoint",
+       "0x102"
+      ],
+      [
+       "DscpToPbitMapping",
+       "0x000000\n0x249249\n0x492492\n0x6db6db\n0x924924\n0xb6db6d\n0xdb6db6\n0xffffff"
+      ],
+      [
+       "Parsed DscpToPbitMapping",
+       ""
+      ],
+      [
+       "dscp",
+       "0 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "1 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "2 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "3 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "4 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "5 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "6 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "7 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "8 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "9 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "10 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "11 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "12 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "13 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "14 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "15 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "16 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "17 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "18 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "19 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "20 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "21 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "22 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "23 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "24 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "25 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "26 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "27 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "28 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "29 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "30 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "31 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "32 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "33 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "34 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "35 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "36 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "37 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "38 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "39 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "40 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "41 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "42 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "43 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "44 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "45 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "46 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "47 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "48 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "49 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "50 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "51 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "52 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "53 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "54 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "55 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "56 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "57 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "58 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "59 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "60 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "61 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "62 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "63 => pbit: 7"
+      ]
+     ],
+     "raw": "EntityId: 0x102\nAssociationType: 2\nReceivedFrameVlanTagOperTableMaxSize: 0\nInputTPID: 0x8100\nOutputTPID: 0x8100\nDsMode: 0\nReceivedFrameVlanTaggingOperTable\nINDEX 0\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 15,VID 0, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 0, TPID 2\nINDEX 1\nFilter Outer   : PRI 14,VID 4096, TPID 5\nFilter Inner   : PRI 14,VID 4096, TPID 0, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 4096, TPID 3\nINDEX 2\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 14,VID 4096, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 4096, TPID 2\nAssociatedMePoint: 0x102\nDscpToPbitMapping:\n\t0x000000\n\t0x249249\n\t0x492492\n\t0x6db6db\n\t0x924924\n\t0xb6db6d\n\t0xdb6db6\n\t0xffffff\n\n\nParsed DscpToPbitMapping:\ndscp: 0 => pbit: 0\ndscp: 1 => pbit: 0\ndscp: 2 => pbit: 0\ndscp: 3 => pbit: 0\ndscp: 4 => pbit: 0\ndscp: 5 => pbit: 0\ndscp: 6 => pbit: 0\ndscp: 7 => pbit: 0\ndscp: 8 => pbit: 1\ndscp: 9 => pbit: 1\ndscp: 10 => pbit: 1\ndscp: 11 => pbit: 1\ndscp: 12 => pbit: 1\ndscp: 13 => pbit: 1\ndscp: 14 => pbit: 1\ndscp: 15 => pbit: 1\ndscp: 16 => pbit: 2\ndscp: 17 => pbit: 2\ndscp: 18 => pbit: 2\ndscp: 19 => pbit: 2\ndscp: 20 => pbit: 2\ndscp: 21 => pbit: 2\ndscp: 22 => pbit: 2\ndscp: 23 => pbit: 2\ndscp: 24 => pbit: 3\ndscp: 25 => pbit: 3\ndscp: 26 => pbit: 3\ndscp: 27 => pbit: 3\ndscp: 28 => pbit: 3\ndscp: 29 => pbit: 3\ndscp: 30 => pbit: 3\ndscp: 31 => pbit: 3\ndscp: 32 => pbit: 4\ndscp: 33 => pbit: 4\ndscp: 34 => pbit: 4\ndscp: 35 => pbit: 4\ndscp: 36 => pbit: 4\ndscp: 37 => pbit: 4\ndscp: 38 => pbit: 4\ndscp: 39 => pbit: 4\ndscp: 40 => pbit: 5\ndscp: 41 => pbit: 5\ndscp: 42 => pbit: 5\ndscp: 43 => pbit: 5\ndscp: 44 => pbit: 5\ndscp: 45 => pbit: 5\ndscp: 46 => pbit: 5\ndscp: 47 => pbit: 5\ndscp: 48 => pbit: 6\ndscp: 49 => pbit: 6\ndscp: 50 => pbit: 6\ndscp: 51 => pbit: 6\ndscp: 52 => pbit: 6\ndscp: 53 => pbit: 6\ndscp: 54 => pbit: 6\ndscp: 55 => pbit: 6\ndscp: 56 => pbit: 7\ndscp: 57 => pbit: 7\ndscp: 58 => pbit: 7\ndscp: 59 => pbit: 7\ndscp: 60 => pbit: 7\ndscp: 61 => pbit: 7\ndscp: 62 => pbit: 7\ndscp: 63 => pbit: 7"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x103"
+      ],
+      [
+       "AssociationType",
+       "2"
+      ],
+      [
+       "ReceivedFrameVlanTagOperTableMaxSize",
+       "0"
+      ],
+      [
+       "InputTPID",
+       "0x8100"
+      ],
+      [
+       "OutputTPID",
+       "0x8100"
+      ],
+      [
+       "DsMode",
+       "0"
+      ],
+      [
+       "ReceivedFrameVlanTaggingOperTable",
+       ""
+      ],
+      [
+       "INDEX 0",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 15,VID 0, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 0, TPID 2"
+      ],
+      [
+       "INDEX 1",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 14,VID 4096, TPID 5"
+      ],
+      [
+       "Filter Inner",
+       "PRI 14,VID 4096, TPID 0, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 4096, TPID 3"
+      ],
+      [
+       "INDEX 2",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 14,VID 4096, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 4096, TPID 2"
+      ],
+      [
+       "AssociatedMePoint",
+       "0x103"
+      ],
+      [
+       "DscpToPbitMapping",
+       "0x000000\n0x249249\n0x492492\n0x6db6db\n0x924924\n0xb6db6d\n0xdb6db6\n0xffffff"
+      ],
+      [
+       "Parsed DscpToPbitMapping",
+       ""
+      ],
+      [
+       "dscp",
+       "0 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "1 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "2 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "3 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "4 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "5 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "6 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "7 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "8 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "9 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "10 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "11 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "12 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "13 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "14 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "15 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "16 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "17 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "18 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "19 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "20 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "21 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "22 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "23 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "24 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "25 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "26 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "27 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "28 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "29 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "30 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "31 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "32 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "33 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "34 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "35 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "36 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "37 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "38 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "39 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "40 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "41 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "42 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "43 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "44 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "45 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "46 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "47 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "48 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "49 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "50 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "51 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "52 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "53 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "54 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "55 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "56 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "57 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "58 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "59 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "60 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "61 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "62 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "63 => pbit: 7"
+      ]
+     ],
+     "raw": "EntityId: 0x103\nAssociationType: 2\nReceivedFrameVlanTagOperTableMaxSize: 0\nInputTPID: 0x8100\nOutputTPID: 0x8100\nDsMode: 0\nReceivedFrameVlanTaggingOperTable\nINDEX 0\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 15,VID 0, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 0, TPID 2\nINDEX 1\nFilter Outer   : PRI 14,VID 4096, TPID 5\nFilter Inner   : PRI 14,VID 4096, TPID 0, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 4096, TPID 3\nINDEX 2\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 14,VID 4096, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 4096, TPID 2\nAssociatedMePoint: 0x103\nDscpToPbitMapping:\n\t0x000000\n\t0x249249\n\t0x492492\n\t0x6db6db\n\t0x924924\n\t0xb6db6d\n\t0xdb6db6\n\t0xffffff\n\n\nParsed DscpToPbitMapping:\ndscp: 0 => pbit: 0\ndscp: 1 => pbit: 0\ndscp: 2 => pbit: 0\ndscp: 3 => pbit: 0\ndscp: 4 => pbit: 0\ndscp: 5 => pbit: 0\ndscp: 6 => pbit: 0\ndscp: 7 => pbit: 0\ndscp: 8 => pbit: 1\ndscp: 9 => pbit: 1\ndscp: 10 => pbit: 1\ndscp: 11 => pbit: 1\ndscp: 12 => pbit: 1\ndscp: 13 => pbit: 1\ndscp: 14 => pbit: 1\ndscp: 15 => pbit: 1\ndscp: 16 => pbit: 2\ndscp: 17 => pbit: 2\ndscp: 18 => pbit: 2\ndscp: 19 => pbit: 2\ndscp: 20 => pbit: 2\ndscp: 21 => pbit: 2\ndscp: 22 => pbit: 2\ndscp: 23 => pbit: 2\ndscp: 24 => pbit: 3\ndscp: 25 => pbit: 3\ndscp: 26 => pbit: 3\ndscp: 27 => pbit: 3\ndscp: 28 => pbit: 3\ndscp: 29 => pbit: 3\ndscp: 30 => pbit: 3\ndscp: 31 => pbit: 3\ndscp: 32 => pbit: 4\ndscp: 33 => pbit: 4\ndscp: 34 => pbit: 4\ndscp: 35 => pbit: 4\ndscp: 36 => pbit: 4\ndscp: 37 => pbit: 4\ndscp: 38 => pbit: 4\ndscp: 39 => pbit: 4\ndscp: 40 => pbit: 5\ndscp: 41 => pbit: 5\ndscp: 42 => pbit: 5\ndscp: 43 => pbit: 5\ndscp: 44 => pbit: 5\ndscp: 45 => pbit: 5\ndscp: 46 => pbit: 5\ndscp: 47 => pbit: 5\ndscp: 48 => pbit: 6\ndscp: 49 => pbit: 6\ndscp: 50 => pbit: 6\ndscp: 51 => pbit: 6\ndscp: 52 => pbit: 6\ndscp: 53 => pbit: 6\ndscp: 54 => pbit: 6\ndscp: 55 => pbit: 6\ndscp: 56 => pbit: 7\ndscp: 57 => pbit: 7\ndscp: 58 => pbit: 7\ndscp: 59 => pbit: 7\ndscp: 60 => pbit: 7\ndscp: 61 => pbit: 7\ndscp: 62 => pbit: 7\ndscp: 63 => pbit: 7"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x104"
+      ],
+      [
+       "AssociationType",
+       "2"
+      ],
+      [
+       "ReceivedFrameVlanTagOperTableMaxSize",
+       "0"
+      ],
+      [
+       "InputTPID",
+       "0x8100"
+      ],
+      [
+       "OutputTPID",
+       "0x8100"
+      ],
+      [
+       "DsMode",
+       "0"
+      ],
+      [
+       "ReceivedFrameVlanTaggingOperTable",
+       ""
+      ],
+      [
+       "INDEX 0",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 15,VID 0, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 0, TPID 2"
+      ],
+      [
+       "INDEX 1",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 14,VID 4096, TPID 5"
+      ],
+      [
+       "Filter Inner",
+       "PRI 14,VID 4096, TPID 0, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 4096, TPID 3"
+      ],
+      [
+       "INDEX 2",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 14,VID 4096, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 4096, TPID 2"
+      ],
+      [
+       "AssociatedMePoint",
+       "0x104"
+      ],
+      [
+       "DscpToPbitMapping",
+       "0x000000\n0x249249\n0x492492\n0x6db6db\n0x924924\n0xb6db6d\n0xdb6db6\n0xffffff"
+      ],
+      [
+       "Parsed DscpToPbitMapping",
+       ""
+      ],
+      [
+       "dscp",
+       "0 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "1 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "2 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "3 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "4 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "5 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "6 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "7 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "8 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "9 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "10 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "11 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "12 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "13 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "14 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "15 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "16 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "17 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "18 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "19 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "20 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "21 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "22 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "23 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "24 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "25 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "26 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "27 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "28 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "29 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "30 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "31 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "32 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "33 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "34 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "35 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "36 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "37 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "38 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "39 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "40 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "41 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "42 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "43 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "44 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "45 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "46 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "47 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "48 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "49 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "50 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "51 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "52 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "53 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "54 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "55 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "56 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "57 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "58 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "59 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "60 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "61 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "62 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "63 => pbit: 7"
+      ]
+     ],
+     "raw": "EntityId: 0x104\nAssociationType: 2\nReceivedFrameVlanTagOperTableMaxSize: 0\nInputTPID: 0x8100\nOutputTPID: 0x8100\nDsMode: 0\nReceivedFrameVlanTaggingOperTable\nINDEX 0\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 15,VID 0, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 0, TPID 2\nINDEX 1\nFilter Outer   : PRI 14,VID 4096, TPID 5\nFilter Inner   : PRI 14,VID 4096, TPID 0, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 4096, TPID 3\nINDEX 2\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 14,VID 4096, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 4096, TPID 2\nAssociatedMePoint: 0x104\nDscpToPbitMapping:\n\t0x000000\n\t0x249249\n\t0x492492\n\t0x6db6db\n\t0x924924\n\t0xb6db6d\n\t0xdb6db6\n\t0xffffff\n\n\nParsed DscpToPbitMapping:\ndscp: 0 => pbit: 0\ndscp: 1 => pbit: 0\ndscp: 2 => pbit: 0\ndscp: 3 => pbit: 0\ndscp: 4 => pbit: 0\ndscp: 5 => pbit: 0\ndscp: 6 => pbit: 0\ndscp: 7 => pbit: 0\ndscp: 8 => pbit: 1\ndscp: 9 => pbit: 1\ndscp: 10 => pbit: 1\ndscp: 11 => pbit: 1\ndscp: 12 => pbit: 1\ndscp: 13 => pbit: 1\ndscp: 14 => pbit: 1\ndscp: 15 => pbit: 1\ndscp: 16 => pbit: 2\ndscp: 17 => pbit: 2\ndscp: 18 => pbit: 2\ndscp: 19 => pbit: 2\ndscp: 20 => pbit: 2\ndscp: 21 => pbit: 2\ndscp: 22 => pbit: 2\ndscp: 23 => pbit: 2\ndscp: 24 => pbit: 3\ndscp: 25 => pbit: 3\ndscp: 26 => pbit: 3\ndscp: 27 => pbit: 3\ndscp: 28 => pbit: 3\ndscp: 29 => pbit: 3\ndscp: 30 => pbit: 3\ndscp: 31 => pbit: 3\ndscp: 32 => pbit: 4\ndscp: 33 => pbit: 4\ndscp: 34 => pbit: 4\ndscp: 35 => pbit: 4\ndscp: 36 => pbit: 4\ndscp: 37 => pbit: 4\ndscp: 38 => pbit: 4\ndscp: 39 => pbit: 4\ndscp: 40 => pbit: 5\ndscp: 41 => pbit: 5\ndscp: 42 => pbit: 5\ndscp: 43 => pbit: 5\ndscp: 44 => pbit: 5\ndscp: 45 => pbit: 5\ndscp: 46 => pbit: 5\ndscp: 47 => pbit: 5\ndscp: 48 => pbit: 6\ndscp: 49 => pbit: 6\ndscp: 50 => pbit: 6\ndscp: 51 => pbit: 6\ndscp: 52 => pbit: 6\ndscp: 53 => pbit: 6\ndscp: 54 => pbit: 6\ndscp: 55 => pbit: 6\ndscp: 56 => pbit: 7\ndscp: 57 => pbit: 7\ndscp: 58 => pbit: 7\ndscp: 59 => pbit: 7\ndscp: 60 => pbit: 7\ndscp: 61 => pbit: 7\ndscp: 62 => pbit: 7\ndscp: 63 => pbit: 7"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0xe01"
+      ],
+      [
+       "AssociationType",
+       "10"
+      ],
+      [
+       "ReceivedFrameVlanTagOperTableMaxSize",
+       "0"
+      ],
+      [
+       "InputTPID",
+       "0x8100"
+      ],
+      [
+       "OutputTPID",
+       "0x8100"
+      ],
+      [
+       "DsMode",
+       "0"
+      ],
+      [
+       "ReceivedFrameVlanTaggingOperTable",
+       ""
+      ],
+      [
+       "INDEX 0",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 8,VID 209, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 1"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 8,VID 209, TPID 2"
+      ],
+      [
+       "INDEX 1",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 8,VID 400, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 1"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 8,VID 400, TPID 2"
+      ],
+      [
+       "INDEX 2",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 8,VID 500, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 1"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 8,VID 500, TPID 2"
+      ],
+      [
+       "INDEX 3",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 15,VID 0, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 0, TPID 2"
+      ],
+      [
+       "INDEX 4",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 14,VID 4096, TPID 5"
+      ],
+      [
+       "Filter Inner",
+       "PRI 14,VID 4096, TPID 0, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 4096, TPID 3"
+      ],
+      [
+       "INDEX 5",
+       ""
+      ],
+      [
+       "Filter Outer",
+       "PRI 15,VID 4096, TPID 0"
+      ],
+      [
+       "Filter Inner",
+       "PRI 14,VID 4096, TPID 5, EthType 0x00"
+      ],
+      [
+       "Treatment Outer",
+       "PRI 15,VID 0, TPID 0, RemoveTags 3"
+      ],
+      [
+       "Treatment Inner",
+       "PRI 15,VID 4096, TPID 2"
+      ],
+      [
+       "AssociatedMePoint",
+       "0x601"
+      ],
+      [
+       "DscpToPbitMapping",
+       "0x000000\n0x249249\n0x492492\n0x6db6db\n0x924924\n0xb6db6d\n0xdb6db6\n0xffffff"
+      ],
+      [
+       "Parsed DscpToPbitMapping",
+       ""
+      ],
+      [
+       "dscp",
+       "0 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "1 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "2 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "3 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "4 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "5 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "6 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "7 => pbit: 0"
+      ],
+      [
+       "dscp",
+       "8 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "9 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "10 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "11 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "12 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "13 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "14 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "15 => pbit: 1"
+      ],
+      [
+       "dscp",
+       "16 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "17 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "18 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "19 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "20 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "21 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "22 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "23 => pbit: 2"
+      ],
+      [
+       "dscp",
+       "24 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "25 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "26 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "27 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "28 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "29 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "30 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "31 => pbit: 3"
+      ],
+      [
+       "dscp",
+       "32 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "33 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "34 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "35 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "36 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "37 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "38 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "39 => pbit: 4"
+      ],
+      [
+       "dscp",
+       "40 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "41 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "42 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "43 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "44 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "45 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "46 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "47 => pbit: 5"
+      ],
+      [
+       "dscp",
+       "48 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "49 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "50 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "51 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "52 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "53 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "54 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "55 => pbit: 6"
+      ],
+      [
+       "dscp",
+       "56 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "57 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "58 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "59 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "60 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "61 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "62 => pbit: 7"
+      ],
+      [
+       "dscp",
+       "63 => pbit: 7"
+      ]
+     ],
+     "raw": "EntityId: 0xe01\nAssociationType: 10\nReceivedFrameVlanTagOperTableMaxSize: 0\nInputTPID: 0x8100\nOutputTPID: 0x8100\nDsMode: 0\nReceivedFrameVlanTaggingOperTable\nINDEX 0\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 8,VID 209, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 1\nTreatment Inner   : PRI 8,VID 209, TPID 2\nINDEX 1\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 8,VID 400, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 1\nTreatment Inner   : PRI 8,VID 400, TPID 2\nINDEX 2\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 8,VID 500, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 1\nTreatment Inner   : PRI 8,VID 500, TPID 2\nINDEX 3\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 15,VID 0, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 0, TPID 2\nINDEX 4\nFilter Outer   : PRI 14,VID 4096, TPID 5\nFilter Inner   : PRI 14,VID 4096, TPID 0, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 4096, TPID 3\nINDEX 5\nFilter Outer   : PRI 15,VID 4096, TPID 0\nFilter Inner   : PRI 14,VID 4096, TPID 5, EthType 0x00\nTreatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3\nTreatment Inner   : PRI 15,VID 4096, TPID 2\nAssociatedMePoint: 0x601\nDscpToPbitMapping:\n\t0x000000\n\t0x249249\n\t0x492492\n\t0x6db6db\n\t0x924924\n\t0xb6db6d\n\t0xdb6db6\n\t0xffffff\n\n\nParsed DscpToPbitMapping:\ndscp: 0 => pbit: 0\ndscp: 1 => pbit: 0\ndscp: 2 => pbit: 0\ndscp: 3 => pbit: 0\ndscp: 4 => pbit: 0\ndscp: 5 => pbit: 0\ndscp: 6 => pbit: 0\ndscp: 7 => pbit: 0\ndscp: 8 => pbit: 1\ndscp: 9 => pbit: 1\ndscp: 10 => pbit: 1\ndscp: 11 => pbit: 1\ndscp: 12 => pbit: 1\ndscp: 13 => pbit: 1\ndscp: 14 => pbit: 1\ndscp: 15 => pbit: 1\ndscp: 16 => pbit: 2\ndscp: 17 => pbit: 2\ndscp: 18 => pbit: 2\ndscp: 19 => pbit: 2\ndscp: 20 => pbit: 2\ndscp: 21 => pbit: 2\ndscp: 22 => pbit: 2\ndscp: 23 => pbit: 2\ndscp: 24 => pbit: 3\ndscp: 25 => pbit: 3\ndscp: 26 => pbit: 3\ndscp: 27 => pbit: 3\ndscp: 28 => pbit: 3\ndscp: 29 => pbit: 3\ndscp: 30 => pbit: 3\ndscp: 31 => pbit: 3\ndscp: 32 => pbit: 4\ndscp: 33 => pbit: 4\ndscp: 34 => pbit: 4\ndscp: 35 => pbit: 4\ndscp: 36 => pbit: 4\ndscp: 37 => pbit: 4\ndscp: 38 => pbit: 4\ndscp: 39 => pbit: 4\ndscp: 40 => pbit: 5\ndscp: 41 => pbit: 5\ndscp: 42 => pbit: 5\ndscp: 43 => pbit: 5\ndscp: 44 => pbit: 5\ndscp: 45 => pbit: 5\ndscp: 46 => pbit: 5\ndscp: 47 => pbit: 5\ndscp: 48 => pbit: 6\ndscp: 49 => pbit: 6\ndscp: 50 => pbit: 6\ndscp: 51 => pbit: 6\ndscp: 52 => pbit: 6\ndscp: 53 => pbit: 6\ndscp: 54 => pbit: 6\ndscp: 55 => pbit: 6\ndscp: 56 => pbit: 7\ndscp: 57 => pbit: 7\ndscp: 58 => pbit: 7\ndscp: 59 => pbit: 7\ndscp: 60 => pbit: 7\ndscp: 61 => pbit: 7\ndscp: 62 => pbit: 7\ndscp: 63 => pbit: 7"
+    }
+   ],
+   "truncated": false
+  },
+  "11": {
+   "class": 11,
+   "name": "EthUni",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0101"
+      ],
+      [
+       "ExpectedType",
+       "47"
+      ],
+      [
+       "SensedType",
+       "47"
+      ],
+      [
+       "AutoDectectCfg",
+       "0"
+      ],
+      [
+       "EthLoopbackCfg",
+       "0"
+      ],
+      [
+       "AdminState",
+       "0"
+      ],
+      [
+       "OpState",
+       "1"
+      ],
+      [
+       "DuplexInd",
+       "0"
+      ],
+      [
+       "MaxFrameSize",
+       "2000"
+      ],
+      [
+       "DTEorDCEInd",
+       "0"
+      ],
+      [
+       "PauseTime",
+       "0"
+      ],
+      [
+       "BridgedorIPInd",
+       "2"
+      ],
+      [
+       "ARC",
+       "0"
+      ],
+      [
+       "ARCInterval",
+       "0"
+      ],
+      [
+       "PppoeFilter",
+       "0"
+      ],
+      [
+       "PowerControl",
+       "0"
+      ],
+      [
+       "PhysicalPortId",
+       "0"
+      ]
+     ],
+     "raw": "EntityID: 0x0101\nExpectedType: 47\nSensedType: 47\nAutoDectectCfg: 0\nEthLoopbackCfg: 0\nAdminState: 0\nOpState: 1\nDuplexInd: 0\nMaxFrameSize: 2000\nDTEorDCEInd: 0\nPauseTime: 0\nBridgedorIPInd: 2\nARC: 0\nARCInterval: 0\nPppoeFilter: 0\nPowerControl: 0\nPhysicalPortId: 0"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0102"
+      ],
+      [
+       "ExpectedType",
+       "47"
+      ],
+      [
+       "SensedType",
+       "47"
+      ],
+      [
+       "AutoDectectCfg",
+       "0"
+      ],
+      [
+       "EthLoopbackCfg",
+       "0"
+      ],
+      [
+       "AdminState",
+       "0"
+      ],
+      [
+       "OpState",
+       "0"
+      ],
+      [
+       "DuplexInd",
+       "3"
+      ],
+      [
+       "MaxFrameSize",
+       "2000"
+      ],
+      [
+       "DTEorDCEInd",
+       "0"
+      ],
+      [
+       "PauseTime",
+       "0"
+      ],
+      [
+       "BridgedorIPInd",
+       "2"
+      ],
+      [
+       "ARC",
+       "0"
+      ],
+      [
+       "ARCInterval",
+       "0"
+      ],
+      [
+       "PppoeFilter",
+       "0"
+      ],
+      [
+       "PowerControl",
+       "0"
+      ],
+      [
+       "PhysicalPortId",
+       "1"
+      ]
+     ],
+     "raw": "EntityID: 0x0102\nExpectedType: 47\nSensedType: 47\nAutoDectectCfg: 0\nEthLoopbackCfg: 0\nAdminState: 0\nOpState: 0\nDuplexInd: 3\nMaxFrameSize: 2000\nDTEorDCEInd: 0\nPauseTime: 0\nBridgedorIPInd: 2\nARC: 0\nARCInterval: 0\nPppoeFilter: 0\nPowerControl: 0\nPhysicalPortId: 1"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0103"
+      ],
+      [
+       "ExpectedType",
+       "47"
+      ],
+      [
+       "SensedType",
+       "47"
+      ],
+      [
+       "AutoDectectCfg",
+       "0"
+      ],
+      [
+       "EthLoopbackCfg",
+       "0"
+      ],
+      [
+       "AdminState",
+       "0"
+      ],
+      [
+       "OpState",
+       "1"
+      ],
+      [
+       "DuplexInd",
+       "0"
+      ],
+      [
+       "MaxFrameSize",
+       "2000"
+      ],
+      [
+       "DTEorDCEInd",
+       "0"
+      ],
+      [
+       "PauseTime",
+       "0"
+      ],
+      [
+       "BridgedorIPInd",
+       "2"
+      ],
+      [
+       "ARC",
+       "0"
+      ],
+      [
+       "ARCInterval",
+       "0"
+      ],
+      [
+       "PppoeFilter",
+       "0"
+      ],
+      [
+       "PowerControl",
+       "0"
+      ],
+      [
+       "PhysicalPortId",
+       "2"
+      ]
+     ],
+     "raw": "EntityID: 0x0103\nExpectedType: 47\nSensedType: 47\nAutoDectectCfg: 0\nEthLoopbackCfg: 0\nAdminState: 0\nOpState: 1\nDuplexInd: 0\nMaxFrameSize: 2000\nDTEorDCEInd: 0\nPauseTime: 0\nBridgedorIPInd: 2\nARC: 0\nARCInterval: 0\nPppoeFilter: 0\nPowerControl: 0\nPhysicalPortId: 2"
+    },
+    {
+     "attrs": [
+      [
+       "EntityID",
+       "0x0104"
+      ],
+      [
+       "ExpectedType",
+       "47"
+      ],
+      [
+       "SensedType",
+       "47"
+      ],
+      [
+       "AutoDectectCfg",
+       "0"
+      ],
+      [
+       "EthLoopbackCfg",
+       "0"
+      ],
+      [
+       "AdminState",
+       "0"
+      ],
+      [
+       "OpState",
+       "1"
+      ],
+      [
+       "DuplexInd",
+       "0"
+      ],
+      [
+       "MaxFrameSize",
+       "2000"
+      ],
+      [
+       "DTEorDCEInd",
+       "0"
+      ],
+      [
+       "PauseTime",
+       "0"
+      ],
+      [
+       "BridgedorIPInd",
+       "2"
+      ],
+      [
+       "ARC",
+       "0"
+      ],
+      [
+       "ARCInterval",
+       "0"
+      ],
+      [
+       "PppoeFilter",
+       "0"
+      ],
+      [
+       "PowerControl",
+       "0"
+      ],
+      [
+       "PhysicalPortId",
+       "3"
+      ]
+     ],
+     "raw": "EntityID: 0x0104\nExpectedType: 47\nSensedType: 47\nAutoDectectCfg: 0\nEthLoopbackCfg: 0\nAdminState: 0\nOpState: 1\nDuplexInd: 0\nMaxFrameSize: 2000\nDTEorDCEInd: 0\nPauseTime: 0\nBridgedorIPInd: 2\nARC: 0\nARCInterval: 0\nPppoeFilter: 0\nPowerControl: 0\nPhysicalPortId: 3"
+    }
+   ],
+   "truncated": false
+  },
+  "329": {
+   "class": 329,
+   "name": "VEIP",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x0e01"
+      ],
+      [
+       "AdminState",
+       "1"
+      ],
+      [
+       "OperState",
+       "1"
+      ],
+      [
+       "InterDomainName",
+       "0x00000000000000000000000000000000000000000000000000"
+      ],
+      [
+       "TcpUdpPtr",
+       "0x0000"
+      ],
+      [
+       "IansAssignPort",
+       "0"
+      ],
+      [
+       "CustomizedSlotId",
+       "0x0e"
+      ]
+     ],
+     "raw": "EntityId: 0x0e01\nAdminState: 1\nOperState: 1\nInterDomainName: 0x00000000000000000000000000000000000000000000000000\nTcpUdpPtr: 0x0000\nIansAssignPort: 0\nCustomizedSlotId: 0x0e"
+    }
+   ],
+   "truncated": false
+  },
+  "309": {
+   "class": 309,
+   "name": "McastOperProf",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x101"
+      ],
+      [
+       "IGMPVersion",
+       "3"
+      ],
+      [
+       "IGMPFun",
+       "0"
+      ],
+      [
+       "ImmediateLeave",
+       "1"
+      ],
+      [
+       "UsIGMPTci",
+       "0x00"
+      ],
+      [
+       "UsIGMPTagControl",
+       "0"
+      ],
+      [
+       "UsIGMPRate",
+       "16"
+      ],
+      [
+       "DynamicAccessControlListTable (0)",
+       ""
+      ]
+     ],
+     "raw": "EntityId: 0x101\nIGMPVersion: 3\nIGMPFun: 0\nImmediateLeave: 1\nUsIGMPTci: 0x00\nUsIGMPTagControl: 0\nUsIGMPRate: 16\n\nDynamicAccessControlListTable (0)"
+    },
+    {
+     "attrs": [
+      [
+       "StaticAccessControlListTable (0)",
+       ""
+      ]
+     ],
+     "raw": "StaticAccessControlListTable (0)"
+    },
+    {
+     "attrs": [
+      [
+       "LostGroupsListTable",
+       ""
+      ]
+     ],
+     "raw": "LostGroupsListTable"
+    },
+    {
+     "attrs": [
+      [
+       "Robustness",
+       "2"
+      ],
+      [
+       "QuerierIpAddress",
+       "0.0.0.0"
+      ],
+      [
+       "QueryInterval",
+       "30"
+      ],
+      [
+       "QueryMaxResponseTime",
+       "100"
+      ],
+      [
+       "LastMemberQueryInterval",
+       "10"
+      ],
+      [
+       "UnauthorizedJoinRequestBehaviour",
+       "1"
+      ],
+      [
+       "DownstreamIgmpMulticastTci",
+       "00 00 00"
+      ]
+     ],
+     "raw": "Robustness: 2\nQuerierIpAddress: 0.0.0.0\nQueryInterval: 30\nQueryMaxResponseTime: 100\nLastMemberQueryInterval: 10\nUnauthorizedJoinRequestBehaviour: 1\nDownstreamIgmpMulticastTci: 00 00 00\n\n\n"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x102"
+      ],
+      [
+       "IGMPVersion",
+       "3"
+      ],
+      [
+       "IGMPFun",
+       "0"
+      ],
+      [
+       "ImmediateLeave",
+       "1"
+      ],
+      [
+       "UsIGMPTci",
+       "0x00"
+      ],
+      [
+       "UsIGMPTagControl",
+       "0"
+      ],
+      [
+       "UsIGMPRate",
+       "16"
+      ],
+      [
+       "DynamicAccessControlListTable (0)",
+       ""
+      ]
+     ],
+     "raw": "EntityId: 0x102\nIGMPVersion: 3\nIGMPFun: 0\nImmediateLeave: 1\nUsIGMPTci: 0x00\nUsIGMPTagControl: 0\nUsIGMPRate: 16\n\nDynamicAccessControlListTable (0)"
+    },
+    {
+     "attrs": [
+      [
+       "StaticAccessControlListTable (0)",
+       ""
+      ]
+     ],
+     "raw": "StaticAccessControlListTable (0)"
+    },
+    {
+     "attrs": [
+      [
+       "LostGroupsListTable",
+       ""
+      ]
+     ],
+     "raw": "LostGroupsListTable"
+    },
+    {
+     "attrs": [
+      [
+       "Robustness",
+       "2"
+      ],
+      [
+       "QuerierIpAddress",
+       "0.0.0.0"
+      ],
+      [
+       "QueryInterval",
+       "30"
+      ],
+      [
+       "QueryMaxResponseTime",
+       "100"
+      ],
+      [
+       "LastMemberQueryInterval",
+       "10"
+      ],
+      [
+       "UnauthorizedJoinRequestBehaviour",
+       "1"
+      ],
+      [
+       "DownstreamIgmpMulticastTci",
+       "00 00 00"
+      ]
+     ],
+     "raw": "Robustness: 2\nQuerierIpAddress: 0.0.0.0\nQueryInterval: 30\nQueryMaxResponseTime: 100\nLastMemberQueryInterval: 10\nUnauthorizedJoinRequestBehaviour: 1\nDownstreamIgmpMulticastTci: 00 00 00\n\n\n"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x103"
+      ],
+      [
+       "IGMPVersion",
+       "3"
+      ],
+      [
+       "IGMPFun",
+       "0"
+      ],
+      [
+       "ImmediateLeave",
+       "1"
+      ],
+      [
+       "UsIGMPTci",
+       "0x00"
+      ],
+      [
+       "UsIGMPTagControl",
+       "0"
+      ],
+      [
+       "UsIGMPRate",
+       "16"
+      ],
+      [
+       "DynamicAccessControlListTable (0)",
+       ""
+      ]
+     ],
+     "raw": "EntityId: 0x103\nIGMPVersion: 3\nIGMPFun: 0\nImmediateLeave: 1\nUsIGMPTci: 0x00\nUsIGMPTagControl: 0\nUsIGMPRate: 16\n\nDynamicAccessControlListTable (0)"
+    },
+    {
+     "attrs": [
+      [
+       "StaticAccessControlListTable (0)",
+       ""
+      ]
+     ],
+     "raw": "StaticAccessControlListTable (0)"
+    },
+    {
+     "attrs": [
+      [
+       "LostGroupsListTable",
+       ""
+      ]
+     ],
+     "raw": "LostGroupsListTable"
+    },
+    {
+     "attrs": [
+      [
+       "Robustness",
+       "2"
+      ],
+      [
+       "QuerierIpAddress",
+       "0.0.0.0"
+      ],
+      [
+       "QueryInterval",
+       "30"
+      ],
+      [
+       "QueryMaxResponseTime",
+       "100"
+      ],
+      [
+       "LastMemberQueryInterval",
+       "10"
+      ],
+      [
+       "UnauthorizedJoinRequestBehaviour",
+       "1"
+      ],
+      [
+       "DownstreamIgmpMulticastTci",
+       "00 00 00"
+      ]
+     ],
+     "raw": "Robustness: 2\nQuerierIpAddress: 0.0.0.0\nQueryInterval: 30\nQueryMaxResponseTime: 100\nLastMemberQueryInterval: 10\nUnauthorizedJoinRequestBehaviour: 1\nDownstreamIgmpMulticastTci: 00 00 00\n\n\n"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x104"
+      ],
+      [
+       "IGMPVersion",
+       "3"
+      ],
+      [
+       "IGMPFun",
+       "0"
+      ],
+      [
+       "ImmediateLeave",
+       "1"
+      ],
+      [
+       "UsIGMPTci",
+       "0x00"
+      ],
+      [
+       "UsIGMPTagControl",
+       "0"
+      ],
+      [
+       "UsIGMPRate",
+       "16"
+      ],
+      [
+       "DynamicAccessControlListTable (0)",
+       ""
+      ]
+     ],
+     "raw": "EntityId: 0x104\nIGMPVersion: 3\nIGMPFun: 0\nImmediateLeave: 1\nUsIGMPTci: 0x00\nUsIGMPTagControl: 0\nUsIGMPRate: 16\n\nDynamicAccessControlListTable (0)"
+    },
+    {
+     "attrs": [
+      [
+       "StaticAccessControlListTable (0)",
+       ""
+      ]
+     ],
+     "raw": "StaticAccessControlListTable (0)"
+    },
+    {
+     "attrs": [
+      [
+       "LostGroupsListTable",
+       ""
+      ]
+     ],
+     "raw": "LostGroupsListTable"
+    },
+    {
+     "attrs": [
+      [
+       "Robustness",
+       "2"
+      ],
+      [
+       "QuerierIpAddress",
+       "0.0.0.0"
+      ],
+      [
+       "QueryInterval",
+       "30"
+      ],
+      [
+       "QueryMaxResponseTime",
+       "100"
+      ],
+      [
+       "LastMemberQueryInterval",
+       "10"
+      ],
+      [
+       "UnauthorizedJoinRequestBehaviour",
+       "1"
+      ],
+      [
+       "DownstreamIgmpMulticastTci",
+       "00 00 00"
+      ]
+     ],
+     "raw": "Robustness: 2\nQuerierIpAddress: 0.0.0.0\nQueryInterval: 30\nQueryMaxResponseTime: 100\nLastMemberQueryInterval: 10\nUnauthorizedJoinRequestBehaviour: 1\nDownstreamIgmpMulticastTci: 00 00 00\n\n\n"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0xe01"
+      ],
+      [
+       "IGMPVersion",
+       "3"
+      ],
+      [
+       "IGMPFun",
+       "0"
+      ],
+      [
+       "ImmediateLeave",
+       "1"
+      ],
+      [
+       "UsIGMPTci",
+       "0x00"
+      ],
+      [
+       "UsIGMPTagControl",
+       "0"
+      ],
+      [
+       "UsIGMPRate",
+       "16"
+      ],
+      [
+       "DynamicAccessControlListTable (0)",
+       ""
+      ]
+     ],
+     "raw": "EntityId: 0xe01\nIGMPVersion: 3\nIGMPFun: 0\nImmediateLeave: 1\nUsIGMPTci: 0x00\nUsIGMPTagControl: 0\nUsIGMPRate: 16\n\nDynamicAccessControlListTable (0)"
+    },
+    {
+     "attrs": [
+      [
+       "StaticAccessControlListTable (0)",
+       ""
+      ]
+     ],
+     "raw": "StaticAccessControlListTable (0)"
+    },
+    {
+     "attrs": [
+      [
+       "LostGroupsListTable",
+       ""
+      ]
+     ],
+     "raw": "LostGroupsListTable"
+    },
+    {
+     "attrs": [
+      [
+       "Robustness",
+       "2"
+      ],
+      [
+       "QuerierIpAddress",
+       "0.0.0.0"
+      ],
+      [
+       "QueryInterval",
+       "30"
+      ],
+      [
+       "QueryMaxResponseTime",
+       "100"
+      ],
+      [
+       "LastMemberQueryInterval",
+       "10"
+      ],
+      [
+       "UnauthorizedJoinRequestBehaviour",
+       "1"
+      ],
+      [
+       "DownstreamIgmpMulticastTci",
+       "00 00 00"
+      ]
+     ],
+     "raw": "Robustness: 2\nQuerierIpAddress: 0.0.0.0\nQueryInterval: 30\nQueryMaxResponseTime: 100\nLastMemberQueryInterval: 10\nUnauthorizedJoinRequestBehaviour: 1\nDownstreamIgmpMulticastTci: 00 00 00\n\n\n"
+    }
+   ],
+   "truncated": false
+  },
+  "310": {
+   "class": 310,
+   "name": "McastSubConfInfo",
+   "instances": [
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x101"
+      ],
+      [
+       "MeType",
+       "0"
+      ],
+      [
+       "McastOperProfPtr",
+       "0x101"
+      ],
+      [
+       "MaxSimGroups",
+       "0"
+      ],
+      [
+       "MaxMcastBandwidth",
+       "237500000"
+      ],
+      [
+       "BandwidthEnforcement",
+       "1"
+      ],
+      [
+       "McastSvcPkgTable (1)",
+       ""
+      ],
+      [
+       "----------------------------------",
+       ""
+      ],
+      [
+       "INDEX",
+       "0"
+      ],
+      [
+       "Row Key",
+       "1"
+      ],
+      [
+       "vidUni",
+       "65535"
+      ],
+      [
+       "maxSimGroups",
+       "0"
+      ],
+      [
+       "maxMcastBw",
+       "237500000"
+      ],
+      [
+       "mcastOperProfPtr",
+       "101"
+      ],
+      [
+       "Reserved",
+       "00 00 00 00 ff 00 00 69"
+      ],
+      [
+       "Allowed Preview Groups Table",
+       "(0)"
+      ],
+      [
+       "----------------------------------",
+       ""
+      ],
+      [
+       "No entry",
+       ""
+      ]
+     ],
+     "raw": "EntityId: 0x101\nMeType: 0\nMcastOperProfPtr: 0x101\nMaxSimGroups: 0\nMaxMcastBandwidth: 237500000\nBandwidthEnforcement: 1\nMcastSvcPkgTable (1)\n----------------------------------\nINDEX:\t\t\t0\nRow Key:\t\t1\nvidUni:\t\t\t65535\nmaxSimGroups:\t\t0\nmaxMcastBw:\t\t237500000\nmcastOperProfPtr:\t101\nReserved: 00 00 00 00 ff 00 00 69\nAllowed Preview Groups Table: (0)\n----------------------------------\nNo entry"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x102"
+      ],
+      [
+       "MeType",
+       "0"
+      ],
+      [
+       "McastOperProfPtr",
+       "0x102"
+      ],
+      [
+       "MaxSimGroups",
+       "0"
+      ],
+      [
+       "MaxMcastBandwidth",
+       "237500000"
+      ],
+      [
+       "BandwidthEnforcement",
+       "1"
+      ],
+      [
+       "McastSvcPkgTable (1)",
+       ""
+      ],
+      [
+       "----------------------------------",
+       ""
+      ],
+      [
+       "INDEX",
+       "0"
+      ],
+      [
+       "Row Key",
+       "1"
+      ],
+      [
+       "vidUni",
+       "65535"
+      ],
+      [
+       "maxSimGroups",
+       "0"
+      ],
+      [
+       "maxMcastBw",
+       "237500000"
+      ],
+      [
+       "mcastOperProfPtr",
+       "102"
+      ],
+      [
+       "Reserved",
+       "7f 00 00 00 00 00 00 00"
+      ],
+      [
+       "Allowed Preview Groups Table",
+       "(0)"
+      ],
+      [
+       "----------------------------------",
+       ""
+      ],
+      [
+       "No entry",
+       ""
+      ]
+     ],
+     "raw": "EntityId: 0x102\nMeType: 0\nMcastOperProfPtr: 0x102\nMaxSimGroups: 0\nMaxMcastBandwidth: 237500000\nBandwidthEnforcement: 1\nMcastSvcPkgTable (1)\n----------------------------------\nINDEX:\t\t\t0\nRow Key:\t\t1\nvidUni:\t\t\t65535\nmaxSimGroups:\t\t0\nmaxMcastBw:\t\t237500000\nmcastOperProfPtr:\t102\nReserved: 7f 00 00 00 00 00 00 00\nAllowed Preview Groups Table: (0)\n----------------------------------\nNo entry"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x103"
+      ],
+      [
+       "MeType",
+       "0"
+      ],
+      [
+       "McastOperProfPtr",
+       "0x103"
+      ],
+      [
+       "MaxSimGroups",
+       "0"
+      ],
+      [
+       "MaxMcastBandwidth",
+       "237500000"
+      ],
+      [
+       "BandwidthEnforcement",
+       "1"
+      ],
+      [
+       "McastSvcPkgTable (1)",
+       ""
+      ],
+      [
+       "----------------------------------",
+       ""
+      ],
+      [
+       "INDEX",
+       "0"
+      ],
+      [
+       "Row Key",
+       "1"
+      ],
+      [
+       "vidUni",
+       "65535"
+      ],
+      [
+       "maxSimGroups",
+       "0"
+      ],
+      [
+       "maxMcastBw",
+       "237500000"
+      ],
+      [
+       "mcastOperProfPtr",
+       "103"
+      ],
+      [
+       "Reserved",
+       "7f 00 00 00 00 00 00 00"
+      ],
+      [
+       "Allowed Preview Groups Table",
+       "(0)"
+      ],
+      [
+       "----------------------------------",
+       ""
+      ],
+      [
+       "No entry",
+       ""
+      ]
+     ],
+     "raw": "EntityId: 0x103\nMeType: 0\nMcastOperProfPtr: 0x103\nMaxSimGroups: 0\nMaxMcastBandwidth: 237500000\nBandwidthEnforcement: 1\nMcastSvcPkgTable (1)\n----------------------------------\nINDEX:\t\t\t0\nRow Key:\t\t1\nvidUni:\t\t\t65535\nmaxSimGroups:\t\t0\nmaxMcastBw:\t\t237500000\nmcastOperProfPtr:\t103\nReserved: 7f 00 00 00 00 00 00 00\nAllowed Preview Groups Table: (0)\n----------------------------------\nNo entry"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0x104"
+      ],
+      [
+       "MeType",
+       "0"
+      ],
+      [
+       "McastOperProfPtr",
+       "0x104"
+      ],
+      [
+       "MaxSimGroups",
+       "0"
+      ],
+      [
+       "MaxMcastBandwidth",
+       "237500000"
+      ],
+      [
+       "BandwidthEnforcement",
+       "1"
+      ],
+      [
+       "McastSvcPkgTable (1)",
+       ""
+      ],
+      [
+       "----------------------------------",
+       ""
+      ],
+      [
+       "INDEX",
+       "0"
+      ],
+      [
+       "Row Key",
+       "1"
+      ],
+      [
+       "vidUni",
+       "65535"
+      ],
+      [
+       "maxSimGroups",
+       "0"
+      ],
+      [
+       "maxMcastBw",
+       "237500000"
+      ],
+      [
+       "mcastOperProfPtr",
+       "104"
+      ],
+      [
+       "Reserved",
+       "7f 00 00 00 00 00 00 00"
+      ],
+      [
+       "Allowed Preview Groups Table",
+       "(0)"
+      ],
+      [
+       "----------------------------------",
+       ""
+      ],
+      [
+       "No entry",
+       ""
+      ]
+     ],
+     "raw": "EntityId: 0x104\nMeType: 0\nMcastOperProfPtr: 0x104\nMaxSimGroups: 0\nMaxMcastBandwidth: 237500000\nBandwidthEnforcement: 1\nMcastSvcPkgTable (1)\n----------------------------------\nINDEX:\t\t\t0\nRow Key:\t\t1\nvidUni:\t\t\t65535\nmaxSimGroups:\t\t0\nmaxMcastBw:\t\t237500000\nmcastOperProfPtr:\t104\nReserved: 7f 00 00 00 00 00 00 00\nAllowed Preview Groups Table: (0)\n----------------------------------\nNo entry"
+    },
+    {
+     "attrs": [
+      [
+       "EntityId",
+       "0xe01"
+      ],
+      [
+       "MeType",
+       "0"
+      ],
+      [
+       "McastOperProfPtr",
+       "0xe01"
+      ],
+      [
+       "MaxSimGroups",
+       "0"
+      ],
+      [
+       "MaxMcastBandwidth",
+       "237500000"
+      ],
+      [
+       "BandwidthEnforcement",
+       "1"
+      ],
+      [
+       "McastSvcPkgTable (0)",
+       ""
+      ],
+      [
+       "----------------------------------",
+       ""
+      ],
+      [
+       "No entry",
+       ""
+      ],
+      [
+       "Allowed Preview Groups Table",
+       "(0)"
+      ],
+      [
+       "----------------------------------",
+       ""
+      ],
+      [
+       "No entry",
+       ""
+      ]
+     ],
+     "raw": "EntityId: 0xe01\nMeType: 0\nMcastOperProfPtr: 0xe01\nMaxSimGroups: 0\nMaxMcastBandwidth: 237500000\nBandwidthEnforcement: 1\nMcastSvcPkgTable (0)\n----------------------------------\nNo entry\nAllowed Preview Groups Table: (0)\n----------------------------------\nNo entry"
+    }
+   ],
+   "truncated": false
+  }
+ },
+ "qmap": {
+  "pq": [
+   {
+    "meid": "0x8000",
+    "qid": 0,
+    "policy": "WRR",
+    "pw": 0,
+    "tcid": 0,
+    "dp": 0,
+    "cir": 0,
+    "pir": 0,
+    "used": 1
+   },
+   {
+    "meid": "0x8001",
+    "qid": 0,
+    "policy": "WRR",
+    "pw": 0,
+    "tcid": 2,
+    "dp": 0,
+    "cir": 0,
+    "pir": 0,
+    "used": 1
+   },
+   {
+    "meid": "0x8003",
+    "qid": 0,
+    "policy": "WRR",
+    "pw": 0,
+    "tcid": 3,
+    "dp": 0,
+    "cir": 0,
+    "pir": 0,
+    "used": 1
+   },
+   {
+    "meid": "0x8004",
+    "qid": 0,
+    "policy": "WRR",
+    "pw": 0,
+    "tcid": 1,
+    "dp": 0,
+    "cir": 0,
+    "pir": 0,
+    "used": 1
+   },
+   {
+    "meid": "0x8005",
+    "qid": 0,
+    "policy": "WRR",
+    "pw": 0,
+    "tcid": 4,
+    "dp": 0,
+    "cir": 0,
+    "pir": 0,
+    "used": 1
+   }
+  ],
+  "tcont": [
+   {
+    "tcid": 0,
+    "meid": "0x8000",
+    "alloc": 263,
+    "gems": 1
+   },
+   {
+    "tcid": 1,
+    "meid": "0x8004",
+    "alloc": 285,
+    "gems": 1
+   },
+   {
+    "tcid": 2,
+    "meid": "0x8001",
+    "alloc": 264,
+    "gems": 1
+   },
+   {
+    "tcid": 3,
+    "meid": "0x8003",
+    "alloc": 284,
+    "gems": 1
+   },
+   {
+    "tcid": 4,
+    "meid": "0x8005",
+    "alloc": 286,
+    "gems": 1
+   }
+  ],
+  "us": [
+   {
+    "flow": 0,
+    "gem": 263,
+    "pq": "0x8000"
+   },
+   {
+    "flow": 1,
+    "gem": 284,
+    "pq": "0x8004"
+   },
+   {
+    "flow": 2,
+    "gem": 264,
+    "pq": "0x8001"
+   },
+   {
+    "flow": 3,
+    "gem": 283,
+    "pq": "0x8003"
+   },
+   {
+    "flow": 4,
+    "gem": 285,
+    "pq": "0x8005"
+   }
+  ],
+  "ds": [
+   {
+    "flow": 0,
+    "gem": 2047,
+    "pq": "0"
+   },
+   {
+    "flow": 1,
+    "gem": 263,
+    "pq": "0"
+   },
+   {
+    "flow": 2,
+    "gem": 2046,
+    "pq": "0"
+   },
+   {
+    "flow": 3,
+    "gem": 284,
+    "pq": "0"
+   },
+   {
+    "flow": 4,
+    "gem": 264,
+    "pq": "0"
+   },
+   {
+    "flow": 5,
+    "gem": 283,
+    "pq": "0"
+   },
+   {
+    "flow": 6,
+    "gem": 285,
+    "pq": "0"
+   }
+  ]
+ }
+}

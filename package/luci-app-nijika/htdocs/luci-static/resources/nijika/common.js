@@ -203,6 +203,7 @@ return baseclass.extend({
 	callStatus: rpc.declare({ object: 'nijika', method: 'status' }),
 	callOlt: rpc.declare({ object: 'nijika', method: 'olt' }),
 	callMe: rpc.declare({ object: 'nijika', method: 'me', params: [ 'class' ] }),
+	callProvision: rpc.declare({ object: 'nijika', method: 'provision' }),
 	callDiag: rpc.declare({ object: 'nijika', method: 'diag', params: [ 'cmd' ] }),
 	callMibAll: rpc.declare({ object: 'nijika', method: 'mib_all' }),
 	callMibSet: rpc.declare({ object: 'nijika', method: 'mib_set', params: [ 'values' ] }),

@@ -3,7 +3,7 @@
 		"description": "Grant access to NijikaWrt PON / stock configuration management",
 		"read": {
 			"ubus": {
-				"nijika": [ "status", "olt", "me", "diag", "mib_all", "mib_get", "chain",
+				"nijika": [ "status", "olt", "me", "provision", "diag", "mib_all", "mib_get", "chain",
 				            "quick_get", "ident_get", "boot_get", "fw_status" ]
 			},
 			"uci": [ "nijika" ]

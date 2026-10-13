@@ -142,9 +142,23 @@ LuCI never edits stock files directly. The rpcd plugin
 | scalars | `flash get/set KEY` | `kv.awk` |
 | chain tables | `flash get TBL`, `flash set TBL.i.field` | `chain.awk` |
 | OMCI MEs | `omcicli mib get <class>` | `me.awk` (ordered `[key,value]` pairs + raw) |
-| PON/optics | `diag gpon get onu-state`, `diag pon get transceiver …` | `pon.sh` |
+| OMCI queue map | `omcicli dump qmap` | `qmap.awk` |
+| PON/optics | `diag rt_gpon get onu-state`, `diag pon get transceiver …` | `pon.sh` |
 | VoIP | `voipflashcmd get/set NAME [VALUE] CHID PROXY` | |
 | U-Boot env | `nv getenv/setenv` | |
+
+`omcicli` hands each request to `omci_app` and reads the answer from a temp
+file, but only waits a short while. A big answer (`mib get all`, 200+
+priority queues of ME 277) comes back cut off and the rest spills into the
+next `omcicli` call. `omci.sh` therefore asks for one class at a time under a
+lock, checks that each answer starts with the table name of that class
+(`omcicli get tables`), and waits for `omci_app` after a cut-off answer.
+`me.awk` marks such answers `"truncated": true`. The Provisioning page reads
+15 classes plus the queue map (about 5 s) and caches it for 30 s.
+
+The awk parsers escape JSON with a character loop: busybox 1.37 awk (OpenWrt)
+drops the backslash from `gsub()` replacements, so `"\\\""` would come out as
+a bare quote.
 
 Quick Setup writes:
 

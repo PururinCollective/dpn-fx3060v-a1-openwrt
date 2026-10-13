@@ -22,7 +22,7 @@ import time
 TOP = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 WWW = os.environ.get('LUCI_WWW', os.path.join(TOP, 'build', 'stage', 'www'))
 PORT = int(os.environ.get('PORT', '8080'))
-VIEWS = ['status', 'quicksetup', 'omci', 'identity', 'mib', 'firmware', 'settings']
+VIEWS = ['status', 'quicksetup', 'provision', 'omci', 'identity', 'mib', 'firmware', 'settings']
 BOOT = time.time()
 
 
@@ -119,6 +119,10 @@ def nijika_call(method, args):
         cls = int(args.get('class', 0))
         olt = DATA['olt']()
         return olt.get('me%d' % cls) or me(cls, 'Sample', [])
+    if method == 'provision':
+        # real omci_map_json output from a TM Unifi (Nokia OLT) ONT
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'provision-unifi.json')) as f:
+            return json.load(f)
     if method == 'chain':
         return DATA['quick_get']()['wan'] if args.get('table') == 'ATM_VC_TBL' else {'table': args.get('table'), 'num': 0, 'records': []}
     if method == 'diag':

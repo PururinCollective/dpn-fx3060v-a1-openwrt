@@ -28,6 +28,15 @@
 		}
 	},
 
+	"admin/nijika/provision": {
+		"title": "Provisioning",
+		"order": 25,
+		"action": {
+			"type": "view",
+			"path": "nijika/provision"
+		}
+	},
+
 	"admin/nijika/omci": {
 		"title": "ME Explorer",
 		"order": 30,

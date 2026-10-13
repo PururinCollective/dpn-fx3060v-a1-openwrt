@@ -41,6 +41,11 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
     voltage, bias, alarms, OLT vendor, and whether the OLT withheld ME 84/171.
   * *Quick Setup*: GPON serial, PLOAM, LOID, PPPoE WAN (VLAN, priority, MTU,
     ISP presets), WiFi 2.4/5 GHz, VoIP lines 1/2.
+  * *Provisioning*: what the OLT set up over OMCI, for troubleshooting: one
+    line per service (VLAN path, what the ONT does with it, which stock WAN
+    uses it), the VLAN rules (ME 171) in words, the provider's set-up drawn
+    from T-CONT to LAN port / VEIP, and QoS (GEM port → queue → T-CONT /
+    Alloc-ID). `tools/omci-capture.sh` saves the same data for a bug report.
   * *ME Explorer*: decoded OLT provisioning (ME 131/256/84/171), a browser for
     any OMCI managed entity, read-only diag output.
   * *ONT Identity*: vendor/model/version emulation presets (from NIJIKA

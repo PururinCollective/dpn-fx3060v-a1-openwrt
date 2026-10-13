@@ -1,6 +1,6 @@
 # Parse `omcicli mib get <class>` into JSON:
 #   {"class":171,"name":"ExtVlanTagOperCfgData","instances":[
-#      {"attrs":[["EntityId","0x101"],...],"raw":"..."}, ...]}
+#      {"attrs":[["EntityId","0x101"],...],"raw":"..."}, ...],"truncated":false}
 # Attributes are kept as ordered [key, value] pairs (keys can repeat, e.g.
 # VLAN rule tables). Indented lines continue the previous attribute.
 #
@@ -62,6 +62,8 @@ inhdr { t = trim($0); if (t != "") name = t; next }
 }
 
 END {
+	# an instance still open at the end: omcicli stopped reading early
+	trunc = inst ? "true" : "false"
 	if (inst) flush_inst()
-	printf "{\"class\":%d,\"name\":%s,\"instances\":[%s]}\n", class + 0, jstr(name), insts
+	printf "{\"class\":%d,\"name\":%s,\"instances\":[%s],\"truncated\":%s}\n", class + 0, jstr(name), insts, trunc
 }

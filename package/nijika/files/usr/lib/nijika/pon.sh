@@ -1,5 +1,5 @@
 # shellcheck shell=ash
-# PON / ONT status collection. Requires common.sh.
+# PON / ONT status collection. Requires common.sh and omci.sh.
 
 # Extract a number from a diag transceiver line, normalise the unit and
 # round it to <decimals>.
@@ -70,7 +70,7 @@ pon_collect_env() {
 	# what the transceiver reports as no light.
 	case "$rx" in -inf|'') los=1; alarms="LOS=yes;" ;; *) los=0; alarms="LOS=no;" ;; esac
 
-	olt_hex=$(omcicli mib get 131 | awk -F': *' '/^OltVendorId/ { print $2; exit }')
+	olt_hex=$(omci_get 131 | awk -F': *' '/^OltVendorId/ { print $2; exit }')
 	[ -n "$olt_hex" ] && olt=$(hex_to_ascii "$olt_hex")
 
 	sn=$(mib_get GPON_SN)
