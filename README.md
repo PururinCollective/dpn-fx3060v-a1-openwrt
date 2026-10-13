@@ -30,6 +30,8 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
 * The **stock D-Link/Realtek userland** runs untouched in a chroot at `/rtk`.
   Your existing settings (`mib`/`flash`) stay the defaults, so the router works
   like the original from the first boot.
+* **No vendor cloud agent**: D-Link's Alibaba Cloud IoT agent (`ccom_linkkit`:
+  cloud firmware/config push, remote control) is removed from the image.
 * **boa shim**: the stock daemons expect `boa` to be alive. A shim keeps that
   contract while LuCI owns port 80. Optionally the original web GUI runs on
   port 8080.

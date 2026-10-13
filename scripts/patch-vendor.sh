@@ -46,6 +46,15 @@ if [ -f "$RTKDIR/bin/boa" ] && ! grep -q "NijikaWrt boa shim" "$RTKDIR/bin/boa" 
 	mv "$RTKDIR/bin/boa" "$RTKDIR/bin/boa.stock"
 fi
 
+# Alibaba Cloud Link Kit agent (iot-*.aliyuncs.com: cloud FOTA/COTA, remote
+# property/service calls, AWSS WiFi provisioning, ALCS LAN control). Removed
+# from the image; package rtk-vendor installs an inert placeholder with the
+# same name because `startup` launches it and libmib kills it by name.
+if [ -f "$RTKDIR/bin/ccom_linkkit" ] && ! grep -q "NijikaWrt placeholder" "$RTKDIR/bin/ccom_linkkit" 2>/dev/null; then
+	rm -f "$RTKDIR/bin/ccom_linkkit"
+	log "removed bin/ccom_linkkit (Alibaba Cloud IoT agent)"
+fi
+
 # Stock GUI (boa mode "stock") moves to 8080, uhttpd/LuCI owns port 80.
 if [ -f "$RTKDIR/home/httpd/boa.conf" ]; then
 	sed -i 's/^Port 80$/Port 8080/' "$RTKDIR/home/httpd/boa.conf"

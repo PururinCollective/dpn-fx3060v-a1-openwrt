@@ -93,6 +93,13 @@ Other build-time changes to `/rtk`:
 * `bin/boa` → `bin/boa.stock`, shim installed as `bin/boa`
 * `home/httpd/boa.conf`: `Port 80` → `Port 8080` (used when `boa=stock`)
 * `etc/inetd.conf`: `ssh` line commented (OpenWrt dropbear owns port 22)
+* `bin/ccom_linkkit` **removed**: D-Link's Alibaba Cloud Link Kit agent
+  (MQTT to `iot-*.aliyuncs.com`, cloud firmware/config push, remote
+  property/service calls, AWSS WiFi provisioning, ALCS LAN control). An inert
+  placeholder of the same name keeps `startup`/`libmib` happy. TR-069
+  (`cwmpClient`), TR-369 (`obuspa`), DDNS and speedtest are kept: they only
+  talk to endpoints configured in the MIB (ISP ACS/controller, your DDNS
+  provider) or when used.
 
 ## boa shim
 
