@@ -2,6 +2,7 @@
 # nijika-housekeep: once a minute, re-apply what the stock stack may undo.
 #  - LAN access to SSH/LuCI in the stock iptables (rebuilt on WAN changes)
 #  - /var mirror for paths the stock drivers open from kernel threads
+#  - the OpenWrt hostname (stock `startup` writes DEVICE_NAME over it)
 # PON/ONT status is NOT polled here: it is read on demand (see pon.sh).
 
 RTK=/rtk
@@ -13,5 +14,6 @@ done
 while :; do
 	/usr/libexec/rtk/lan-mgmt
 	/usr/libexec/rtk/var-mirror
+	/usr/libexec/rtk/hostname
 	sleep 60
 done

@@ -309,7 +309,7 @@ wan_internet_index() {
 	rtk /bin/flash get ATM_VC_TBL 2>/dev/null | awk '
 		{ l = $0; sub(/\r$/, "", l); sub(/^[ \t]+/, "", l) }
 		l ~ /\.[0-9]+:$/ { idx = l; sub(/:$/, "", idx); sub(/.*\./, "", idx); next }
-		l == "ChannelMode=2" && idx != "" { print idx; found = 1; exit }
+		l ~ /^ChannelMode[ \t]*=[ \t]*2$/ && idx != "" { print idx; found = 1; exit }
 		END { if (!found) print 0 }'
 }
 

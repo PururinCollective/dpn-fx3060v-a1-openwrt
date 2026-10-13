@@ -68,9 +68,12 @@ DATA = {
         'voip': [{'line': 0, 'enable': True, 'addr': 'sip.example.net', 'port': '5060', 'domain': 'example.net', 'number': '0312345678',
                   'login': '0312345678', 'password': 'secret', 'display': 'Home'},
                  {'line': 1, 'enable': False, 'addr': '', 'port': '5060', 'domain': '', 'number': '', 'login': '', 'password': '', 'display': ''}],
-        'wan': {'table': 'ATM_VC_TBL', 'num': 2, 'records': [
-            {'ifIndex': '65536', 'ChannelMode': '2', 'vlan': '1', 'vid': '500', 'vprio': '1', 'MTU': '1492', 'pppUser': 'user@unifi', 'pppPasswd': 'secret', 'WanName': 'INTERNET'},
-            {'ifIndex': '130817', 'ChannelMode': '0', 'vlan': '1', 'vid': '600', 'vprio': '0', 'MTU': '1500', 'pppUser': '', 'pppPasswd': '', 'WanName': 'IPTV'}]},
+        # Same layout as a TM Unifi unit: Internet PPPoE, IPTV bridge, voice, TR-069.
+        'wan': {'table': 'ATM_VC_TBL', 'num': 4, 'records': [
+            {'ifIndex': '65536', 'ChannelMode': '2', 'applicationtype': '2', 'vlan': '1', 'vid': '500', 'vprio': '0', 'MTU': '1492', 'pppUser': 'user@unifi', 'pppPasswd': 'secret', 'WanName': ''},
+            {'ifIndex': '130817', 'ChannelMode': '0', 'applicationtype': '4', 'vlan': '1', 'vid': '600', 'vprio': '0', 'MTU': '1500', 'pppUser': '', 'pppPasswd': '', 'WanName': ''},
+            {'ifIndex': '130818', 'ChannelMode': '1', 'applicationtype': '8', 'vlan': '1', 'vid': '400', 'vprio': '0', 'MTU': '1500', 'pppUser': '', 'pppPasswd': '', 'WanName': ''},
+            {'ifIndex': '130819', 'ChannelMode': '1', 'applicationtype': '1', 'vlan': '1', 'vid': '209', 'vprio': '0', 'MTU': '1500', 'pppUser': '', 'pppPasswd': '', 'WanName': ''}]},
         'isp': [{'id': 'unifi', 'label': 'TM Unifi (Malaysia)', 'vid': 500, 'prio': 1, 'mtu': 1492},
                 {'id': 'maxis', 'label': 'TM HSBB - Maxis (Malaysia)', 'vid': 621, 'prio': 1, 'mtu': 1492},
                 {'id': 'time', 'label': 'TIME dotCom (Malaysia)', 'vid': 499, 'prio': 1, 'mtu': 1492}],

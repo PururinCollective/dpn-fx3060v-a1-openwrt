@@ -10,12 +10,31 @@
  * stack applies them after a reboot.
  */
 
+/* ATM_VC_TBL.applicationtype is a service bitmask (stock GUI: TR069,
+ * INTERNET, OTHER, VOICE and their combinations). */
+var WAN_SERVICES = [ [ 2, _('Internet') ], [ 8, _('Voice') ], [ 4, _('Other/IPTV') ], [ 1, 'TR-069' ] ];
+
+function wanService(rec) {
+	var t = +rec.applicationtype || 0;
+	return WAN_SERVICES.filter(function(s) { return t & s[0]; })
+		.map(function(s) { return s[1]; }).join(' + ') || _('no service');
+}
+
 function wanLabel(rec, idx) {
-	var mode = { 0: 'Bridge', 1: 'IPoE', 2: 'PPPoE' }[rec.ChannelMode] || ('mode ' + rec.ChannelMode);
+	var mode = { 0: _('Bridge'), 1: 'IPoE', 2: 'PPPoE' }[rec.ChannelMode] || ('mode ' + rec.ChannelMode);
 	var vid = (rec.vlan == '1' && rec.vid) ? 'VLAN ' + rec.vid : _('untagged');
 	var name = rec.WanName ? ' "' + rec.WanName + '"' : '';
 	var user = rec.pppUser ? ' (' + rec.pppUser + ')' : '';
-	return '#%d%s %s, %s%s'.format(idx, name, mode, vid, user);
+	return '#%d%s %s: %s, %s%s'.format(idx, name, wanService(rec), mode, vid, user);
+}
+
+/* Form values of a WAN record, as shown before any edit. */
+function wanFields(rec) {
+	return {
+		user: rec.pppUser || '', pass: rec.pppPasswd || '',
+		vid: (rec.vlan == '1') ? (rec.vid || '0') : '0',
+		prio: rec.vprio || '0', mtu: rec.MTU || ''
+	};
 }
 
 return view.extend({
@@ -27,15 +46,13 @@ return view.extend({
 		if (!qs || qs.error)
 			return E('p', { 'class': 'alert-message warning' }, (qs && qs.error) || _('Vendor stack not available'));
 
+		/* Internet is WAN connection #0, as the ISP/stock default creates it. */
 		var recs = (qs.wan && qs.wan.records) || [],
 		    presets = qs.isp || [],
-		    wanIdx = 0;
+		    wan0 = recs[0],
+		    cur = wanFields(wan0 || {});
 
-		for (var i = 0; i < recs.length; i++)
-			if (recs[i].ChannelMode == '2') { wanIdx = i; break; }
-
-		var cur = recs[wanIdx] || {};
-		this.recs = recs;
+		this.wan0 = wan0;
 		this.orig = {
 			ploam: qs.pon.ploam, loid: qs.pon.loid, loid_pw: qs.pon.loid_pw
 		};
@@ -43,10 +60,8 @@ return view.extend({
 		var data = {
 			pon: { sn: qs.pon.sn, ploam: qs.pon.ploam, loid: qs.pon.loid, loid_pw: qs.pon.loid_pw },
 			wan: {
-				index: String(wanIdx), isp: '',
-				user: cur.pppUser || '', pass: cur.pppPasswd || '',
-				vid: (cur.vlan == '1') ? (cur.vid || '') : '0',
-				prio: cur.vprio || '0', mtu: cur.MTU || ''
+				isp: '',
+				user: cur.user, pass: cur.pass, vid: cur.vid, prio: cur.prio, mtu: cur.mtu
 			}
 		};
 		(qs.wifi || []).forEach(function(w) {
@@ -82,42 +97,38 @@ return view.extend({
 		o.optional = true;
 
 		/* WAN */
-		s = m.section(form.NamedSection, 'wan', 'wan', _('Internet (PPPoE)'),
-			_('Edits an existing WAN connection of the stock configuration.'));
-		o = s.option(form.ListValue, 'index', _('WAN connection'));
-		recs.forEach(function(r, idx) { o.value(String(idx), wanLabel(r, idx)); });
-		o.onchange = L.bind(function(ev, sid, value) {
-			var r = this.recs[+value] || {};
-			this.setField('wan', 'user', r.pppUser || '');
-			this.setField('wan', 'pass', r.pppPasswd || '');
-			this.setField('wan', 'vid', (r.vlan == '1') ? (r.vid || '') : '0');
-			this.setField('wan', 'prio', r.vprio || '0');
-			this.setField('wan', 'mtu', r.MTU || '');
-		}, this);
+		if (wan0) {
+			s = m.section(form.NamedSection, 'wan', 'wan', _('Internet (PPPoE)'),
+				_('Edits WAN connection #0 of the stock configuration, the Internet connection the ISP default creates. The other connections (IPTV, voice, TR-069 management, one per VLAN) are left as they are. Only fields you change are written.'));
+			o = s.option(form.DummyValue, '_wan', _('WAN connection'));
+			o.cfgvalue = function() { return wanLabel(wan0, 0); };
+			if (wan0.ChannelMode != '2')
+				o.description = _('Connection #0 is not PPPoE; the PPPoE login below has no effect on it.');
 
-		o = s.option(form.ListValue, 'isp', _('ISP preset'), _('Fills in VLAN, priority and MTU.'));
-		o.value('', _('-- custom --'));
-		presets.forEach(function(p) { o.value(p.id, '%s (VLAN %d)'.format(p.label, p.vid)); });
-		o.onchange = L.bind(function(ev, sid, value) {
-			var p = presets.filter(function(p) { return p.id == value; })[0];
-			if (!p)
-				return;
-			this.setField('wan', 'vid', String(p.vid));
-			this.setField('wan', 'prio', String(p.prio));
-			this.setField('wan', 'mtu', String(p.mtu));
-		}, this);
+			o = s.option(form.ListValue, 'isp', _('ISP preset'), _('Fills in VLAN, priority and MTU.'));
+			o.value('', _('-- custom --'));
+			presets.forEach(function(p) { o.value(p.id, '%s (VLAN %d)'.format(p.label, p.vid)); });
+			o.onchange = L.bind(function(ev, sid, value) {
+				var p = presets.filter(function(p) { return p.id == value; })[0];
+				if (!p)
+					return;
+				this.setField('wan', 'vid', String(p.vid));
+				this.setField('wan', 'prio', String(p.prio));
+				this.setField('wan', 'mtu', String(p.mtu));
+			}, this);
 
-		o = s.option(form.Value, 'user', _('PPPoE username'));
-		o = s.option(form.Value, 'pass', _('PPPoE password'));
-		o.password = true;
-		o = s.option(form.Value, 'vid', _('VLAN ID'), _('0 = untagged'));
-		o.datatype = 'range(0,4094)';
-		o = s.option(form.ListValue, 'prio', _('802.1p priority'));
-		for (var p = 0; p <= 7; p++)
-			o.value(String(p));
-		o = s.option(form.Value, 'mtu', _('MTU'));
-		o.datatype = 'range(576,1500)';
-		o.placeholder = '1492';
+			o = s.option(form.Value, 'user', _('PPPoE username'));
+			o = s.option(form.Value, 'pass', _('PPPoE password'));
+			o.password = true;
+			o = s.option(form.Value, 'vid', _('VLAN ID'), _('0 = untagged'));
+			o.datatype = 'range(0,4094)';
+			o = s.option(form.ListValue, 'prio', _('802.1p priority'));
+			for (var p = 0; p <= 7; p++)
+				o.value(String(p));
+			o = s.option(form.Value, 'mtu', _('MTU'));
+			o.datatype = 'range(576,1500)';
+			o.placeholder = '1492';
+		}
 
 		/* WiFi */
 		[ 0, 1 ].forEach(function(r) {
@@ -183,14 +194,16 @@ return view.extend({
 			loid_set: ((d('pon', 'loid') || '') != (this.orig.loid || '')) ||
 			          ((d('pon', 'loid_pw') || '') != (this.orig.loid_pw || ''))
 		};
-		var wan = {
-			index: +d('wan', 'index'),
-			user: d('wan', 'user') || '',
-			pass: d('wan', 'pass') || '',
-			vid: d('wan', 'vid') || '0',
-			prio: d('wan', 'prio') || '0',
-			mtu: d('wan', 'mtu') || ''
-		};
+		/* WAN #0: send only what differs from the stock record, so a field
+		 * the user did not touch can never overwrite the stock value. */
+		var base = wanFields(this.wan0 || {}),
+		    wan = {};
+		if (this.wan0)
+			[ 'user', 'pass', 'vid', 'prio', 'mtu' ].forEach(function(k) {
+				var v = d('wan', k) || ((k == 'vid' || k == 'prio') ? '0' : '');
+				if (v != base[k])
+					wan[k] = v;
+			});
 		var wifi = [], voip = [];
 		[ 0, 1 ].forEach(function(r) {
 			if (m.data.get('json', 'wifi' + r))

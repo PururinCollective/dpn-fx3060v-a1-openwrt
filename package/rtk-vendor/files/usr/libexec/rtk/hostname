@@ -1,0 +1,9 @@
+#!/bin/sh
+# The stock `startup` writes MIB DEVICE_NAME (RTK_GW) to
+# /proc/sys/kernel/hostname. Keep the OpenWrt hostname
+# (system.@system[0].hostname) instead; DEVICE_NAME stays in the MIB for the
+# stock services that read it. Run after vendor boot and by nijika-housekeep.
+
+want=$(uci -q get system.@system[0].hostname)
+[ -n "$want" ] || exit 0
+[ "$(cat /proc/sys/kernel/hostname)" = "$want" ] || echo "$want" > /proc/sys/kernel/hostname

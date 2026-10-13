@@ -1,7 +1,8 @@
 # `flash get <CHAIN_TBL>` -> JSON
 #   {"table":"ATM_VC_TBL","num":4,"records":[{"ifIndex":"...",...},...]}
-# Stock output: "<TBL>.NUM=4", then per record "<TBL>.<i>:" followed by
-# "field=value" lines.
+# Stock output: "<TBL>.NUM=4" (only for "get <TBL>.NUM"), then per record
+# "<TBL>.<i>:" followed by "%-18s = %s" lines ("vid                = 500").
+# Plain "field=value" lines are accepted too.
 # Usage: flash get ATM_VC_TBL | awk -v table=ATM_VC_TBL -f chain.awk
 
 function jstr(s) {
@@ -21,9 +22,12 @@ line ~ /\.NUM=[0-9]+$/ { num = substr(line, index(line, "=") + 1) + 0; next }
 
 line ~ /\.[0-9]+:$/ { close_rec(); inrec = 1; next }
 
-inrec && line ~ /^[A-Za-z_][A-Za-z0-9_.]*=/ {
+inrec && line ~ /^[A-Za-z_][A-Za-z0-9_.]*[ \t]*=/ {
 	p = index(line, "=")
 	k = substr(line, 1, p - 1); v = substr(line, p + 1)
+	# padded form: drop the padding and the single space after "=" (a value
+	# may itself start with spaces, e.g. an SSID)
+	if (k ~ /[ \t]$/) { sub(/[ \t]+$/, "", k); sub(/^ /, "", v) }
 	sub(/^.*\./, "", k)
 	fields = fields (nf_++ ? "," : "") jstr(k) ":" jstr(v)
 }

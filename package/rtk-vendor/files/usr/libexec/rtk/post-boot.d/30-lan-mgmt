@@ -1,6 +1,7 @@
 #!/bin/sh
-# The stock firewall (iptables, built by `startup`) only knows about boa on
-# port 80. Make sure LuCI (80) and SSH (22) stay reachable from the LAN
-# bridge. nijika-housekeep re-checks this periodically because the stock stack
-# rebuilds its chains whenever the WAN changes.
+# The stock firewall (iptables, built by `startup`) was made for boa on port
+# 80. Make sure LuCI (80) and SSH (22) stay reachable from the LAN bridge and
+# boa (8080/443) follows nijika.vendor.boa. nijika-housekeep re-checks this
+# periodically because the stock stack rebuilds its chains whenever the WAN
+# changes.
 exec /usr/libexec/rtk/lan-mgmt

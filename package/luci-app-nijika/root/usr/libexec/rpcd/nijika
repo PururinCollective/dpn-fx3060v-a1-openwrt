@@ -201,8 +201,9 @@ m_quick_get() {
 	printf ']}\n'
 }
 
-set_if() { # key value  (only when value given)
+set_if() { # key value  (only when a value is given and it differs)
 	[ -n "$2" ] || return 0
+	[ "$(mib_get "$1")" = "$2" ] && return 0
 	mib_set "$1" "$2"
 }
 
@@ -223,9 +224,9 @@ m_quick_set() {
 		json_select ..
 	fi
 
-	# Internet WAN (PPPoE)
+	# Internet WAN (PPPoE): always connection #0, the ISP/stock default
 	if json_select wan 2>/dev/null; then
-		json_get_var idx index
+		idx=0
 		json_get_var user user
 		json_get_var pass pass
 		json_get_var vid vid
@@ -235,10 +236,10 @@ m_quick_set() {
 			set_if "ATM_VC_TBL.$idx.pppUser" "$user"
 			set_if "ATM_VC_TBL.$idx.pppPasswd" "$pass"
 			if [ -n "$vid" ] && [ "$vid" -gt 0 ] 2>/dev/null; then
-				mib_set "ATM_VC_TBL.$idx.vlan" 1
-				mib_set "ATM_VC_TBL.$idx.vid" "$vid"
+				set_if "ATM_VC_TBL.$idx.vlan" 1
+				set_if "ATM_VC_TBL.$idx.vid" "$vid"
 			elif [ "$vid" = 0 ]; then
-				mib_set "ATM_VC_TBL.$idx.vlan" 0
+				set_if "ATM_VC_TBL.$idx.vlan" 0
 			fi
 			set_if "ATM_VC_TBL.$idx.vprio" "$prio"
 			set_if "ATM_VC_TBL.$idx.MTU" "$mtu"
