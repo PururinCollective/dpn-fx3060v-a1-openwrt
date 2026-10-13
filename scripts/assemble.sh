@@ -57,6 +57,8 @@ for f in "$R"/etc/board.d/*; do
 done
 # Only the stock 5.10.70 kernel runs here.
 rm -rf "$R"/lib/modules/[0-9]*
+# The opkg -> apk cheat sheet printed at every login (base-files).
+rm -f "$R/etc/profile.d/apk-cheatsheet.sh"
 
 # Login banner: NijikaWrt renderer instead of `cat /etc/banner`.
 sed -i 's|^\[ -f /etc/banner \] && cat /etc/banner$|if [ -x /usr/libexec/nijika/banner ] \&\& [ -z "$FAILSAFE" ]; then /usr/libexec/nijika/banner; elif [ -f /etc/banner ]; then cat /etc/banner; fi|' \

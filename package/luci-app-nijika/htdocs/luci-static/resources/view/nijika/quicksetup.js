@@ -20,12 +20,10 @@ function wanService(rec) {
 		.map(function(s) { return s[1]; }).join(' + ') || _('no service');
 }
 
+/* "PON_0: Internet (PPPoE)"; VLAN and login are the fields below. */
 function wanLabel(rec, idx) {
 	var mode = { 0: _('Bridge'), 1: 'IPoE', 2: 'PPPoE' }[rec.ChannelMode] || ('mode ' + rec.ChannelMode);
-	var vid = (rec.vlan == '1' && rec.vid) ? 'VLAN ' + rec.vid : _('untagged');
-	var name = rec.WanName ? ' "' + rec.WanName + '"' : '';
-	var user = rec.pppUser ? ' (' + rec.pppUser + ')' : '';
-	return '#%d%s %s: %s, %s%s'.format(idx, name, wanService(rec), mode, vid, user);
+	return 'PON_%d: %s (%s)'.format(idx, wanService(rec), mode);
 }
 
 /* Form values of a WAN record, as shown before any edit. */
@@ -99,11 +97,11 @@ return view.extend({
 		/* WAN */
 		if (wan0) {
 			s = m.section(form.NamedSection, 'wan', 'wan', _('Internet (PPPoE)'),
-				_('Edits WAN connection #0 of the stock configuration, the Internet connection the ISP default creates. The other connections (IPTV, voice, TR-069 management, one per VLAN) are left as they are. Only fields you change are written.'));
+				_('Edits PON_0, the first WAN connection of the stock configuration: the Internet connection the ISP default creates. The other connections (IPTV, voice, TR-069 management, one per VLAN) are left as they are. Only fields you change are written.'));
 			o = s.option(form.DummyValue, '_wan', _('WAN connection'));
 			o.cfgvalue = function() { return wanLabel(wan0, 0); };
 			if (wan0.ChannelMode != '2')
-				o.description = _('Connection #0 is not PPPoE; the PPPoE login below has no effect on it.');
+				o.description = _('PON_0 is not PPPoE; the PPPoE login below has no effect on it.');
 
 			o = s.option(form.ListValue, 'isp', _('ISP preset'), _('Fills in VLAN, priority and MTU.'));
 			o.value('', _('-- custom --'));
