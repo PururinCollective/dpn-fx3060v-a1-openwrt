@@ -77,6 +77,10 @@ release="$NIJIKA_DISTRO $NIJIKA_REVISION${NIJIKA_CODENAME:+ ($NIJIKA_CODENAME)}"
 NIJIKA_TAGLINE="${NIJIKA_TAGLINE:-O P E N  P O N  F O U N D A T I O N}"
 
 PON_STATE=""; PON_STATE_TEXT=""; PON_RX_DBM=""; PON_TX_DBM=""; PON_LOS=0; PON_UPDATED=0
+# On-demand read (shared 5 s cache): refreshes only when stale.
+if [ -z "$R" ] && [ -x /usr/sbin/nijika ]; then
+	/usr/sbin/nijika info --env >/dev/null 2>&1
+fi
 if [ -f "$R/tmp/nijika/pon.env" ]; then
 	. "$R/tmp/nijika/pon.env"
 fi

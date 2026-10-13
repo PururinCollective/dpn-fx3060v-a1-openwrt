@@ -2,7 +2,7 @@
 # Mirror the vendor /var (/rtk/var) into the host /var (= /tmp) so kernel
 # threads of the stock drivers, which resolve paths against the host root,
 # find /var/config, /var/run/solar_control.fifo etc. Never overrides host
-# entries. Called repeatedly during vendor boot and by nijika-ontd.
+# entries. Called repeatedly during vendor boot and by nijika-housekeep.
 
 for e in /rtk/var/*; do
 	[ -e "$e" ] || continue

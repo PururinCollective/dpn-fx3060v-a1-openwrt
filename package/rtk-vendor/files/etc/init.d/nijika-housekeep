@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+# Periodic fix-ups for the stock vendor stack (firewall LAN access, /var mirror).
+
+START=95
+USE_PROCD=1
+
+start_service() {
+	procd_open_instance
+	procd_set_param command /usr/libexec/rtk/housekeep
+	procd_set_param respawn 3600 5 0
+	procd_close_instance
+}

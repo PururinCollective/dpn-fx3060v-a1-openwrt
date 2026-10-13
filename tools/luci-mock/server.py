@@ -118,7 +118,7 @@ UCI = {'nijika': {
     'vendor': {'.type': 'vendor', '.name': 'vendor', '.anonymous': False, 'boa': 'shim', 'console': '1', 'inetd': '0',
                'lan_mgmt': '1', 'lan_ifname': 'br0'},
     'banner': {'.type': 'banner', '.name': 'banner', '.anonymous': False, 'animate': 'ssh', 'color': 'auto'},
-    'ontd': {'.type': 'ontd', '.name': 'ontd', '.anonymous': False, 'enabled': '1', 'interval': '5'}}}
+    'pon': {'.type': 'pon', '.name': 'pon', '.anonymous': False, 'cache_ttl': '5'}}}
 
 
 def ubus(obj, method, args):

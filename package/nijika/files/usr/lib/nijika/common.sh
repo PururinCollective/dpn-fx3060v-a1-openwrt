@@ -1,5 +1,5 @@
 # shellcheck shell=ash
-# NijikaWrt shared helpers (sourced by /usr/sbin/nijika, rpcd and ontd).
+# NijikaWrt shared helpers (sourced by /usr/sbin/nijika, rpcd and the banner).
 
 NIJIKA_LIB=/usr/lib/nijika
 NIJIKA_SHARE=/usr/share/nijika

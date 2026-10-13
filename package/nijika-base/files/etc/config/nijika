@@ -18,6 +18,7 @@ config banner 'banner'
 	# auto | truecolor | 256 | 16 | none
 	option color 'auto'
 
-config ontd 'ontd'
-	option enabled '1'
-	option interval '5'
+config pon 'pon'
+	# PON/ONT status (diag, omcicli) is read on demand when LuCI, `nijika
+	# info` or the login banner asks, and reused for this many seconds.
+	option cache_ttl '5'

@@ -28,9 +28,10 @@ nijika_info() {
 	need_vendor
 	local env
 	if has_flag --live "$@"; then
-		pon_refresh_cache
+		env=$(pon_cached_env 0)
+	else
+		env=$(pon_cached_env)
 	fi
-	env=$(pon_cached_env 10)
 
 	if has_flag --json "$@"; then
 		printf '%s\n' "$env" | pon_env_to_json
@@ -481,6 +482,7 @@ Usage: nijika <command> [args]
 
 PON / OMCI
   info [--json|--short|--live]  ONU state, optical power, OLT vendor
+                                (cached 5 s, --live forces a fresh read)
   olt [--json]                  OLT provisioning (ME 131/256/84/171)
   me <class|name> [--json]      Dump any OMCI managed entity
   ploam [password]              Show/set GPON PLOAM password

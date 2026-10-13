@@ -146,7 +146,7 @@ First boot:
 
 ```
  ┌────────────────────────── OpenWrt 25.12 (musl) ───────────────────────────┐
- │ procd · ubus · rpcd · uhttpd/LuCI · dropbear · apk · logd · nijika-ontd   │
+ │ procd · ubus · rpcd · uhttpd/LuCI · dropbear · apk · logd · housekeep    │
  │                                                                           │
  │  /usr/bin/{mib,flash,diag,omcicli,nv,...} ──► chroot /rtk                 │
  │  rpcd "nijika" ──► nijika CLI ──► same wrappers                           │
@@ -194,7 +194,7 @@ nijika banner | version | rtk [cmd]
 | `vendor.lan_mgmt` | `1` | keep TCP 22/80 open on `br0` in the stock iptables |
 | `banner.animate` | `ssh` | `always`, `ssh`, `never` (serial at 115200 is slow) |
 | `banner.color` | `auto` | `truecolor`, `256`, `16`, `none` |
-| `ontd.interval` | `5` | PON status cache refresh in seconds |
+| `pon.cache_ttl` | `5` | PON status is read on demand (LuCI, `nijika info`, banner) and reused this many seconds |
 
 ## Development
 

@@ -36,7 +36,7 @@ chain_field() { # table index field
 
 m_status() {
 	need_vendor
-	pon_cached_env 5 | pon_env_to_json
+	pon_cached_env | pon_env_to_json
 }
 
 m_olt() {

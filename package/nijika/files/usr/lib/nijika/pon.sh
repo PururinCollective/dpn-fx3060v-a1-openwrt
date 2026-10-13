@@ -120,13 +120,33 @@ pon_refresh_cache() {
 		mv "$NIJIKA_RUNDIR/pon.json.$$" "$NIJIKA_RUNDIR/pon.json"
 }
 
-# Return cached env, refreshing it when older than $1 seconds (default 10).
-pon_cached_env() {
-	local max="${1:-10}" now ts
-	now=$(date +%s)
+# Cache lifetime in seconds (uci nijika.pon.cache_ttl, default 5).
+pon_cache_ttl() {
+	local ttl
+	ttl=$(uci -q get nijika.pon.cache_ttl)
+	case "$ttl" in ''|*[!0-9]*) ttl=5 ;; esac
+	echo "$ttl"
+}
+
+# True when the cache is missing or older than $1 seconds.
+pon_cache_stale() {
+	local ts
 	ts=$(sed -n "s/^PON_UPDATED='\(.*\)'$/\1/p" "$NIJIKA_RUNDIR/pon.env" 2>/dev/null)
-	if [ -z "$ts" ] || [ $((now - ts)) -gt "$max" ]; then
-		vendor_up && pon_refresh_cache
+	[ -z "$ts" ] || [ $(( $(date +%s) - ts )) -ge "$1" ]
+}
+
+# On-demand status: nothing polls in the background. Callers (LuCI, `nijika
+# info`, the login banner) get the cached values, refreshed first when older
+# than $1 seconds (default: pon_cache_ttl). Concurrent callers share one
+# refresh: the lock holder runs diag, the others wait and re-check.
+pon_cached_env() {
+	local max="${1:-$(pon_cache_ttl)}"
+	if pon_cache_stale "$max" && vendor_up; then
+		mkdir -p "$NIJIKA_RUNDIR"
+		(
+			flock -x 9
+			pon_cache_stale "$max" && pon_refresh_cache
+		) 9>"$NIJIKA_RUNDIR/pon.lock"
 	fi
 	cat "$NIJIKA_RUNDIR/pon.env" 2>/dev/null
 }

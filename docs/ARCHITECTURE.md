@@ -71,9 +71,12 @@ resolve file paths against the root of PID 1, not the chroot.
        `startup`, VoIP): waits for the stock "system up" marker, then runs the
        `post-boot.d` hooks (resolv.conf, LAN management rules).
    * `S19dropbear`, `S50uhttpd`, `S12rpcd`: OpenWrt management.
-   * **`S95nijika-ontd`**: refreshes `/tmp/nijika/pon.{env,json}` every 5 s for
-     the banner, LuCI and `nijika info`; re-applies the LAN rules and `/var`
-     mirror every 60 s.
+   * **`S95nijika-housekeep`**: re-applies the LAN management rules and the
+     `/var` mirror every 60 s. PON/ONT status is **not** polled: LuCI,
+     `nijika info` and the login banner read it on demand through
+     `pon_cached_env` (`/usr/lib/nijika/pon.sh`), which reuses
+     `/tmp/nijika/pon.{env,json}` for `nijika.pon.cache_ttl` seconds (5) and
+     serialises refreshes with `flock`, so simultaneous callers run `diag` once.
 
 ### Stock rc lines disabled in the chroot
 

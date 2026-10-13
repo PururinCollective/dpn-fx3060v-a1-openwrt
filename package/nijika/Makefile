@@ -20,7 +20,7 @@ define Package/nijika/description
  `nijika` command line utility for the D-Link DPN-FX3060V: ONT/PON status
  and optical power, OMCI managed entity dumps, PLOAM/serial/LOID, ONT
  identity emulation, ISP VLAN presets, boot bank selection and upgrades.
- Includes nijika-ontd, the PON status cache used by the banner and LuCI.
+ PON status is read on demand (5 s cache) by the CLI, LuCI and the banner.
 endef
 
 define Build/Compile

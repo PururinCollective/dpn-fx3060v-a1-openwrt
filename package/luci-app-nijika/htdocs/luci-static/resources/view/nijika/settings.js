@@ -46,11 +46,10 @@ return view.extend({
 		o.value('16', _('16 colours'));
 		o.value('none', _('Monochrome'));
 
-		s = m.section(form.NamedSection, 'ontd', 'ontd', _('ONT status cache'));
-		o = s.option(form.Flag, 'enabled', _('Enabled'), _('Polls diag for the banner, LuCI and <code>nijika info</code>.'));
-		o.default = '1';
-		o = s.option(form.Value, 'interval', _('Interval (s)'));
-		o.datatype = 'range(2,300)';
+		s = m.section(form.NamedSection, 'pon', 'pon', _('PON status'));
+		o = s.option(form.Value, 'cache_ttl', _('Cache lifetime (s)'),
+			_('PON/ONT status is read from the stock tools (diag, omcicli) only when LuCI, <code>nijika info</code> or the login banner asks for it, and reused for this many seconds. Nothing polls in the background.'));
+		o.datatype = 'range(1,300)';
 		o.default = '5';
 
 		return m.render();

@@ -1,0 +1,17 @@
+#!/bin/sh
+# nijika-housekeep: once a minute, re-apply what the stock stack may undo.
+#  - LAN access to SSH/LuCI in the stock iptables (rebuilt on WAN changes)
+#  - /var mirror for paths the stock drivers open from kernel threads
+# PON/ONT status is NOT polled here: it is read on demand (see pon.sh).
+
+RTK=/rtk
+
+while [ ! -f "$RTK/var/run/.start_up_run_file" ]; do
+	sleep 2
+done
+
+while :; do
+	/usr/libexec/rtk/lan-mgmt
+	/usr/libexec/rtk/var-mirror
+	sleep 60
+done
