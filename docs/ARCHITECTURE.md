@@ -43,12 +43,24 @@ trial-booted bank) and the WiFi tuning helpers `cmd`/`cmd1` are not found.
 The mirrors exist because kernel threads (workqueues of the stock drivers)
 resolve file paths against the root of PID 1, not the chroot.
 
+## Device profiles
+
+`devices/<id>/device.conf` holds what differs between hardware revisions
+(board name, model, stock firmware pattern, switch PHY ID fingerprint, UBI
+sizes). `scripts/lib.sh` loads the one named by `DEVICE`; the values reach the
+image as `/etc/nijika_release` (board identity in `01_nijika_sysinfo` and
+`board.d`, `fw.sh`, `nijika hw`), the sysupgrade metadata and the device
+block of the factory `fwu.sh`. Both installers compare the unit's switch PHY
+IDs (`diag rt_port get phy-reg`) with the image's before writing. See
+docs/PORTING.md.
+
 ## Boot sequence
 
 1. U-Boot loads `ubi_k<n>` (stock FIT kernel) with `root=31:8|11`.
 2. The kernel mounts the squashfs and runs `/sbin/init` (procd).
 3. **Preinit**
-   * `01_nijika_sysinfo`: board name `dlink,dpn-fx3060v-a1`, model
+   * `01_nijika_sysinfo`: board name and model from the device profile
+     (`/etc/nijika_release`), e.g. `dlink,dpn-fx3060v-a1`,
      "D-Link DPN-FX3060V (A1)".
    * `75_nijika_rootfs_data`: creates UBI volume `rootfs_data` (id 120) on first
      boot using the stock `ubimkvol` through the glibc loader

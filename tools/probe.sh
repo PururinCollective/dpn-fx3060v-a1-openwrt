@@ -48,6 +48,17 @@ run() {
 	run "hexdump -C -n 64 /dev/mtd1 2>/dev/null"
 	run "nv getenv"
 
+	# hardware revision: what a devices/<id>/device.conf needs
+	run "diag rt_port get status port all"
+	for p in 0 1 2 3 4 5 6; do
+		run "diag rt_port get phy-reg port $p page 0 register 2; diag rt_port get phy-reg port $p page 0 register 3"
+	done
+	run "tr '\\0' ' ' < /proc/device-tree/model; echo; tr '\\0' ' ' < /proc/device-tree/compatible; echo"
+	run "zcat /proc/config.gz 2>/dev/null | grep -E 'BONDING|NF_TABLES=|TUN=|REALTEK_PHY|PHYLINK|SFP='"
+	run "dmesg | grep -iE 'phy|rtl82|2500|sgmii|xfi|usxgmii' | head -40"
+	run "for i in /sys/class/net/*; do echo \$i \$(cat \$i/speed 2>/dev/null); done"
+
+	run "diag rt_gpon get onu-state"
 	run "diag gpon get onu-state"
 	run "diag pon get transceiver rx-power"
 	run "diag pon get transceiver tx-power"
@@ -58,6 +69,7 @@ run() {
 	run "diag gpon show onu-info"
 	run "diag gpon show us-flow"
 	run "diag gpon show ds-flow"
+	run "diag rt_gpon show tcont; diag rt_gpon show us-flow; diag rt_gpon show ds-flow; diag rt_gpon show omcc"
 
 	for me in 2 7 131 256 257 263 264 11 329 84 171 47 130 268 262; do
 		run "omcicli mib get $me"
@@ -75,7 +87,7 @@ run() {
 	done
 
 	run "ps w"
-	run "for p in \$(pidof boa boa.stock 2>/dev/null); do echo pid \$p: \$(tr '\\0' ' ' < /proc/\$p/cmdline); done; cat /var/run/boa.pid /rtk/var/run/boa.pid 2>/dev/null"
+	run "for p in \$(pidof boa 2>/dev/null); do echo pid \$p: \$(tr '\\0' ' ' < /proc/\$p/cmdline); done; cat /var/run/boa.pid /rtk/var/run/boa.pid 2>/dev/null"
 	run "cat /proc/sys/kernel/hotplug /proc/sys/kernel/modprobe"
 	run "ls -la /dev/watchdog* /var/run /var/config /rtk/var/run 2>/dev/null"
 	run "lsmod"

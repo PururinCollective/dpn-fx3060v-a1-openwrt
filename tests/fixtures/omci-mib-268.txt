@@ -1,0 +1,95 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+GemPortCtp
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+=================================
+EntityId: 0x0107
+PortID: 263
+TcAdapterPtr: 0x8000
+Direction: 3
+UsTraffMgmtPtr: 0x8000
+UsTraffDescPtr: 0x0000
+UniCounter: 0
+DsPriQPtr: 0x0000
+EncryptionState: 0
+DsTraffDescPtr: 0x0000
+EncryptionKeyRing: 0
+=================================
+=================================
+EntityId: 0x0108
+PortID: 264
+TcAdapterPtr: 0x8001
+Direction: 3
+UsTraffMgmtPtr: 0x8001
+UsTraffDescPtr: 0x0000
+UniCounter: 0
+DsPriQPtr: 0x0000
+EncryptionState: 0
+DsTraffDescPtr: 0x0000
+EncryptionKeyRing: 0
+=================================
+=================================
+EntityId: 0x011b
+PortID: 283
+TcAdapterPtr: 0x8003
+Direction: 3
+UsTraffMgmtPtr: 0x8003
+UsTraffDescPtr: 0x0000
+UniCounter: 0
+DsPriQPtr: 0x0000
+EncryptionState: 0
+DsTraffDescPtr: 0x0000
+EncryptionKeyRing: 0
+=================================
+=================================
+EntityId: 0x011c
+PortID: 284
+TcAdapterPtr: 0x8004
+Direction: 3
+UsTraffMgmtPtr: 0x8004
+UsTraffDescPtr: 0x0000
+UniCounter: 0
+DsPriQPtr: 0x0000
+EncryptionState: 0
+DsTraffDescPtr: 0x0000
+EncryptionKeyRing: 0
+=================================
+=================================
+EntityId: 0x011d
+PortID: 285
+TcAdapterPtr: 0x8005
+Direction: 3
+UsTraffMgmtPtr: 0x8005
+UsTraffDescPtr: 0x0000
+UniCounter: 0
+DsPriQPtr: 0x0000
+EncryptionState: 0
+DsTraffDescPtr: 0x0000
+EncryptionKeyRing: 0
+=================================
+=================================
+EntityId: 0x07fe
+PortID: 2046
+TcAdapterPtr: 0x0000
+Direction: 2
+UsTraffMgmtPtr: 0x0000
+UsTraffDescPtr: 0x0000
+UniCounter: 0
+DsPriQPtr: 0x0000
+EncryptionState: 0
+DsTraffDescPtr: 0x0000
+EncryptionKeyRing: 0
+=================================
+=================================
+EntityId: 0x07ff
+PortID: 2047
+TcAdapterPtr: 0x0000
+Direction: 2
+UsTraffMgmtPtr: 0x0000
+UsTraffDescPtr: 0x0000
+UniCounter: 0
+DsPriQPtr: 0x0000
+EncryptionState: 0
+DsTraffDescPtr: 0x0000
+EncryptionKeyRing: 0
+=================================
+

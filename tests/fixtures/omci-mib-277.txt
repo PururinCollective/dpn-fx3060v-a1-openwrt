@@ -1,0 +1,2376 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+PriQ
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+=================================
+EntityID: 0x0000
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01010007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0001
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01010006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0002
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01010005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0003
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01010004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0004
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01010003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0005
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01010002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0006
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01010001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0007
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01010000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0008
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01020007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0009
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01020006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x000a
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01020005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x000b
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01020004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x000c
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01020003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x000d
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01020002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x000e
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01020001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x000f
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01020000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0010
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01030007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0011
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01030006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0012
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01030005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0013
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01030004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0014
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01030003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0015
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01030002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0016
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01030001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0017
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01030000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0018
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01040007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0019
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01040006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x001a
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01040005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x001b
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01040004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x001c
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01040003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x001d
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01040002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x001e
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01040001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x001f
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x01040000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0020
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x0e010007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0021
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x0e010006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0022
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x0e010005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0023
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x0e010004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0024
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x0e010003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0025
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x0e010002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0026
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x0e010001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x0027
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x0e010000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8000
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80000007
+SchedulerPtr: 0x8000
+Weight: 0
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8001
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80000006
+SchedulerPtr: 0x8001
+Weight: 0
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8002
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80000005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8003
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80000004
+SchedulerPtr: 0x8003
+Weight: 0
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8004
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80000003
+SchedulerPtr: 0x8004
+Weight: 0
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8005
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80000002
+SchedulerPtr: 0x8005
+Weight: 0
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8006
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80000001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8007
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80000000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8008
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80010007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8009
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80010006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x800a
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80010005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x800b
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80010004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x800c
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80010003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x800d
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80010002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x800e
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80010001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x800f
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80010000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8010
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80020007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8011
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80020006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8012
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80020005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8013
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80020004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8014
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80020003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8015
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80020002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8016
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80020001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8017
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80020000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8018
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80030007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8019
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80030006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x801a
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80030005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x801b
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80030004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x801c
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80030003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x801d
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80030002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x801e
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80030001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x801f
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80030000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8020
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80040007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8021
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80040006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8022
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80040005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8023
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80040004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8024
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80040003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8025
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80040002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8026
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80040001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8027
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80040000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8028
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80050007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8029
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80050006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x802a
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80050005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x802b
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80050004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x802c
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80050003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x802d
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80050002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x802e
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80050001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x802f
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80050000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8030
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80060007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8031
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80060006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8032
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80060005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8033
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80060004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8034
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80060003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8035
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80060002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8036
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80060001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8037
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80060000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8038
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80070007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8039
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80070006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x803a
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80070005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x803b
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80070004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x803c
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80070003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x803d
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80070002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x803e
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80070001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x803f
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80070000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8040
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80080007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8041
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80080006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8042
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80080005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8043
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80080004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8044
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80080003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8045
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80080002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8046
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80080001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8047
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80080000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8048
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80090007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8049
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80090006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x804a
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80090005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x804b
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80090004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x804c
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80090003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x804d
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80090002
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x804e
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80090001
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x804f
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x80090000
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8050
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x800a0007
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8051
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x800a0006
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8052
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x800a0005
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8053
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x800a0004
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+QueueDropWQ: 9
+DropPColorMarking: 0
+=================================
+=================================
+EntityID: 0x8054
+QCfgOpt: 1
+MaxQSize: 3276
+AllocQSize: 3276
+ResetInterval: 0
+Threshold: 0
+RelatedPort: 0x800a0003
+SchedulerPtr: 0x0000
+Weight: 1
+BPOperation: 0
+BPTime: 0
+BPOccThreshold: 0
+BPClrThreshold: 0
+PktDropQThold: 0x0000000000000000
+PktDropMaxP: 0x00ff
+

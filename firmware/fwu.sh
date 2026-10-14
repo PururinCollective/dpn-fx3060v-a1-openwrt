@@ -1,5 +1,5 @@
 #!/bin/sh
-# NijikaWrt factory installer for the D-Link DPN-FX3060V (A1).
+# NijikaWrt factory installer for the D-Link DPN-FX3060V.
 #
 # Runs on the STOCK firmware: the stock web upgrade (configd ->
 # /etc/scripts/fwu_starter.sh) extracts this file from the uploaded image,
@@ -12,7 +12,11 @@
 #   [~] in progress   [+] ok / found   [-] skipped / not applicable
 #   [!] warning       [x] failed       [?] unknown
 #
-# Force on a firmware that does not identify as DPN-FX3060V:
+# The image carries the stock kernel and device tree of ONE hardware revision:
+# the device block below (filled in by scripts/mkfw.sh from
+# devices/<id>/device.conf) names it, and the installer refuses a stock
+# firmware or hardware (switch PHY IDs) of another revision.
+# Force anyway (at your own risk):
 #     touch /tmp/nijika_force
 
 bank="$1"
@@ -31,7 +35,23 @@ FORCE_FILE=${NIJIKA_FORCE_FILE:-/tmp/nijika_force}
 ST_INVALID=1
 ST_TOO_BIG=3
 
-KERNEL_MAX=6291456	# ubi_k<n> = pfl_kernel*_sz = 0x600000
+# Device profile (IMG_DEVICE, IMG_MODEL, IMG_STOCK_MATCH, IMG_PHY_IDS,
+# KERNEL_MAX), filled in by scripts/mkfw.sh
+# @DEVICE@
+
+# PHY ID (page 0, registers 2+3) of switch ports 0..6, as in device.conf:
+# "001ccac4 001ccac4 ... ffffffff". Empty when diag cannot tell.
+phy_ids() {
+	command -v diag >/dev/null 2>&1 || return 0
+	local p r out=""
+	for p in 0 1 2 3 4 5 6; do
+		r=$(for reg in 2 3; do diag rt_port get phy-reg port $p page 0 register $reg 2>/dev/null; done |
+			sed -n 's/.*Register [23]: 0x\([0-9A-Fa-f][0-9A-Fa-f]*\).*/\1/p' | tr -d '\n' | tr 'A-F' 'a-f')
+		[ ${#r} -eq 8 ] || return 0
+		out="$out${out:+ }$r"
+	done
+	echo "$out"
+}
 
 # --- logging -----------------------------------------------------------------
 
@@ -95,15 +115,29 @@ esac
 [ -f "$img" ] || fail $ST_INVALID "image $img not found"
 ok "image: $img ($(wc -c < "$img") bytes)"
 
-# --- running on a DPN-FX3060V stock firmware? ------------------------------------
+# --- the right device and hardware revision? ---------------------------------
+
+[ -n "$IMG_DEVICE" ] || fail $ST_INVALID "fwu.sh has no device profile (not built by scripts/mkfw.sh)"
+ok "image for: $IMG_MODEL"
 
 stock_ver=$(cat "$VERSION_FILE" 2>/dev/null)
-if echo "$stock_ver" | grep -q "DPN-FX3060V"; then
+if echo "$stock_ver" | grep -Eq "$IMG_STOCK_MATCH"; then
 	ok "running firmware: $stock_ver"
 elif [ -f "$FORCE_FILE" ]; then
-	warn "running firmware is not DPN-FX3060V ($stock_ver), continuing: $FORCE_FILE"
+	warn "running firmware '$stock_ver' is not the stock firmware of $IMG_MODEL, continuing: $FORCE_FILE"
 else
-	fail $ST_INVALID "this is not a DPN-FX3060V firmware ($stock_ver); touch $FORCE_FILE to override"
+	fail $ST_INVALID "this image is for $IMG_MODEL, the running firmware is '$stock_ver'; touch $FORCE_FILE to override"
+fi
+
+phy=$(phy_ids)
+if [ -z "$phy" ]; then
+	unknown "switch PHY IDs not readable, hardware revision not verified"
+elif [ "$phy" = "$IMG_PHY_IDS" ]; then
+	ok "hardware matches $IMG_MODEL (switch PHY IDs)"
+elif [ -f "$FORCE_FILE" ]; then
+	warn "hardware differs from $IMG_MODEL (PHY IDs $phy), continuing: $FORCE_FILE"
+else
+	fail $ST_INVALID "this image is for $IMG_MODEL, but this hardware differs (PHY IDs $phy); touch $FORCE_FILE to override"
 fi
 
 # --- never write the bank we are running from -----------------------------------

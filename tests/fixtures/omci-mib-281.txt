@@ -1,0 +1,25 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+MultiGemIwTp
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+=================================
+EntityID:	 01
+GemCtpPtr:	 7ff
+IwOpt:	 0
+ServProPtr:	 00
+PptpCounter:	 0
+OpState:	 0
+GalProfPtr:	 00
+
+
+Ipv4MCastAddrTable:
+*************************************
+INDEX:	 0
+Gem Port Id:	 2047
+Sec Key:	 0
+DIP Start: 224.0.0.0
+DIP Stop: 239.255.255.255
+
+
+Ipv6MCastAddrTable:
+=================================
+

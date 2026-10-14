@@ -3,9 +3,11 @@
 # 02_sysinfo, which only fills in missing values.
 
 nijika_sysinfo() {
+	local NIJIKA_BOARD NIJIKA_MODEL
+	[ -f /etc/nijika_release ] && . /etc/nijika_release
 	mkdir -p /tmp/sysinfo
-	echo "dlink,dpn-fx3060v-a1" > /tmp/sysinfo/board_name
-	echo "D-Link DPN-FX3060V (A1)" > /tmp/sysinfo/model
+	echo "${NIJIKA_BOARD:-dlink,dpn-fx3060v-a1}" > /tmp/sysinfo/board_name
+	echo "${NIJIKA_MODEL:-D-Link DPN-FX3060V (A1)}" > /tmp/sysinfo/model
 }
 
 boot_hook_add preinit_main nijika_sysinfo

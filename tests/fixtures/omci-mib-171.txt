@@ -1,0 +1,534 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+ExtVlanTagOperCfgData
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+=================================
+EntityId: 0x101
+AssociationType: 2
+ReceivedFrameVlanTagOperTableMaxSize: 0
+InputTPID: 0x8100
+OutputTPID: 0x8100
+DsMode: 0
+ReceivedFrameVlanTaggingOperTable
+INDEX 0
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 8,VID 209, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 1
+Treatment Inner   : PRI 8,VID 209, TPID 2
+INDEX 1
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 8,VID 500, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 1
+Treatment Inner   : PRI 8,VID 500, TPID 2
+INDEX 2
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 15,VID 0, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 0, TPID 2
+INDEX 3
+Filter Outer   : PRI 14,VID 4096, TPID 5
+Filter Inner   : PRI 14,VID 4096, TPID 0, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 4096, TPID 3
+INDEX 4
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 14,VID 4096, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 4096, TPID 2
+AssociatedMePoint: 0x101
+DscpToPbitMapping:
+	0x000000
+	0x249249
+	0x492492
+	0x6db6db
+	0x924924
+	0xb6db6d
+	0xdb6db6
+	0xffffff
+
+
+Parsed DscpToPbitMapping:
+dscp: 0 => pbit: 0
+dscp: 1 => pbit: 0
+dscp: 2 => pbit: 0
+dscp: 3 => pbit: 0
+dscp: 4 => pbit: 0
+dscp: 5 => pbit: 0
+dscp: 6 => pbit: 0
+dscp: 7 => pbit: 0
+dscp: 8 => pbit: 1
+dscp: 9 => pbit: 1
+dscp: 10 => pbit: 1
+dscp: 11 => pbit: 1
+dscp: 12 => pbit: 1
+dscp: 13 => pbit: 1
+dscp: 14 => pbit: 1
+dscp: 15 => pbit: 1
+dscp: 16 => pbit: 2
+dscp: 17 => pbit: 2
+dscp: 18 => pbit: 2
+dscp: 19 => pbit: 2
+dscp: 20 => pbit: 2
+dscp: 21 => pbit: 2
+dscp: 22 => pbit: 2
+dscp: 23 => pbit: 2
+dscp: 24 => pbit: 3
+dscp: 25 => pbit: 3
+dscp: 26 => pbit: 3
+dscp: 27 => pbit: 3
+dscp: 28 => pbit: 3
+dscp: 29 => pbit: 3
+dscp: 30 => pbit: 3
+dscp: 31 => pbit: 3
+dscp: 32 => pbit: 4
+dscp: 33 => pbit: 4
+dscp: 34 => pbit: 4
+dscp: 35 => pbit: 4
+dscp: 36 => pbit: 4
+dscp: 37 => pbit: 4
+dscp: 38 => pbit: 4
+dscp: 39 => pbit: 4
+dscp: 40 => pbit: 5
+dscp: 41 => pbit: 5
+dscp: 42 => pbit: 5
+dscp: 43 => pbit: 5
+dscp: 44 => pbit: 5
+dscp: 45 => pbit: 5
+dscp: 46 => pbit: 5
+dscp: 47 => pbit: 5
+dscp: 48 => pbit: 6
+dscp: 49 => pbit: 6
+dscp: 50 => pbit: 6
+dscp: 51 => pbit: 6
+dscp: 52 => pbit: 6
+dscp: 53 => pbit: 6
+dscp: 54 => pbit: 6
+dscp: 55 => pbit: 6
+dscp: 56 => pbit: 7
+dscp: 57 => pbit: 7
+dscp: 58 => pbit: 7
+dscp: 59 => pbit: 7
+dscp: 60 => pbit: 7
+dscp: 61 => pbit: 7
+dscp: 62 => pbit: 7
+dscp: 63 => pbit: 7
+=================================
+=================================
+EntityId: 0x102
+AssociationType: 2
+ReceivedFrameVlanTagOperTableMaxSize: 0
+InputTPID: 0x8100
+OutputTPID: 0x8100
+DsMode: 0
+ReceivedFrameVlanTaggingOperTable
+INDEX 0
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 15,VID 0, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 0, TPID 2
+INDEX 1
+Filter Outer   : PRI 14,VID 4096, TPID 5
+Filter Inner   : PRI 14,VID 4096, TPID 0, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 4096, TPID 3
+INDEX 2
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 14,VID 4096, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 4096, TPID 2
+AssociatedMePoint: 0x102
+DscpToPbitMapping:
+	0x000000
+	0x249249
+	0x492492
+	0x6db6db
+	0x924924
+	0xb6db6d
+	0xdb6db6
+	0xffffff
+
+
+Parsed DscpToPbitMapping:
+dscp: 0 => pbit: 0
+dscp: 1 => pbit: 0
+dscp: 2 => pbit: 0
+dscp: 3 => pbit: 0
+dscp: 4 => pbit: 0
+dscp: 5 => pbit: 0
+dscp: 6 => pbit: 0
+dscp: 7 => pbit: 0
+dscp: 8 => pbit: 1
+dscp: 9 => pbit: 1
+dscp: 10 => pbit: 1
+dscp: 11 => pbit: 1
+dscp: 12 => pbit: 1
+dscp: 13 => pbit: 1
+dscp: 14 => pbit: 1
+dscp: 15 => pbit: 1
+dscp: 16 => pbit: 2
+dscp: 17 => pbit: 2
+dscp: 18 => pbit: 2
+dscp: 19 => pbit: 2
+dscp: 20 => pbit: 2
+dscp: 21 => pbit: 2
+dscp: 22 => pbit: 2
+dscp: 23 => pbit: 2
+dscp: 24 => pbit: 3
+dscp: 25 => pbit: 3
+dscp: 26 => pbit: 3
+dscp: 27 => pbit: 3
+dscp: 28 => pbit: 3
+dscp: 29 => pbit: 3
+dscp: 30 => pbit: 3
+dscp: 31 => pbit: 3
+dscp: 32 => pbit: 4
+dscp: 33 => pbit: 4
+dscp: 34 => pbit: 4
+dscp: 35 => pbit: 4
+dscp: 36 => pbit: 4
+dscp: 37 => pbit: 4
+dscp: 38 => pbit: 4
+dscp: 39 => pbit: 4
+dscp: 40 => pbit: 5
+dscp: 41 => pbit: 5
+dscp: 42 => pbit: 5
+dscp: 43 => pbit: 5
+dscp: 44 => pbit: 5
+dscp: 45 => pbit: 5
+dscp: 46 => pbit: 5
+dscp: 47 => pbit: 5
+dscp: 48 => pbit: 6
+dscp: 49 => pbit: 6
+dscp: 50 => pbit: 6
+dscp: 51 => pbit: 6
+dscp: 52 => pbit: 6
+dscp: 53 => pbit: 6
+dscp: 54 => pbit: 6
+dscp: 55 => pbit: 6
+dscp: 56 => pbit: 7
+dscp: 57 => pbit: 7
+dscp: 58 => pbit: 7
+dscp: 59 => pbit: 7
+dscp: 60 => pbit: 7
+dscp: 61 => pbit: 7
+dscp: 62 => pbit: 7
+dscp: 63 => pbit: 7
+=================================
+=================================
+EntityId: 0x103
+AssociationType: 2
+ReceivedFrameVlanTagOperTableMaxSize: 0
+InputTPID: 0x8100
+OutputTPID: 0x8100
+DsMode: 0
+ReceivedFrameVlanTaggingOperTable
+INDEX 0
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 15,VID 0, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 0, TPID 2
+INDEX 1
+Filter Outer   : PRI 14,VID 4096, TPID 5
+Filter Inner   : PRI 14,VID 4096, TPID 0, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 4096, TPID 3
+INDEX 2
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 14,VID 4096, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 4096, TPID 2
+AssociatedMePoint: 0x103
+DscpToPbitMapping:
+	0x000000
+	0x249249
+	0x492492
+	0x6db6db
+	0x924924
+	0xb6db6d
+	0xdb6db6
+	0xffffff
+
+
+Parsed DscpToPbitMapping:
+dscp: 0 => pbit: 0
+dscp: 1 => pbit: 0
+dscp: 2 => pbit: 0
+dscp: 3 => pbit: 0
+dscp: 4 => pbit: 0
+dscp: 5 => pbit: 0
+dscp: 6 => pbit: 0
+dscp: 7 => pbit: 0
+dscp: 8 => pbit: 1
+dscp: 9 => pbit: 1
+dscp: 10 => pbit: 1
+dscp: 11 => pbit: 1
+dscp: 12 => pbit: 1
+dscp: 13 => pbit: 1
+dscp: 14 => pbit: 1
+dscp: 15 => pbit: 1
+dscp: 16 => pbit: 2
+dscp: 17 => pbit: 2
+dscp: 18 => pbit: 2
+dscp: 19 => pbit: 2
+dscp: 20 => pbit: 2
+dscp: 21 => pbit: 2
+dscp: 22 => pbit: 2
+dscp: 23 => pbit: 2
+dscp: 24 => pbit: 3
+dscp: 25 => pbit: 3
+dscp: 26 => pbit: 3
+dscp: 27 => pbit: 3
+dscp: 28 => pbit: 3
+dscp: 29 => pbit: 3
+dscp: 30 => pbit: 3
+dscp: 31 => pbit: 3
+dscp: 32 => pbit: 4
+dscp: 33 => pbit: 4
+dscp: 34 => pbit: 4
+dscp: 35 => pbit: 4
+dscp: 36 => pbit: 4
+dscp: 37 => pbit: 4
+dscp: 38 => pbit: 4
+dscp: 39 => pbit: 4
+dscp: 40 => pbit: 5
+dscp: 41 => pbit: 5
+dscp: 42 => pbit: 5
+dscp: 43 => pbit: 5
+dscp: 44 => pbit: 5
+dscp: 45 => pbit: 5
+dscp: 46 => pbit: 5
+dscp: 47 => pbit: 5
+dscp: 48 => pbit: 6
+dscp: 49 => pbit: 6
+dscp: 50 => pbit: 6
+dscp: 51 => pbit: 6
+dscp: 52 => pbit: 6
+dscp: 53 => pbit: 6
+dscp: 54 => pbit: 6
+dscp: 55 => pbit: 6
+dscp: 56 => pbit: 7
+dscp: 57 => pbit: 7
+dscp: 58 => pbit: 7
+dscp: 59 => pbit: 7
+dscp: 60 => pbit: 7
+dscp: 61 => pbit: 7
+dscp: 62 => pbit: 7
+dscp: 63 => pbit: 7
+=================================
+=================================
+EntityId: 0x104
+AssociationType: 2
+ReceivedFrameVlanTagOperTableMaxSize: 0
+InputTPID: 0x8100
+OutputTPID: 0x8100
+DsMode: 0
+ReceivedFrameVlanTaggingOperTable
+INDEX 0
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 15,VID 0, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 0, TPID 2
+INDEX 1
+Filter Outer   : PRI 14,VID 4096, TPID 5
+Filter Inner   : PRI 14,VID 4096, TPID 0, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 4096, TPID 3
+INDEX 2
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 14,VID 4096, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 4096, TPID 2
+AssociatedMePoint: 0x104
+DscpToPbitMapping:
+	0x000000
+	0x249249
+	0x492492
+	0x6db6db
+	0x924924
+	0xb6db6d
+	0xdb6db6
+	0xffffff
+
+
+Parsed DscpToPbitMapping:
+dscp: 0 => pbit: 0
+dscp: 1 => pbit: 0
+dscp: 2 => pbit: 0
+dscp: 3 => pbit: 0
+dscp: 4 => pbit: 0
+dscp: 5 => pbit: 0
+dscp: 6 => pbit: 0
+dscp: 7 => pbit: 0
+dscp: 8 => pbit: 1
+dscp: 9 => pbit: 1
+dscp: 10 => pbit: 1
+dscp: 11 => pbit: 1
+dscp: 12 => pbit: 1
+dscp: 13 => pbit: 1
+dscp: 14 => pbit: 1
+dscp: 15 => pbit: 1
+dscp: 16 => pbit: 2
+dscp: 17 => pbit: 2
+dscp: 18 => pbit: 2
+dscp: 19 => pbit: 2
+dscp: 20 => pbit: 2
+dscp: 21 => pbit: 2
+dscp: 22 => pbit: 2
+dscp: 23 => pbit: 2
+dscp: 24 => pbit: 3
+dscp: 25 => pbit: 3
+dscp: 26 => pbit: 3
+dscp: 27 => pbit: 3
+dscp: 28 => pbit: 3
+dscp: 29 => pbit: 3
+dscp: 30 => pbit: 3
+dscp: 31 => pbit: 3
+dscp: 32 => pbit: 4
+dscp: 33 => pbit: 4
+dscp: 34 => pbit: 4
+dscp: 35 => pbit: 4
+dscp: 36 => pbit: 4
+dscp: 37 => pbit: 4
+dscp: 38 => pbit: 4
+dscp: 39 => pbit: 4
+dscp: 40 => pbit: 5
+dscp: 41 => pbit: 5
+dscp: 42 => pbit: 5
+dscp: 43 => pbit: 5
+dscp: 44 => pbit: 5
+dscp: 45 => pbit: 5
+dscp: 46 => pbit: 5
+dscp: 47 => pbit: 5
+dscp: 48 => pbit: 6
+dscp: 49 => pbit: 6
+dscp: 50 => pbit: 6
+dscp: 51 => pbit: 6
+dscp: 52 => pbit: 6
+dscp: 53 => pbit: 6
+dscp: 54 => pbit: 6
+dscp: 55 => pbit: 6
+dscp: 56 => pbit: 7
+dscp: 57 => pbit: 7
+dscp: 58 => pbit: 7
+dscp: 59 => pbit: 7
+dscp: 60 => pbit: 7
+dscp: 61 => pbit: 7
+dscp: 62 => pbit: 7
+dscp: 63 => pbit: 7
+=================================
+=================================
+EntityId: 0xe01
+AssociationType: 10
+ReceivedFrameVlanTagOperTableMaxSize: 0
+InputTPID: 0x8100
+OutputTPID: 0x8100
+DsMode: 0
+ReceivedFrameVlanTaggingOperTable
+INDEX 0
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 8,VID 209, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 1
+Treatment Inner   : PRI 8,VID 209, TPID 2
+INDEX 1
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 8,VID 400, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 1
+Treatment Inner   : PRI 8,VID 400, TPID 2
+INDEX 2
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 8,VID 500, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 1
+Treatment Inner   : PRI 8,VID 500, TPID 2
+INDEX 3
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 15,VID 0, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 0, TPID 2
+INDEX 4
+Filter Outer   : PRI 14,VID 4096, TPID 5
+Filter Inner   : PRI 14,VID 4096, TPID 0, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 4096, TPID 3
+INDEX 5
+Filter Outer   : PRI 15,VID 4096, TPID 0
+Filter Inner   : PRI 14,VID 4096, TPID 5, EthType 0x00
+Treatment Outer   : PRI 15,VID 0, TPID 0, RemoveTags 3
+Treatment Inner   : PRI 15,VID 4096, TPID 2
+AssociatedMePoint: 0x601
+DscpToPbitMapping:
+	0x000000
+	0x249249
+	0x492492
+	0x6db6db
+	0x924924
+	0xb6db6d
+	0xdb6db6
+	0xffffff
+
+
+Parsed DscpToPbitMapping:
+dscp: 0 => pbit: 0
+dscp: 1 => pbit: 0
+dscp: 2 => pbit: 0
+dscp: 3 => pbit: 0
+dscp: 4 => pbit: 0
+dscp: 5 => pbit: 0
+dscp: 6 => pbit: 0
+dscp: 7 => pbit: 0
+dscp: 8 => pbit: 1
+dscp: 9 => pbit: 1
+dscp: 10 => pbit: 1
+dscp: 11 => pbit: 1
+dscp: 12 => pbit: 1
+dscp: 13 => pbit: 1
+dscp: 14 => pbit: 1
+dscp: 15 => pbit: 1
+dscp: 16 => pbit: 2
+dscp: 17 => pbit: 2
+dscp: 18 => pbit: 2
+dscp: 19 => pbit: 2
+dscp: 20 => pbit: 2
+dscp: 21 => pbit: 2
+dscp: 22 => pbit: 2
+dscp: 23 => pbit: 2
+dscp: 24 => pbit: 3
+dscp: 25 => pbit: 3
+dscp: 26 => pbit: 3
+dscp: 27 => pbit: 3
+dscp: 28 => pbit: 3
+dscp: 29 => pbit: 3
+dscp: 30 => pbit: 3
+dscp: 31 => pbit: 3
+dscp: 32 => pbit: 4
+dscp: 33 => pbit: 4
+dscp: 34 => pbit: 4
+dscp: 35 => pbit: 4
+dscp: 36 => pbit: 4
+dscp: 37 => pbit: 4
+dscp: 38 => pbit: 4
+dscp: 39 => pbit: 4
+dscp: 40 => pbit: 5
+dscp: 41 => pbit: 5
+dscp: 42 => pbit: 5
+dscp: 43 => pbit: 5
+dscp: 44 => pbit: 5
+dscp: 45 => pbit: 5
+dscp: 46 => pbit: 5
+dscp: 47 => pbit: 5
+dscp: 48 => pbit: 6
+dscp: 49 => pbit: 6
+dscp: 50 => pbit: 6
+dscp: 51 => pbit: 6
+dscp: 52 => pbit: 6
+dscp: 53 => pbit: 6
+dscp: 54 => pbit: 6
+dscp: 55 => pbit: 6
+dscp: 56 => pbit: 7
+dscp: 57 => pbit: 7
+dscp: 58 => pbit: 7
+dscp: 59 => pbit: 7
+dscp: 60 => pbit: 7
+dscp: 61 => pbit: 7
+dscp: 62 => pbit: 7
+dscp: 63 => pbit: 7
+=================================
+

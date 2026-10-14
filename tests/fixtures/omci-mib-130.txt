@@ -1,0 +1,124 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+Map8021pServProf
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+=================================
+EntityID: 1102
+TpPtr: ffff
+IwTpPtrPbit0: 107
+IwTpPtrPbit1: 107
+IwTpPtrPbit2: 107
+IwTpPtrPbit3: 107
+IwTpPtrPbit4: 107
+IwTpPtrPbit5: 107
+IwTpPtrPbit6: 107
+IwTpPtrPbit7: 107
+UnmarkFrmOpt: 0
+DscpMap2Pbit:
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+DefPbitMark: 0
+TPType: 0
+=================================
+=================================
+EntityID: 1103
+TpPtr: ffff
+IwTpPtrPbit0: 11c
+IwTpPtrPbit1: 11c
+IwTpPtrPbit2: 11c
+IwTpPtrPbit3: 11c
+IwTpPtrPbit4: 11c
+IwTpPtrPbit5: 11c
+IwTpPtrPbit6: 11c
+IwTpPtrPbit7: 11c
+UnmarkFrmOpt: 0
+DscpMap2Pbit:
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+DefPbitMark: 0
+TPType: 0
+=================================
+=================================
+EntityID: e102
+TpPtr: ffff
+IwTpPtrPbit0: 108
+IwTpPtrPbit1: 108
+IwTpPtrPbit2: 108
+IwTpPtrPbit3: 108
+IwTpPtrPbit4: 108
+IwTpPtrPbit5: 108
+IwTpPtrPbit6: 108
+IwTpPtrPbit7: 108
+UnmarkFrmOpt: 0
+DscpMap2Pbit:
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+DefPbitMark: 0
+TPType: 0
+=================================
+=================================
+EntityID: e103
+TpPtr: ffff
+IwTpPtrPbit0: 11b
+IwTpPtrPbit1: 11b
+IwTpPtrPbit2: 11b
+IwTpPtrPbit3: 11b
+IwTpPtrPbit4: 11b
+IwTpPtrPbit5: 11b
+IwTpPtrPbit6: 11b
+IwTpPtrPbit7: 11b
+UnmarkFrmOpt: 0
+DscpMap2Pbit:
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+DefPbitMark: 0
+TPType: 0
+=================================
+=================================
+EntityID: e104
+TpPtr: ffff
+IwTpPtrPbit0: 11d
+IwTpPtrPbit1: 11d
+IwTpPtrPbit2: 11d
+IwTpPtrPbit3: 11d
+IwTpPtrPbit4: 11d
+IwTpPtrPbit5: 11d
+IwTpPtrPbit6: 11d
+IwTpPtrPbit7: 11d
+UnmarkFrmOpt: 0
+DscpMap2Pbit:
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+	0x000000
+DefPbitMark: 0
+TPType: 0
+=================================
+

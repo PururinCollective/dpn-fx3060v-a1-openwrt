@@ -1,0 +1,13 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+OltG
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+=================================
+EntityId: 0x00
+OltVendorId: 0x414c434c
+EquipId:                     
+Version: 
+ToDInfo:
+	Sequence number of GEM superframe: 0x0
+	Timestamp: secs 0, nanosecs 0
+=================================
+

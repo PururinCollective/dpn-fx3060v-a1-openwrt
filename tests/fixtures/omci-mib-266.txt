@@ -1,0 +1,70 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+GemIwTp
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+=================================
+EntityID: 0x0107
+GemCtpPtr: 0x0107
+IwOpt: 5
+ServProPtr: 0x1102
+IwTpPtr: 0x0000
+PptpCounter: 0
+OpState: 0
+GalProfPtr: 0x0001
+GalLoopbackCfg: 0
+=================================
+=================================
+EntityID: 0x0108
+GemCtpPtr: 0x0108
+IwOpt: 5
+ServProPtr: 0xe102
+IwTpPtr: 0x0000
+PptpCounter: 0
+OpState: 0
+GalProfPtr: 0x0001
+GalLoopbackCfg: 0
+=================================
+=================================
+EntityID: 0x011b
+GemCtpPtr: 0x011b
+IwOpt: 5
+ServProPtr: 0xe103
+IwTpPtr: 0x0000
+PptpCounter: 0
+OpState: 0
+GalProfPtr: 0x0001
+GalLoopbackCfg: 0
+=================================
+=================================
+EntityID: 0x011c
+GemCtpPtr: 0x011c
+IwOpt: 5
+ServProPtr: 0x1103
+IwTpPtr: 0x0000
+PptpCounter: 0
+OpState: 0
+GalProfPtr: 0x0001
+GalLoopbackCfg: 0
+=================================
+=================================
+EntityID: 0x011d
+GemCtpPtr: 0x011d
+IwOpt: 5
+ServProPtr: 0xe104
+IwTpPtr: 0x0000
+PptpCounter: 0
+OpState: 0
+GalProfPtr: 0x0001
+GalLoopbackCfg: 0
+=================================
+=================================
+EntityID: 0x07fe
+GemCtpPtr: 0x07fe
+IwOpt: 6
+ServProPtr: 0x0000
+IwTpPtr: 0x0000
+PptpCounter: 0
+OpState: 0
+GalProfPtr: 0x0000
+GalLoopbackCfg: 0
+=================================
+

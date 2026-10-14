@@ -1,0 +1,49 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+VlanTagFilterData
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+=================================
+EntityID: 0x1102
+FilterTbl[0]: PRI 0,CFI 0, VID 500
+FwdOp:  0x10
+NumOfEntries: 1
+=================================
+=================================
+EntityID: 0x1103
+FilterTbl[0]: PRI 0,CFI 0, VID 209
+FwdOp:  0x10
+NumOfEntries: 1
+=================================
+=================================
+EntityID: 0x110b
+FilterTbl[0]: PRI 0,CFI 0, VID 209
+FilterTbl[2]: PRI 0,CFI 0, VID 500
+FwdOp:  0x10
+NumOfEntries: 2
+=================================
+=================================
+EntityID: 0xe102
+FilterTbl[0]: PRI 0,CFI 0, VID 500
+FwdOp:  0x10
+NumOfEntries: 1
+=================================
+=================================
+EntityID: 0xe103
+FilterTbl[0]: PRI 0,CFI 0, VID 400
+FwdOp:  0x10
+NumOfEntries: 1
+=================================
+=================================
+EntityID: 0xe104
+FilterTbl[0]: PRI 0,CFI 0, VID 209
+FwdOp:  0x10
+NumOfEntries: 1
+=================================
+=================================
+EntityID: 0xe10b
+FilterTbl[0]: PRI 0,CFI 0, VID 209
+FilterTbl[2]: PRI 0,CFI 0, VID 400
+FilterTbl[4]: PRI 0,CFI 0, VID 500
+FwdOp:  0x10
+NumOfEntries: 3
+=================================
+

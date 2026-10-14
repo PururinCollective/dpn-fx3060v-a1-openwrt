@@ -1,5 +1,5 @@
 #!/bin/sh
-# NIJIKA utility for NijikaWrt on the D-Link DPN-FX3060V (A1)
+# NIJIKA utility for NijikaWrt on the D-Link DPN-FX3060V
 # Created by Anime4000; OpenWrt port.
 #
 # One front end for the stock Realtek tools (diag, omcicli, flash/mib, nv)
@@ -516,12 +516,41 @@ nijika_version() {
 	echo "$NIJIKA_DISTRO $NIJIKA_REVISION${NIJIKA_CODENAME:+ ($NIJIKA_CODENAME)} [$NIJIKA_GITHASH]"
 	echo "OpenWrt $DISTRIB_RELEASE $DISTRIB_REVISION"
 	echo "Linux $(uname -r) (stock Realtek kernel)"
+	echo "Device $NIJIKA_MODEL ($NIJIKA_DEVICE)"
 	echo "Bank $(running_bank): $(nv_get sw_version$(running_bank))"
+}
+
+# Hardware fingerprint: switch PHY IDs of this unit against the device
+# profile the image was built for (first thing to check on a new revision).
+nijika_hw() {
+	need_vendor
+	local live p=0 id
+	live=$(hw_phy_ids)
+	echo "image built for : $NIJIKA_MODEL ($NIJIKA_DEVICE)"
+	echo "expected PHY IDs: $NIJIKA_PHY_IDS"
+	echo "this unit       : ${live:-(not readable)}"
+	for id in $live; do
+		case "$id" in
+			ffffffff) echo "  port $p: no PHY" ;;
+			001ccac4) echo "  port $p: $id  internal GbE PHY" ;;
+			001cc84*) echo "  port $p: $id  RTL8221B 2.5GbE" ;;
+			*) echo "  port $p: $id" ;;
+		esac
+		p=$((p + 1))
+	done
+	if [ -z "$live" ]; then
+		echo "result          : unknown"
+	elif [ "$live" = "$NIJIKA_PHY_IDS" ]; then
+		echo "result          : matches"
+	else
+		echo "result          : DIFFERENT hardware revision"
+		return 1
+	fi
 }
 
 show_usage() {
 	cat <<'EOF'
-NIJIKA utility for NijikaWrt (D-Link DPN-FX3060V A1) by Anime4000
+NIJIKA utility for NijikaWrt (D-Link DPN-FX3060V) by Anime4000
 
 Usage: nijika <command> [args]
 
@@ -552,6 +581,7 @@ System
   reset [--all]                   Factory reset (keeps PON identity)
   banner                          Show the login banner
   version                         Versions of all layers
+  hw                              Hardware revision check (switch PHY IDs)
 
 Stock tools are also available directly: diag, omcicli, flash, mib, nv,
 voipflashcmd, smuxctl. `nijika rtk` opens a stock (vendor) shell.
@@ -577,6 +607,7 @@ case "$CMD" in
 	reset) nijika_reset "$@" ;;
 	banner) NIJIKA_BANNER_FORCE=1 exec /usr/libexec/nijika/banner ;;
 	version|-v|--version) nijika_version ;;
+	hw) nijika_hw ;;
 	rtk) exec /usr/libexec/rtk/run "$@" ;;
 	diag|omcicli|flash|nv) exec /usr/libexec/rtk/run "/bin/$CMD" "$@" ;;
 	*) show_usage ;;

@@ -1,0 +1,74 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+MacBriServProf
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+=================================
+EntityID: 0x0101
+SpanTreeInd: 0
+LearningInd: 0
+AtmBriInd: 0
+Priority: 32768
+MaxAge: 5120
+HelloTime: 512
+ForwardDelay: 3840
+DiscardUnknow: 0
+MacLearningDepth: 0
+DynamicFilteringAgeingTime: 0
+BridgeIdx: 1
+=================================
+=================================
+EntityID: 0x0102
+SpanTreeInd: 0
+LearningInd: 0
+AtmBriInd: 0
+Priority: 32768
+MaxAge: 5120
+HelloTime: 512
+ForwardDelay: 3840
+DiscardUnknow: 0
+MacLearningDepth: 0
+DynamicFilteringAgeingTime: 0
+BridgeIdx: 2
+=================================
+=================================
+EntityID: 0x0103
+SpanTreeInd: 0
+LearningInd: 0
+AtmBriInd: 0
+Priority: 32768
+MaxAge: 5120
+HelloTime: 512
+ForwardDelay: 3840
+DiscardUnknow: 0
+MacLearningDepth: 0
+DynamicFilteringAgeingTime: 0
+BridgeIdx: 3
+=================================
+=================================
+EntityID: 0x0104
+SpanTreeInd: 0
+LearningInd: 0
+AtmBriInd: 0
+Priority: 32768
+MaxAge: 5120
+HelloTime: 512
+ForwardDelay: 3840
+DiscardUnknow: 0
+MacLearningDepth: 0
+DynamicFilteringAgeingTime: 0
+BridgeIdx: 4
+=================================
+=================================
+EntityID: 0x0e01
+SpanTreeInd: 0
+LearningInd: 0
+AtmBriInd: 0
+Priority: 32768
+MaxAge: 5120
+HelloTime: 512
+ForwardDelay: 3840
+DiscardUnknow: 0
+MacLearningDepth: 0
+DynamicFilteringAgeingTime: 0
+BridgeIdx: 5
+=================================
+

@@ -1,0 +1,196 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+MacBriPortCfgData
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+=================================
+EntityID: 0x0101
+BridgeIdPtr: 0x0101
+PortNum: 1
+TPType: 1
+TPPointer: 0x0101
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 16
+=================================
+=================================
+EntityID: 0x0102
+BridgeIdPtr: 0x0102
+PortNum: 1
+TPType: 1
+TPPointer: 0x0102
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 16
+=================================
+=================================
+EntityID: 0x0103
+BridgeIdPtr: 0x0103
+PortNum: 1
+TPType: 1
+TPPointer: 0x0103
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 16
+=================================
+=================================
+EntityID: 0x0104
+BridgeIdPtr: 0x0104
+PortNum: 1
+TPType: 1
+TPPointer: 0x0104
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 16
+=================================
+=================================
+EntityID: 0x0e01
+BridgeIdPtr: 0x0e01
+PortNum: 1
+TPType: 11
+TPPointer: 0x0601
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 16
+=================================
+=================================
+EntityID: 0x1102
+BridgeIdPtr: 0x0101
+PortNum: 2
+TPType: 3
+TPPointer: 0x1102
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 0
+=================================
+=================================
+EntityID: 0x1103
+BridgeIdPtr: 0x0101
+PortNum: 3
+TPType: 3
+TPPointer: 0x1103
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 0
+=================================
+=================================
+EntityID: 0x110b
+BridgeIdPtr: 0x0101
+PortNum: 11
+TPType: 5
+TPPointer: 0x07fe
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 0
+=================================
+=================================
+EntityID: 0xe102
+BridgeIdPtr: 0x0e01
+PortNum: 2
+TPType: 3
+TPPointer: 0xe102
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 0
+=================================
+=================================
+EntityID: 0xe103
+BridgeIdPtr: 0x0e01
+PortNum: 3
+TPType: 3
+TPPointer: 0xe103
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 0
+=================================
+=================================
+EntityID: 0xe104
+BridgeIdPtr: 0x0e01
+PortNum: 4
+TPType: 3
+TPPointer: 0xe104
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 0
+=================================
+=================================
+EntityID: 0xe10b
+BridgeIdPtr: 0x0e01
+PortNum: 11
+TPType: 5
+TPPointer: 0x07fe
+PortPriority: 0
+PortPathCost: 1
+PortSpanTreeInd: 0
+EncapMethod: 0
+LanFCSInd: 0
+PortMacAddr: 0x000000000000
+OutboundTD: 0x0000
+InboundTD: 0x0000
+NumOfAllowedMac: 0
+=================================
+

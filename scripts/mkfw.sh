@@ -14,7 +14,7 @@ need tar md5sum sha256sum
 [ -f "$BUILD_DIR/rootfs.squashfs" ] || die "run: ./build.sh assemble"
 [ -d "$IB_DIR" ] || die "ImageBuilder missing, run: ./build.sh fetch"
 
-BOARD=dlink_dpn-fx3060v-a1
+BOARD="$DEVICE_TAG"
 FWTOOL="$IB_DIR/staging_dir/host/bin/fwtool"
 rev="r$(nijika_revision)"
 name="${NIJIKA_DISTRO}-${rev}-${OPENWRT_VERSION}-${BOARD}"
@@ -30,7 +30,21 @@ rm -f "$BIN_DIR/$NIJIKA_DISTRO"-*-"$BOARD"-*.bin "$BIN_DIR/sha256sums"
 work="$BUILD_DIR/fw-factory"
 rm -rf "$work"
 mkdir -p "$work"
-cp "$TOPDIR/firmware/fwu.sh" "$work/fwu.sh"
+# fwu.sh with the device profile filled in (the "@DEVICE@" line)
+# (values through the environment: awk -v would eat the backslashes)
+D_ID="$DEVICE_ID" D_MODEL="$DEVICE_MODEL" D_STOCK="$DEVICE_STOCK_MATCH" \
+D_PHY="$DEVICE_PHY_IDS" D_KMAX="$DEVICE_KERNEL_MAX" awk '
+	$0 == "# @DEVICE@" {
+		q = "\047"
+		print "IMG_DEVICE=" q ENVIRON["D_ID"] q
+		print "IMG_MODEL=" q ENVIRON["D_MODEL"] q
+		print "IMG_STOCK_MATCH=" q ENVIRON["D_STOCK"] q
+		print "IMG_PHY_IDS=" q ENVIRON["D_PHY"] q
+		print "KERNEL_MAX=" ENVIRON["D_KMAX"]
+		next
+	}
+	{ print }' "$TOPDIR/firmware/fwu.sh" > "$work/fwu.sh"
+grep -q "^IMG_DEVICE='$DEVICE_ID'" "$work/fwu.sh" || die "fwu.sh: device block not filled in"
 cp "$STOCK_DIR/dtb" "$work/dtb"
 cp "$STOCK_DIR/kimage" "$work/kimage"
 cp "$BUILD_DIR/rootfs.squashfs" "$work/rootfs"
@@ -58,7 +72,12 @@ cat > "$BUILD_DIR/metadata.json" <<EOF
 {
 	"metadata_version": "1.1",
 	"compat_version": "1.0",
-	"supported_devices": [ "dlink,dpn-fx3060v-a1" ],
+	"supported_devices": [ "$DEVICE_BOARD" ],
+	"nijika": {
+		"device": "$DEVICE_ID",
+		"model": "$DEVICE_MODEL",
+		"phy_ids": "$DEVICE_PHY_IDS"
+	},
 	"version": {
 		"dist": "$NIJIKA_DISTRO",
 		"version": "$version",

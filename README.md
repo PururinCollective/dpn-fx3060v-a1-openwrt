@@ -81,9 +81,9 @@ Screenshots (LuCI mock with sample data): [banner](docs/screenshots/banner.jpg),
 |---|---|
 | SoC | Realtek RTL9607DQ (Taurus, Cortina CA8277 based), 4× Cortex-A55 @ 1 GHz |
 | RAM | 512 MiB DDR3 |
-| Flash | 256 MiB SPI-NAND (Micron MT29F2G01), UBI |
+| Flash | 256 MiB SPI-NAND (MT29F2G01 / F50L2G41XA / XT26G02E / WSFVC32GBID), UBI |
 | PON | GPON, Semtech GN25L95 BOSA |
-| LAN | 4× GbE (RTL8211 PHYs), USB |
+| LAN | 4× GbE (internal PHYs on switch ports 0–3), USB |
 | WiFi | Realtek AX (rtw/PHL driver), 2.4 + 5 GHz |
 | VoIP | 2× FXS (Si3228x) |
 | Boot | ATF BL1/BL2/BL31 → U-Boot 2020.01, dual bank (`sw_commit`, `sw_tryactive`) |
@@ -91,6 +91,18 @@ Screenshots (LuCI mock with sample data): [banner](docs/screenshots/banner.jpg),
 
 See [docs/FLASH_LAYOUT.md](docs/FLASH_LAYOUT.md) for the MTD/UBI layout and
 the U-Boot bank logic.
+
+### Hardware revisions
+
+| Revision | | Profile |
+|---|---|---|
+| A1 | 4× GbE, stock firmware V1.x: supported and tested | `devices/dpn-fx3060v-a1` |
+| B1 | 2.5GbE port (RTL8221B), stock firmware V2.x: not yet | see [docs/PORTING.md](docs/PORTING.md) |
+
+Images are built per revision (`DEVICE=` in `build.conf`) because they carry
+that revision's stock kernel and device tree. The installers compare the
+switch PHY IDs of the unit with the image's profile and refuse a mismatch
+(`touch /tmp/nijika_force` overrides); `nijika hw` shows both.
 
 ## Building
 
@@ -248,13 +260,23 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
   (`COLOR=truecolor STATE=O3 RX=-28.4 tools/banner-preview.sh`).
 * `tools/luci-mock/server.py`: run the LuCI app in a browser against
   synthetic data (after `./build.sh rootfs assemble`).
-* `tools/fwu-dryrun.sh`: runs the factory installer (`firmware/fwu.sh`) on a PC
-  against stubbed stock tools through seven upgrade situations (fresh install,
-  reinstall, U-Boot env out of sync, corrupt upload, wrong device, oversized
-  rootfs, unknown running bank) and prints its log.
-* `tools/probe.sh`: **read-only** script for the router. It records the exact
-  `diag`/`omcicli`/`flash`/`voipflashcmd` output formats and the layout NijikaWrt
-  relies on. Secrets are redacted by default.
+* `tests/run.sh`: offline regression suite (about 20 s, no router): shell
+  syntax, JSON, lint rules, the parsers against real captures, the stock
+  dnsmasq wrapper, `/etc/config/rtk` quoting, the boot-env hook, every factory
+  installer scenario, the banner. Run it before every image.
+* `tools/fwu-dryrun.sh`: runs the factory installer shipped in the image on a
+  PC against stubbed stock tools through eleven upgrade situations (fresh
+  install, reinstall, U-Boot env out of sync, corrupt upload, wrong device,
+  oversized rootfs, unknown running bank, env not writable, other hardware
+  revision, other revision's stock firmware, PHY IDs unreadable).
+* `tools/probe.sh`: **read-only** script for the router (stock or NijikaWrt).
+  It records the exact `diag`/`omcicli`/`flash`/`voipflashcmd` output formats,
+  the layout NijikaWrt relies on and the hardware facts a device profile needs
+  (switch PHY IDs, port status, kernel options). Secrets are redacted by default.
+* `tools/omci-capture.sh`: OMCI baseline (every data-path ME class, the queue
+  map, the connections) from a unit on live fibre, credentials masked.
+* [docs/PORTING.md](docs/PORTING.md): bringing up another hardware revision,
+  and the list of pitfalls found on A1.
 * `package/` is also an OpenWrt feed (Makefiles), so the packages can be built as
   `.apk` with the OpenWrt SDK.
 
@@ -265,9 +287,8 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
   by the stock stack, and LuCI's *Network* pages are intentionally not installed.
 * Values written via Quick Setup/MIB are applied by the stock stack after a
   reboot.
-* The output parsers (transceiver units, ME 171 rule lines, `flash get
-  <chain>` format) follow the stock binaries' format strings and need
-  confirmation from `tools/probe.sh` output on real hardware.
+* No link aggregation: the stock kernel has no bonding and this SoC's switch
+  driver no trunking (details in `devices/dpn-fx3060v-a1/NOTES.md`).
 * Kernel threads of the stock drivers resolve paths against the OpenWrt root.
   `/lib/firmware`, `/etc/serdes`, `/etc/conf`, `/config` and `/var/*` are
   mirrored into `/rtk`. If a driver complains about a missing file, that's the

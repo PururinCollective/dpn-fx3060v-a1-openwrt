@@ -31,6 +31,24 @@ rtk_tool() {
 }
 
 diag() { rtk /bin/diag "$@" 2>/dev/null; }
+
+# Device this image was built for (devices/<id>/device.conf at build time)
+[ -f /etc/nijika_release ] && . /etc/nijika_release
+: "${NIJIKA_BOARD:=dlink,dpn-fx3060v-a1}"
+: "${NIJIKA_MODEL:=D-Link DPN-FX3060V (A1)}"
+
+# PHY ID (page 0, registers 2+3) of switch ports 0..6 -> "001ccac4 ... ffffffff",
+# the hardware fingerprint of device.conf. Empty when diag cannot tell.
+hw_phy_ids() {
+	local p r out=""
+	for p in 0 1 2 3 4 5 6; do
+		r=$(for reg in 2 3; do diag rt_port get phy-reg port $p page 0 register $reg; done |
+			sed -n 's/.*Register [23]: 0x\([0-9A-Fa-f][0-9A-Fa-f]*\).*/\1/p' | tr -d '\n' | tr 'A-F' 'a-f')
+		[ ${#r} -eq 8 ] || return 0
+		out="$out${out:+ }$r"
+	done
+	echo "$out"
+}
 omcicli() { rtk /bin/omcicli "$@" 2>/dev/null; }
 
 # --- MIB (flash) -------------------------------------------------------------

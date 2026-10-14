@@ -7,15 +7,22 @@
 #                fwu.sh dtb kimage rootfs fwu_ver hw_ver md5.txt
 #              integrity: md5.txt
 #  sysupgrade  OpenWrt NAND sysupgrade tar + fwtool metadata trailer:
-#                sysupgrade-dlink_dpn-fx3060v-a1/{CONTROL,kernel,root,dtb}
+#                sysupgrade-<board>/{CONTROL,kernel,root,dtb}
 #              integrity: fwtool trailer CRC, board: metadata supported_devices
+#
+# Each image carries the stock kernel + device tree of one hardware revision.
+# NijikaWrt images name it (sysupgrade metadata "nijika.phy_ids", or the
+# IMG_PHY_IDS line of the factory fwu.sh) and must match the switch PHY IDs of
+# this unit; a stock D-Link image must match this revision's stock version.
+# `touch /tmp/nijika_force` overrides (sysupgrade -F skips the check too).
 #
 # dtb/kernel/rootfs are written to ubi_DTB<n>/ubi_k<n>/ubi_r<n> of the bank
 # we are NOT running from. U-Boot then boots it once (sw_tryactive) with a
 # 60 s watchdog; the stock fw_loaded.sh commits it after a good boot.
 
-FW_BOARD=dlink_dpn-fx3060v-a1
+FW_BOARD=$(echo "$NIJIKA_BOARD" | tr ',' '_')
 FW_META=/tmp/.nijika-fw-meta.json
+FW_FORCE_FILE=/tmp/nijika_force
 
 # fw_detect IMAGE -> sets FW_FMT, FW_DTB, FW_KERNEL, FW_ROOT (tar member names)
 fw_detect() {
@@ -36,7 +43,7 @@ fw_detect() {
 		FW_KERNEL=kimage
 		FW_ROOT=rootfs
 	else
-		echo "not a DPN-FX3060V firmware image (neither factory nor sysupgrade format)"
+		echo "not a firmware image for the $NIJIKA_MODEL (neither factory nor sysupgrade format)"
 		return 1
 	fi
 	return 0
@@ -77,12 +84,14 @@ fw_check() {
 				echo "sysupgrade image metadata missing or checksum mismatch"
 				return 1
 			}
-			jsonfilter -i "$FW_META" -e '@.supported_devices[*]' | grep -qx "dlink,dpn-fx3060v-a1" || {
-				echo "sysupgrade image is not for the DPN-FX3060V (A1)"
+			jsonfilter -i "$FW_META" -e '@.supported_devices[*]' | grep -qx "$NIJIKA_BOARD" || {
+				echo "sysupgrade image is not for the $NIJIKA_MODEL"
 				return 1
 			}
 			;;
 	esac
+
+	fw_check_hw "$img" || return 1
 
 	[ "$(tar -xOf "$img" "$FW_ROOT" | head -c 4)" = "hsqs" ] || {
 		echo "rootfs is not a squashfs image"
@@ -100,6 +109,34 @@ fw_check() {
 	done
 
 	return 0
+}
+
+# fw_check_hw IMAGE -- the hardware revision the image was built for must be
+# this unit (see the top of this file).
+fw_check_hw() {
+	local img="$1" want="" live stock
+	case "$FW_FMT" in
+		sysupgrade) want=$(jsonfilter -i "$FW_META" -e '@.nijika.phy_ids' 2>/dev/null) ;;
+		factory) want=$(tar -xOf "$img" fwu.sh 2>/dev/null | sed -n "s/^IMG_PHY_IDS='\(.*\)'$/\1/p") ;;
+	esac
+
+	if [ -z "$want" ]; then
+		# stock D-Link image: no fingerprint, check its version instead
+		stock=$(tar -xOf "$img" fwu_ver 2>/dev/null | head -n 1)
+		[ -z "$stock" ] || [ -z "$NIJIKA_STOCK_MATCH" ] && return 0
+		case "$stock" in NijikaWrt*) return 0 ;; esac
+		echo "$stock" | grep -Eq "$NIJIKA_STOCK_MATCH" && return 0
+		[ -f "$FW_FORCE_FILE" ] && return 0
+		echo "stock firmware $stock is not for the $NIJIKA_MODEL (touch $FW_FORCE_FILE to override)"
+		return 1
+	fi
+
+	live=$(hw_phy_ids)
+	[ -z "$live" ] && return 0	# not readable: nothing to compare
+	[ "$live" = "$want" ] && return 0
+	[ -f "$FW_FORCE_FILE" ] && return 0
+	echo "image is for other hardware: switch PHY IDs '$want', this unit '$live' (touch $FW_FORCE_FILE to override)"
+	return 1
 }
 
 # fw_target_info -> sets FW_TARGET (bank written by fw_flash), FW_TARGET_VER

@@ -9,6 +9,17 @@ BIN_DIR="${BIN_DIR:-$TOPDIR/bin}"
 # shellcheck source=../build.conf
 . "$TOPDIR/build.conf"
 
+# Device profile (devices/<DEVICE>/device.conf)
+DEVICE_DIR="$TOPDIR/devices/$DEVICE"
+if [ ! -f "$DEVICE_DIR/device.conf" ]; then
+	echo "[nijika] unknown DEVICE '$DEVICE' (no $DEVICE_DIR/device.conf)" >&2
+	exit 1
+fi
+# shellcheck source=../devices/dpn-fx3060v-a1/device.conf
+. "$DEVICE_DIR/device.conf"
+DEVICE_TAG="$(echo "$DEVICE_BOARD" | tr ',' '_')"	# dlink_dpn-fx3060v-a1
+: "${ROOTFS_MAX_BYTES:=$DEVICE_ROOTFS_MAX}"
+
 IB_NAME="openwrt-imagebuilder-${OPENWRT_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}.Linux-x86_64"
 IB_URL="${OPENWRT_MIRROR}/releases/${OPENWRT_VERSION}/targets/${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}"
 IB_DIR="$BUILD_DIR/$IB_NAME"
