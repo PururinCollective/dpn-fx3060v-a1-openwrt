@@ -243,11 +243,24 @@ t_fwu() {
 
 t_banner() {
 	echo "banner"
-	local out
-	out=$(STATE=O5 RX=-16.27 TX=2.73 ANIMATE=never COLOR=none NIJIKA_BANNER_FORCE=1 sh "$TOP/tools/banner-preview.sh" 2>&1)
-	check "renders logo, tagline and PON line" sh -c "printf '%s' \"\$1\" | grep -q 'O P E N  P O N' && printf '%s' \"\$1\" | grep -q 'RX -16.27 dBm'" _ "$out"
-	out=$(STATE=O1.1 LOS=1 RX=-inf TX=-inf ANIMATE=never COLOR=none NIJIKA_BANNER_FORCE=1 sh "$TOP/tools/banner-preview.sh" 2>&1)
-	check "no fibre: LOS and 'no light'" sh -c "printf '%s' \"\$1\" | grep -q 'no signal (LOS)' && printf '%s' \"\$1\" | grep -q 'RX no light'" _ "$out"
+	local out pv="$TOP/tools/banner-preview.sh"
+	out=$(REV=r7 NODATA=1 ANIMATE=never COLOR=none sh "$pv" 2>&1)
+	check "layout: centred logo, 'ft. <model>' under the tagline, links" sh -c '
+		printf "%s\n" "$1" | grep -qx "        |    |  |__|__|__|  |--.---.-.|  |  |  |.----.|  |_" &&
+		printf "%s\n" "$1" | grep -qx "                                            ft. DPN-FX3060V (A1)" &&
+		printf "%s\n" "$1" | grep -qx " Homepage    : https://openpon.org/" &&
+		printf "%s\n" "$1" | grep -qx " GitHub      : https://github.com/PururinCollective" &&
+		printf "%s\n" "$1" | grep -q "PON status pending  |  RX n/a  |  TX n/a"' _ "$out"
+	out=$(STATE=O5 RX=-16.27 TX=2.73 ANIMATE=never COLOR=truecolor sh "$pv" 2>&1)
+	check "live light: both rules red" sh -c '
+		[ $(printf "%s\n" "$1" | grep -E "TX 1310|RX 1490" | grep -c "38;2;210;48;48m") -eq 2 ]' _ "$out"
+	out=$(STATE=O1.1 LOS=1 RX=-inf TX=-inf ANIMATE=never COLOR=truecolor sh "$pv" 2>&1)
+	check "no fibre: rules grey, LOS and no light" sh -c '
+		[ $(printf "%s\n" "$1" | grep -E "TX 1310|RX 1490" | grep -c "38;2;210;48;48m") -eq 0 ] &&
+		printf "%s" "$1" | grep -q "no signal (LOS)" && printf "%s" "$1" | grep -q "no light"' _ "$out"
+	out=$(STATE=O5 RX=-16.27 TX=2.73 ANIMATE=always COLOR=256 SLEEP="printf @" sh "$pv" 2>&1)
+	check "animation: 36 frames, cursor shown again at the end" sh -c '
+		[ $(printf "%s" "$1" | tr -cd @ | wc -c) -eq 35 ] && printf "%s" "$1" | grep -q "?25h"' _ "$out"
 }
 
 # ------------------------------------------------------------------- main

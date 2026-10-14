@@ -67,8 +67,13 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   `mode`, `isp`, `boot`, `upgrade`, `mib`, `boa`, `reset`, `banner`. Stock
   tools are wrapped too: `diag`, `omcicli`, `flash`, `mib`, `nv`,
   `voipflashcmd`, `smuxctl`, and `rtk` opens a stock shell.
-* **Animated login banner**: a grey → cyan/blue/purple sweep with live PON
-  state and optical levels.
+* **Animated login banner**: the NijikaWrt logo, "ft. <model>" and the project
+  links, lit by a grey → cyan/blue/purple sweep. The two rules are the ONT's
+  lights: the downstream light (RX 1490 nm) flows in as a wave, then the laser
+  (TX 1310 nm) sends bursts out, as GPON does. Each rule is red only while that
+  light really exists (live reading above −35 dBm) and grey otherwise, so the
+  banner never lies about the fibre. Over SSH only by default (~1.2 s); the
+  serial console gets the static version. Links: `/usr/share/nijika/banner-links`.
 
 Screenshots (LuCI mock with sample data): [banner](docs/screenshots/banner.jpg),
 [ONT Status](docs/screenshots/luci-ont-status.jpg),
@@ -257,7 +262,8 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
 ## Development
 
 * `tools/banner-preview.sh`: render the login banner on a PC
-  (`COLOR=truecolor STATE=O3 RX=-28.4 tools/banner-preview.sh`).
+  (`COLOR=truecolor STATE=O3 RX=-28.4 tools/banner-preview.sh`; no fibre:
+  `STATE=O1.1 LOS=1 RX=-inf TX=-inf`, no reading yet: `NODATA=1`).
 * `tools/luci-mock/server.py`: run the LuCI app in a browser against
   synthetic data (after `./build.sh rootfs assemble`).
 * `tests/run.sh`: offline regression suite (about 20 s, no router): shell

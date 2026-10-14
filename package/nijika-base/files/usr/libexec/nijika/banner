@@ -48,8 +48,8 @@ esac
 tty=$(readlink /proc/self/fd/1 2>/dev/null)
 frames=1
 case "$animate" in
-	always) frames=18 ;;
-	ssh) case "$tty" in /dev/pts/*) frames=18 ;; esac ;;
+	always) frames=36 ;;
+	ssh) case "$tty" in /dev/pts/*) frames=36 ;; esac ;;
 esac
 [ "$mode" = none ] && frames=1
 
@@ -57,10 +57,12 @@ delay=""
 if [ "$frames" -gt 1 ]; then
 	if [ -n "$NIJIKA_BANNER_SLEEP" ]; then
 		delay="$NIJIKA_BANNER_SLEEP"
-	elif [ -x /usr/bin/sleep ] && /usr/bin/sleep 0 2>/dev/null; then
-		delay="/usr/bin/sleep 0.028"
+	elif sleep 0.001 2>/dev/null; then
+		# coreutils-sleep (/bin/sleep via alternatives) takes fractions; a
+		# frame also needs ~10 ms to compute on the RTL9607DQ: ~25 ms a frame
+		delay="sleep 0.015"
 	elif [ -x /rtk/bin/busybox ]; then
-		delay="/usr/libexec/rtk/glibc /rtk/bin/busybox usleep 22000"
+		delay="/usr/libexec/rtk/glibc /rtk/bin/busybox usleep 15000"
 	else
 		frames=1
 	fi
@@ -126,26 +128,28 @@ dbm_txt() {
 rx_txt=$(dbm_txt "$PON_RX_DBM")
 tx_txt=$(dbm_txt "$PON_TX_DBM")
 
+# A light rule is red only while that light exists: a reading above -35 dBm
+# (the transceiver reports -inf without light; GPON works at -8..-28 dBm in,
+# +0.5..+5 dBm out). No reading yet counts as no light.
+lit() {
+	awk -v v="$1" 'BEGIN { exit !(v != "" && v !~ /inf|n\/a/ && v + 0 > -35) }'
+}
+rxlit=0; lit "$PON_RX_DBM" && rxlit=1
+txlit=0; lit "$PON_TX_DBM" && txlit=1
+
+# ---- layout (banner-layout.sh, shared with the static /etc/banner) ----------
+
+release="$release"
 owrt="OpenWrt ${DISTRIB_RELEASE:-?} ${DISTRIB_REVISION:-}"
+kernel="${NIJIKA_BANNER_KERNEL:-$(uname -r)}"
+tagline="$NIJIKA_TAGLINE"
+model="${NIJIKA_MODEL_SHORT:-${NIJIKA_MODEL#D-Link }}"
+status_line=$(printf '  {dim}PON {%s}%s{dim}  |  RX {%s}%s{dim}  |  TX {%s}%s{dim}  |  {txt}up %s' \
+	"$st_tag" "$st_txt" "$rx_tag" "$rx_txt" "$tx_tag" "$tx_txt" "$up")
 
-# ---- layout (art by the NijikaWrt project, tabs expanded) --------------------
-
-{
-	cat <<'EOF'
-                 _______ __ __ __ __           ________        __
-                |    |  |__|__|__|  |--.---.-.|  |  |  |.----.|  |_
-                |       |  |  |  |    <|  _  ||  |  |  ||   _||   _|
-                |__|____|__|  |__|__|__|___._||________||__|  |____|
-EOF
-	printf '                           |___|     %s\n' "$NIJIKA_TAGLINE"
-	echo ""
-	echo ' <---------------------------------------------------------- {lbl}TX 1310 nm{grad} ---'
-	printf '  {hi}%s{dim}  |  {txt}%s{dim}  |  {txt}Linux %s\n' \
-		"$release" "$owrt" "${NIJIKA_BANNER_KERNEL:-$(uname -r)}"
-	printf '  {dim}PON {%s}%s{dim}  |  RX {%s}%s{dim}  |  TX {%s}%s{dim}  |  {txt}up %s\n' \
-		"$st_tag" "$st_txt" "$rx_tag" "$rx_txt" "$tx_tag" "$tx_txt" "$up"
-	echo ' --- {lbl}RX 1490 nm{grad} ---------------------------------------------------------->'
-} | awk -v mode="$mode" -v frames="$frames" -v delay="$delay" -v width=76 \
-	-f "$R/usr/lib/nijika/banner.awk"
+. "$R/usr/lib/nijika/banner-layout.sh"
+banner_layout "$R/usr/share/nijika/banner-links" |
+	awk -v mode="$mode" -v frames="$frames" -v delay="$delay" -v rxlit="$rxlit" -v txlit="$txlit" \
+		-f "$R/usr/lib/nijika/banner.awk"
 
 echo

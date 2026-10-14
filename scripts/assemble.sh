@@ -69,20 +69,20 @@ sed -i 's|^\[ -f /etc/banner \] && cat /etc/banner$|if [ -x /usr/libexec/nijika/
 	"$R/etc/profile"
 grep -q /usr/libexec/nijika/banner "$R/etc/profile" || warn "could not hook the banner into /etc/profile"
 
-# Plain banner for failsafe / dropbear.
+# Plain banner for failsafe / dropbear: the login banner's layout
+# (banner-layout.sh) without colour, animation or the live PON line.
 . "$R/etc/nijika_release"
 . "$R/etc/openwrt_release"
 release="$NIJIKA_DISTRO $NIJIKA_REVISION${NIJIKA_CODENAME:+ ($NIJIKA_CODENAME)}"
-cat > "$R/etc/banner" <<EOF
-                 _______ __ __ __ __           ________        __
-                |    |  |__|__|__|  |--.---.-.|  |  |  |.----.|  |_
-                |       |  |  |  |    <|  _  ||  |  |  ||   _||   _|
-                |__|____|__|  |__|__|__|___._||________||__|  |____|
-                           |___|     $NIJIKA_TAGLINE
- -------------------------------------------------------------------------
-  $release  |  OpenWrt $DISTRIB_RELEASE $DISTRIB_REVISION
- -------------------------------------------------------------------------
-EOF
+(
+	owrt="OpenWrt $DISTRIB_RELEASE $DISTRIB_REVISION"
+	kernel="$(cd "$R/rtk/lib/modules" 2>/dev/null && ls -d [0-9]* | head -n 1)"	# the stock kernel
+	tagline="$NIJIKA_TAGLINE"
+	model="${NIJIKA_MODEL_SHORT:-$NIJIKA_MODEL}"
+	status_line=""
+	. "$R/usr/lib/nijika/banner-layout.sh"
+	banner_layout "$R/usr/share/nijika/banner-links" | banner_plain
+) > "$R/etc/banner"
 
 # LuCI "Firmware Version" shows DISTRIB_DESCRIPTION.
 sed -i "s|^DISTRIB_DESCRIPTION=.*|DISTRIB_DESCRIPTION='$release / OpenWrt $DISTRIB_RELEASE $DISTRIB_REVISION'|" \
