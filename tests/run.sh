@@ -4,7 +4,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint parsers wrapper ucimirror bootenv fwu banner
+# Groups: syntax json lint parsers wrapper ucimirror spi bootenv fwu banner
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -190,6 +190,42 @@ t_ucimirror() {
 	check "changed: only the edited option" sh -c "[ \"\$(cat '$W/um.chg')\" = 'mib.LAN_IP_ADDR=192.168.0.2' ]"
 }
 
+# ------------------------------------------- stock SPI firewall switches
+
+t_spi() {
+	echo "spi (stock SPI firewall MIB pinning)"
+	local f="$TOP/package/rtk-vendor/files/usr/libexec/rtk/spi-firewall" D="$W/spi"
+	mkdir -p "$D"
+	{
+		sed -n '/^pin()/,/^}/p' "$f"
+		sed -n '/^spi_apply()/,/^}/p' "$f"
+	} > "$D/lib.sh"
+	# spi MIB-STATE V4-MODE V6-MODE [readonly] -> the flash writes
+	spi() {
+		printf '%s\n' $1 > "$D/mib"; : > "$D/writes"
+		"$BB" sh -c "
+			logger() { :; }
+			mib_get() { sed -n \"s/^\$1=//p\" '$D/mib'; }
+			mib_set() { [ -z '$4' ] || return 1; echo \"\$1=\$2\" >> '$D/writes'; }
+			. '$D/lib.sh'; changed=0
+			spi_apply '$2' ''; spi_apply '$3' V6_" >/dev/null 2>&1
+		tr '\n' ' ' < "$D/writes"
+	}
+	local factory='IPF_IN_ACTION=0 IPF_OUT_ACTION=1 V6_IPF_IN_ACTION=0 V6_IPF_OUT_ACTION=1'
+	local open='IPF_IN_ACTION=1 IPF_OUT_ACTION=1 V6_IPF_IN_ACTION=1 V6_IPF_OUT_ACTION=1'
+	local trap='IPF_IN_ACTION=0 IPF_OUT_ACTION=0 V6_IPF_IN_ACTION=0 V6_IPF_OUT_ACTION=0'
+	check "factory -> off/off: only the two incoming switches written" sh -c \
+		"[ \"$(spi "$factory" off off)\" = 'IPF_IN_ACTION=1 V6_IPF_IN_ACTION=1 ' ]"
+	check "already off: nothing written" sh -c "[ -z \"$(spi "$open" off off)\" ]"
+	check "outgoing lock-out -> on/on: outgoing allowed again, incoming kept" sh -c \
+		"[ \"$(spi "$trap" on on)\" = 'IPF_OUT_ACTION=1 V6_IPF_OUT_ACTION=1 ' ]"
+	check "keep: nothing written, even from the lock-out state" sh -c "[ -z \"$(spi "$trap" keep keep)\" ]"
+	check "per family: off for IPv4, stock default for IPv6" sh -c \
+		"[ \"$(spi "$open" off on)\" = 'V6_IPF_IN_ACTION=0 ' ]"
+	check "unknown mode: nothing written" sh -c "[ -z \"$(spi "$factory" disabled '')\" ]"
+	check "flash set failing: no partial state recorded" sh -c "[ -z \"$(spi "$factory" off off readonly)\" ]"
+}
+
 # ------------------------------------------------ preinit boot-env hook
 
 t_bootenv() {
@@ -265,10 +301,10 @@ t_banner() {
 
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint parsers wrapper ucimirror bootenv fwu banner}"
+groups="${*:-syntax json lint parsers wrapper ucimirror spi bootenv fwu banner}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|parsers|wrapper|ucimirror|bootenv|fwu|banner) "t_$g" ;;
+		syntax|json|lint|parsers|wrapper|ucimirror|spi|bootenv|fwu|banner) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

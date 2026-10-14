@@ -14,6 +14,18 @@ config vendor 'vendor'
 	option lan_mgmt '1'
 	option lan_ifname 'br0'
 
+config firewall 'firewall'
+	# The stock "SPI Firewall" switches (stock GUI: Firewall > IPv4/IPv6
+	# Port Filtering), pinned in the stock configuration at every boot:
+	#   off   new connections allowed both ways
+	#   on    stock default: new incoming connections dropped
+	#   keep  leave what the stock GUI set
+	# off for IPv6 means LAN devices with a public IPv6 address are
+	# reachable from the internet: their own firewall protects them. The
+	# stock configuration is shared with the stock firmware bank.
+	option spi_ipv4 'off'
+	option spi_ipv6 'off'
+
 config banner 'banner'
 	# ssh | always | never
 	option animate 'ssh'

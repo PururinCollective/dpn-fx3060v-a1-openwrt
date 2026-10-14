@@ -56,6 +56,10 @@ early() {
 	logger -t rtk-vendor "early phase done after ${i}s"
 	touch "$EARLY_DONE"
 	/usr/libexec/rtk/var-mirror
+
+	# Stock SPI firewall switches (nijika.firewall): configd is up now, the
+	# stock `startup` (late phase) builds the iptables chains from them.
+	/usr/libexec/rtk/spi-firewall boot
 }
 
 late() {

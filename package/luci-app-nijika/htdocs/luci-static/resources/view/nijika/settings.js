@@ -52,6 +52,21 @@ return view.extend({
 		o.default = '1.1.1.1,8.8.8.8';
 		o.depends('enabled', '1');
 
+		s = m.section(form.NamedSection, 'firewall', 'firewall', _('Stock SPI firewall'),
+			_('The <em>SPI Firewall</em> switches of the stock GUI (Firewall &gt; IPv4/IPv6 Port Filtering): the default action of the stock forwarding filter. <em>Off</em> allows new connections both ways, <em>On</em> drops new incoming ones (stock default; outgoing stays allowed). NijikaWrt writes them to the stock configuration at every boot; a change here applies after the next reboot. The router\'s own services (LuCI, SSH, stock GUI) are guarded by separate rules either way. The stock configuration is shared with the stock firmware bank.'));
+		o = s.option(form.ListValue, 'spi_ipv4', _('IPv4'),
+			_('Unsolicited incoming IPv4 connections still need a port forward or DMZ (NAT).'));
+		o.value('off', _('Off'));
+		o.value('on', _('On (stock default)'));
+		o.value('keep', _('Keep stock GUI value'));
+		o.default = 'off';
+		o = s.option(form.ListValue, 'spi_ipv6', _('IPv6'),
+			_('IPv6 has no NAT: when off, every LAN device with a public IPv6 address is reachable from the internet and only its own firewall protects it.'));
+		o.value('off', _('Off'));
+		o.value('on', _('On (stock default)'));
+		o.value('keep', _('Keep stock GUI value'));
+		o.default = 'off';
+
 		s = m.section(form.NamedSection, 'banner', 'banner', _('Login banner'));
 		o = s.option(form.ListValue, 'animate', _('Animation'));
 		o.value('ssh', _('SSH/telnet sessions only'));

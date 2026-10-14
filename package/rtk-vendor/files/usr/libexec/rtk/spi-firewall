@@ -1,0 +1,62 @@
+#!/bin/sh
+# The stock "SPI Firewall" switches (stock GUI: Firewall > IPv4/IPv6 Port
+# Filtering) are the default actions of the stock forward filter (iptables
+# chains ipfilter / ipv6filter, FORWARD only: the router's own services are
+# guarded by the INPUT rules, lan-mgmt and Remote Access), kept in the
+# stock configuration (flash MIB) both banks share:
+#
+#   IPF_IN_ACTION     IPF_OUT_ACTION       IPv4   0 = drop  (GUI "ON")
+#   V6_IPF_IN_ACTION  V6_IPF_OUT_ACTION    IPv6   1 = allow (GUI "OFF")
+#
+# nijika.firewall.spi_ipv4 / spi_ipv6 pin them:
+#   off    new connections allowed both ways (in 1, out 1)
+#   on     stock factory default: incoming dropped, outgoing allowed (0, 1)
+#   keep   leave the values of the stock GUI alone
+# Outgoing "ON" (every new LAN connection dropped, a lock-out) is never
+# written. Only values that differ are written.
+#
+#   spi-firewall boot   from vendor-boot, between the early phase (configd
+#                       up) and the late one (stock `startup` builds the
+#                       iptables chains from these values)
+#   spi-firewall        uci reload of nijika: written to flash, the stock
+#                       firewall uses them from the next boot on
+
+. /lib/functions.sh
+. /usr/lib/nijika/common.sh
+
+# pin KEY VALUE: write the MIB value when it differs
+pin() {
+	local have
+	have=$(mib_get "$1")
+	[ "$have" = "$2" ] && return 0
+	if mib_set "$1" "$2"; then
+		logger -t rtk-firewall "$1: ${have:-unset} -> $2"
+		changed=$((changed + 1))
+	else
+		logger -t rtk-firewall "flash set $1 $2 failed"
+	fi
+}
+
+# spi_apply MODE MIB-PREFIX
+spi_apply() {
+	case "$1" in
+		off) pin "${2}IPF_IN_ACTION" 1; pin "${2}IPF_OUT_ACTION" 1 ;;
+		on) pin "${2}IPF_IN_ACTION" 0; pin "${2}IPF_OUT_ACTION" 1 ;;
+		keep|'') ;;
+		*) logger -t rtk-firewall "unknown SPI firewall mode '$1' (off|on|keep)" ;;
+	esac
+}
+
+main() {
+	local v4 v6
+	config_load nijika
+	config_get v4 firewall spi_ipv4 keep
+	config_get v6 firewall spi_ipv6 keep
+	changed=0
+	spi_apply "$v4" ""
+	spi_apply "$v6" V6_
+	[ "$1" = boot ] || [ $changed -eq 0 ] ||
+		echo "stock SPI firewall: $changed value(s) written, effective after the next reboot"
+}
+
+[ -n "$SPI_FIREWALL_LIB" ] || main "$@"

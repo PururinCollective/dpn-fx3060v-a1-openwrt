@@ -1,5 +1,7 @@
 #!/bin/sh
 # Apply /etc/config/nijika vendor settings at runtime (uci reload trigger).
 # The stock boa always runs; nijika.vendor.boa only decides who may reach
-# its web GUI, which is a firewall question.
+# its web GUI, which is a firewall question. The stock SPI firewall
+# switches (nijika.firewall) go to flash and apply from the next boot.
+/usr/libexec/rtk/spi-firewall | logger -t rtk-firewall
 exec /usr/libexec/rtk/lan-mgmt

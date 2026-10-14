@@ -84,8 +84,10 @@ docs/PORTING.md.
        interface came up mid-probe and `ca_ni_start_xmit_check` jumped through
        the not-yet-registered TX hook.
      * **late, background** (`vendor-boot late`, rc10..rc63: sysctl, systemd,
-       `startup`, VoIP): waits for the stock "system up" marker, then runs the
-       `post-boot.d` hooks (resolv.conf, LAN management rules).
+       `startup`, VoIP). Before it, `spi-firewall boot` pins the stock SPI
+       firewall switches (see *Stock SPI firewall*). It waits for the stock
+       "system up" marker, then runs the `post-boot.d` hooks (resolv.conf,
+       LAN management rules).
    * `S19dropbear`, `S50uhttpd`, `S12rpcd`: OpenWrt management.
    * **`S95nijika-housekeep`**: re-applies the LAN management rules and the
      `/var` mirror every 60 s. PON/ONT status is **not** polled: LuCI,
@@ -225,6 +227,27 @@ The stock `startup` builds the iptables/ebtables ruleset, NAT, PPPoE
 MIB. OpenWrt's `firewall4`, `dnsmasq`, `odhcpd` and `ppp` are not installed
 (the stock kernel has no nftables anyway). `lan-mgmt` inserts accept rules for
 TCP 22/80 on `br0` into the stock INPUT chain and re-checks them every minute.
+
+### Stock SPI firewall
+
+The *SPI Firewall* switches of the stock GUI (Firewall > IPv4/IPv6 Port
+Filtering) are the default actions of the stock forwarding filter, the chains
+`ipfilter` and `ipv6filter` hooked into FORWARD only. The router's own services
+are guarded by the INPUT rules (`inacc`, Remote Access, `lan-mgmt`) whatever
+they say.
+
+| MIB | GUI | factory |
+|---|---|---|
+| `IPF_IN_ACTION`, `V6_IPF_IN_ACTION` | Incoming | `0` (ON: new connections from the WAN dropped) |
+| `IPF_OUT_ACTION`, `V6_IPF_OUT_ACTION` | Outgoing | `1` (OFF; ON drops every new LAN connection) |
+
+`0` is the GUI's ON (drop), `1` its OFF (allow). `spi-firewall boot` pins them
+from `nijika.firewall.spi_ipv4` / `spi_ipv6` between the early phase (configd
+is up) and the late one (`startup` builds the chains), writing only values
+that differ. `off` (default) sets both directions to `1`, `on` restores the
+factory pair, `keep` leaves them alone; outgoing ON is never written. A uci
+reload of `nijika` writes them too, effective from the next boot. The MIB is
+shared with the stock bank, which therefore boots with the same switches.
 
 ## A/B upgrades
 

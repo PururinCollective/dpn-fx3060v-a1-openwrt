@@ -40,6 +40,11 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   `https://b.hitoha.moe/dns-query`. The stock DNS server keeps serving the LAN
   and sends every lookup to a local `https-dns-proxy`, except the ISP's own
   domains (voice/IMS, TR-069), so phone and remote management keep working.
+* **Stock SPI firewall off**: the stock GUI's *SPI Firewall* switches (IPv4 and
+  IPv6, incoming and outgoing) are set to off at every boot, so a wrong toggle
+  can no longer cut the LAN off. NAT still keeps unsolicited IPv4 out; on IPv6
+  every LAN device with a public address is reachable, its own firewall is what
+  protects it (`firewall.spi_ipv6 on` restores the stock behaviour).
 * **The stock configuration as UCI**: `/etc/config/rtk` mirrors the flash MIB
   (`uci get rtk.mib.LAN_IP_ADDR`, `uci get rtk.ATM_VC_TBL_0.vid`); a commit plus
   `reload_config` (or LuCI "Save & Apply") writes the changed options back
@@ -240,6 +245,8 @@ nijika banner | version | rtk [cmd]
 | `doh.bootstrap_dns` | `1.1.1.1,8.8.8.8` | plain DNS used only to look up the resolver's host name |
 | `doh.listen_port` | `5053` | local port of the proxy (127.0.0.1) |
 | `uci.tables` | `ATM_VC_TBL WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL` | chain tables mirrored into `/etc/config/rtk` |
+| `firewall.spi_ipv4` | `off` | stock *IPv4 SPI Firewall*, pinned at boot: `off` (allow both ways), `on` (stock: drop new incoming), `keep` (whatever the stock GUI set) |
+| `firewall.spi_ipv6` | `off` | the same for IPv6 (`off`: LAN devices reachable over IPv6) |
 
 ## The stock configuration as UCI (`/etc/config/rtk`)
 

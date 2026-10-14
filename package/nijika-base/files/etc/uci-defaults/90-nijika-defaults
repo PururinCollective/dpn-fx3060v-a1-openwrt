@@ -30,6 +30,12 @@ set nijika.uci=uci
 set nijika.uci.tables='ATM_VC_TBL WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL'
 commit nijika
 END
+uci -q get nijika.firewall >/dev/null || uci -q batch <<'END'
+set nijika.firewall=firewall
+set nijika.firewall.spi_ipv4='off'
+set nijika.firewall.spi_ipv6='off'
+commit nijika
+END
 
 # Time comes from the stock stack.
 /etc/init.d/sysntpd disable 2>/dev/null
