@@ -71,7 +71,7 @@ overrides. `nijika hw` shows the expected and the live fingerprint.
    2.5G port's speed.
 7. **With fibre**: `tools/omci-capture.sh` for an OMCI baseline; add the parts
    the parsers need to `tests/fixtures/` (with serials and credentials removed),
-   and check *PON > Provisioning*.
+   and check *PON > OLT Provision*.
 
 ## What A1 taught us
 
@@ -83,7 +83,7 @@ overrides. `nijika hw` shows the expected and the live fingerprint.
 | trial boot never committed, `sw_active` naming the wrong bank, stock GUI "ubiupdatevol busy" | U-Boot's `saveenv` inside `bootcmd` does not reach the flash | `lib/preinit/03_nijika_bootenv`, `fwu.sh` bank check |
 | LuCI pages broken or `\n` shown as `n` | busybox 1.37 awk drops backslashes from `gsub()` replacements (1.36 on the build host does not) | character-loop JSON escaping; `tests/run.sh lint` |
 | `omcicli mib get all` cut off, the rest appearing in the next command | omcicli waits only briefly for omci_app | `omci.sh`: one class per request, header check, pause after a cut-off answer |
-| Provisioning page timing out without fibre | empty OMCI tables end with the header, not `=====` | `omci.sh` |
+| OLT Provision page timing out without fibre | empty OMCI tables end with the header, not `=====` | `omci.sh` |
 | ONU state "unknown", alarms empty | `diag gpon ...` is the old tree ("driver not found"); this SoC uses `diag rt_gpon`, which has no alarms | `pon.sh` (LOS from RX power) |
 | WAN records empty | `flash get <TABLE>` prints `%-18s = %s` (padded), single members `field=value` | `chain.awk`, `mib_get` |
 | prompt shows `RTK_GW` | stock `startup` writes MIB `DEVICE_NAME` to the kernel hostname | `usr/libexec/rtk/hostname` (housekeep) |

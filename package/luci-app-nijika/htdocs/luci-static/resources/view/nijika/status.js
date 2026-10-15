@@ -39,13 +39,86 @@ function renderAlarms(st) {
 	return E('table', { 'class': 'table' }, rows);
 }
 
+function table(headers, rows, empty) {
+	return E('table', { 'class': 'table' }, [
+		E('tr', { 'class': 'tr table-titles' }, headers.map(function(h) { return E('th', { 'class': 'th left' }, h); }))
+	].concat(rows.length ? rows.map(function(r) {
+		return E('tr', { 'class': 'tr' }, r.map(function(c) { return E('td', { 'class': 'td left' }, c); }));
+	}) : [ E('tr', { 'class': 'tr placeholder' }, E('td', { 'class': 'td', 'colspan': headers.length }, E('em', {}, empty))) ]));
+}
+
+function renderMe131(me) {
+	var rows = (me.instances || []).map(function(i) {
+		return [ nc.attr(i, 'EntityId') || '-',
+			E('strong', {}, nc.hexLabel(nc.attr(i, 'OltVendorId'))),
+			nc.hexLabel(nc.attr(i, 'EquipId')), nc.hexLabel(nc.attr(i, 'Version')),
+			nc.attr(i, 'ToDInfo') || '-' ];
+	});
+	return table([ _('Entity'), _('OLT vendor'), _('Equipment ID'), _('Version'), _('ToD info') ], rows,
+		_('OLT has not authenticated this ONT yet.'));
+}
+
+function renderMe256(me) {
+	var i = (me.instances || [])[0];
+	if (!i)
+		return E('em', {}, _('No ONT-G instance'));
+	return nc.kvTable([
+		[ _('Vendor ID'), nc.hexLabel(nc.attr(i, 'VID')) ],
+		[ _('Version'), nc.hexLabel(nc.attr(i, 'Version')) ],
+		[ _('Serial number'), nc.hexLabel(nc.attr(i, 'SerialNum')) ],
+		[ _('Traffic management option'), { 0: _('0 - priority controlled'), 1: _('1 - rate controlled'), 2: _('2 - priority and rate controlled') }[nc.attr(i, 'TraffMgtOpt')] || nc.attr(i, 'TraffMgtOpt') ],
+		[ _('Admin / operational state'), '%s / %s'.format(nc.attr(i, 'AdminState') || '-', nc.attr(i, 'OpState') || '-') ],
+		[ _('ONT state'), nc.attr(i, 'OntState') || '-' ]
+	]);
+}
+
+function renderMe84(me) {
+	var rows = (me.instances || []).map(function(i) {
+		var vids = nc.vtfdVids(i);
+		return [ nc.attr(i, 'EntityID') || nc.attr(i, 'EntityId') || '-',
+			nc.attr(i, 'FwdOp') || '-',
+			vids.length ? E('strong', {}, vids.join(', ')) : E('em', {}, _('none')),
+			nc.attr(i, 'NumOfEntries') || '-' ];
+	});
+	return table([ _('Entity'), _('Forward op'), _('VLAN IDs'), _('Entries') ], rows,
+		_('No VLAN tagging filter provisioned (ME 84 withheld by the OLT?)'));
+}
+
+function renderMe171(me, o5) {
+	var rows = (me.instances || []).map(function(i) {
+		var rules = nc.extVlanRules(i), at = nc.attr(i, 'AssociationType'), mp = nc.attr(i, 'AssociatedMePoint');
+		var rcell = rules.length ? E('div', { 'class': 'nijika-vlan' }, rules.map(function(r) {
+			/* G.988 treatment "tags to remove": 0-2 tags popped, 3 = discard */
+			var rm = r.treatmentOuter && r.treatmentOuter.rm;
+			return E('div', {}, [
+				E('sup', { 'title': _('Filter outer') }, nc.fmtFilter(r.filterOuter)), '↘',
+				E('sub', { 'title': _('Filter inner') }, nc.fmtFilter(r.filterInner)),
+				' → '
+			].concat(rm == '3' ? [ E('span', { 'class': 'drop', 'title': _('Frame is discarded') }, _('drop')) ] : [
+				(rm && rm != '0') ? E('span', { 'class': 'pop', 'title': _('Tags removed') }, _('pop %s').format(rm) + ' ') : '',
+				E('sup', { 'title': _('Treatment outer') }, nc.fmtTreat(r.treatmentOuter)), '↘',
+				E('sub', { 'title': _('Treatment inner') }, nc.fmtTreat(r.treatmentInner))
+			]));
+		})) : E('em', {}, o5 ? _('Port is disabled by OLT') : '-');
+		var uni = nc.uniLabel(at, mp), type = nc.ASSOC_TYPES[at] || at || '?';
+		return [ nc.attr(i, 'EntityId') || '-', mp || '-',
+			(uni == type) ? uni : '%s (%s)'.format(uni, type),
+			rcell ];
+	});
+	return table([ _('Entity'), _('ME point'), _('UNI'), E('span', { 'class': 'nijika-vlan' }, [
+		_('Rules') + ' ', E('sup', {}, _('outer')), '↘', E('sub', {}, _('inner')), ' → ',
+		E('sup', {}, _('outer')), '↘', E('sub', {}, _('inner')) ]) ], rows,
+		_('No extended VLAN operation provisioned (ME 171 withheld by the OLT?)'));
+}
+
+/* What the OLT provisioned over OMCI: ME 131 OLT-G, ME 256 ONT-G, ME 84
+ * VLAN tagging filter, ME 171 extended VLAN operation (as NIJIKA
+ * omci_olt.asp). An OLT can range the ONT to O5 and still withhold 84/171. */
 function renderProvision(olt) {
 	if (!olt || olt.error)
 		return E('em', {}, olt && olt.error || _('No OMCI data'));
 
-	var i131 = (olt.me131 && olt.me131.instances || [])[0] || { attrs: [] },
-	    i256 = (olt.me256 && olt.me256.instances || [])[0] || { attrs: [] },
-	    n84 = (olt.me84 && olt.me84.instances || []).length,
+	var n84 = (olt.me84 && olt.me84.instances || []).length,
 	    n171 = (olt.me171 && olt.me171.instances || []).length,
 	    o5 = /^O5/.test(olt.state || ''),
 	    warn = '';
@@ -57,16 +130,12 @@ function renderProvision(olt) {
 
 	return E([], [
 		warn,
-		nc.kvTable([
-			[ _('OLT vendor ID') + ' (ME 131)', nc.hexLabel(nc.attr(i131, 'OltVendorId')) ],
-			[ _('OLT equipment ID'), nc.hexLabel(nc.attr(i131, 'EquipId')) ],
-			[ _('OLT version'), nc.hexLabel(nc.attr(i131, 'Version')) ],
-			[ _('ONT-G vendor / version') + ' (ME 256)', '%s / %s'.format(nc.hexLabel(nc.attr(i256, 'VID')), nc.hexLabel(nc.attr(i256, 'Version'))) ],
-			[ _('Traffic management option'), nc.attr(i256, 'TraffMgtOpt') || '-' ],
-			[ _('VLAN filters (ME 84)'), n84 ? String(n84) : E('em', {}, _('none')) ],
-			[ _('Extended VLAN (ME 171)'), n171 ? String(n171) : E('em', {}, _('none')) ]
-		]),
-		E('p', {}, E('a', { 'href': L.url('admin/nijika/omci') }, _('Open the ME Explorer for details…')))
+		E('h4', {}, 'ME 131 — ' + nc.meName(131)), renderMe131(olt.me131 || {}),
+		E('h4', {}, 'ME 256 — ' + nc.meName(256)), renderMe256(olt.me256 || {}),
+		E('h4', {}, 'ME 84 — ' + nc.meName(84)), renderMe84(olt.me84 || {}),
+		E('h4', {}, 'ME 171 — ' + nc.meName(171)), renderMe171(olt.me171 || {}, o5),
+		E('p', { 'class': 'nijika-hint' },
+			_('Filter: "no tag" = untagged frames, "default" = default rule, "any" = any VID. Treatment: "pop N" removes N received tags, "drop" discards the frame, "copy inner/outer" keeps the received VID.'))
 	]);
 }
 
@@ -109,7 +178,7 @@ return view.extend({
 			E('div', { 'class': 'cbi-section' }, [ E('h3', {}, _('PON link')), link ]),
 			E('div', { 'class': 'cbi-section' }, [ E('h3', {}, _('Optical transceiver (BOSA)')), optics ]),
 			E('div', { 'class': 'cbi-section' }, [ E('h3', {}, _('Alarms')), alarms ]),
-			E('div', { 'class': 'cbi-section' }, [ E('h3', {}, _('OLT provisioning')), prov ])
+			E('div', { 'class': 'cbi-section' }, [ E('h3', {}, _('OMCI provisioning')), prov ])
 		]);
 	},
 

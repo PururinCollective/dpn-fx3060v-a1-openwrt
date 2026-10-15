@@ -109,7 +109,11 @@ return view.extend({
 	},
 
 	handleSave: function() {
-		return nc.mibSave(this.map, 'lan', this.orig, KEYS, _('LAN settings saved.'));
+		var self = this;
+		return nc.mibSave(this.map, 'lan', this.orig, KEYS, _('LAN settings saved.')).then(function(r) {
+			if (r)
+				return nc.reloadView(self);
+		});
 	},
 
 	handleSaveApply: function() {

@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 /* libmib (stock), prototypes from the SDK's utility.h / sysconfig.h /
  * subr_wlan.h. WAN records are passed through as opaque buffers. */
@@ -36,10 +37,18 @@ extern int delDhcpcOption(unsigned int ifindex);
 extern void rtk_layer2bridging_update_wan_interface_mib_table(int action, unsigned int old_ifIndex,
 							      unsigned int new_ifIndex);
 extern int rtk_tr181_update_wan_interface_entry_list(int action, void *pOld, void *pNew);
+extern int mib_chain_update(int id, void *ptr, unsigned int recordNum);
+extern int updatePortForwarding(unsigned int old_id, unsigned int new_id);
+extern int updateRoutingTable(unsigned int old_id, unsigned int new_id);
 extern void Commit(void);
 extern void rtk_multicast_snooping(void);
 extern int restart_ethernet(int instnum);
 extern int setup_wlan_block(void);
+/* EasyMesh (D-Link libmib, as called by boa's formMultiAP) */
+extern int setupMultiAPController(char *role, char *role_prev, char *backhaul_link,
+				  unsigned char *dhcp_mode);
+extern void setupMultiAP_TMAuto(void);
+extern void setupMultiAPDisabled(void);
 /* librtk (stock), as called by boa's formgponConf / restartOMCIsettings */
 extern int rt_gpon_deactivate(void);
 extern int rt_gpon_activate(int initState);
@@ -53,6 +62,16 @@ extern int rt_gpon_activate(int initState);
 #define INFO_ID		0
 #define INFO_RECSIZE	40
 
+/* MIB_CE_ATM_VC_T of the stock V1.1.2 libmib (0x3c4 bytes): ifIndex at 0
+ * (media << 16 | PPP unit << 8 | VC), cmode at 0x15 (boa formEth,
+ * check_itfGroup) */
+#define VC_RECSIZE	0x3c4
+#define VC_CMODE	0x15
+#define CHANNEL_MODE_PPPOE	2
+#define CHANNEL_MODE_PPPOA	3
+#define PPP_UNITS	8
+#define NO_PPP		0xff
+
 static int usage(void)
 {
 	fputs("usage: rtk-apply <command>\n"
@@ -60,11 +79,16 @@ static int usage(void)
 	      "  lan           LAN address and DHCP server\n"
 	      "  wan-down <n>  before ATM_VC_TBL record <n> changes: take its connection down\n"
 	      "  wan-up <n>    after the change: bring record <n> up again, resync VoIP\n"
+	      "  wan-mode <n>  after the connection mode of record <n> changed (before\n"
+	      "                wan-up): drop what depended on it, new PPP unit\n"
 	      "  wan           every WAN connection down and up again, resync VoIP\n"
 	      "  wan-delete <n> [dhcpc]  delete ATM_VC_TBL record <n> (dhcpc: it is an\n"
 	      "                IPoE DHCP client), as the stock WAN page does\n"
 	      "  wlan          restart WiFi (every radio and SSID)\n"
 	      "  wlan-block    LAN <-> WiFi blocking (WLAN_BLOCK_ETH2WIR)\n"
+	      "  easymesh <role> <previous role> <backhaul>  EasyMesh role (controller,\n"
+	      "                auto, disabled; backhaul 0 wlan0, 1 wlan1, 3 auto), WiFi restart\n"
+	      "  easymesh-pair <role>  EasyMesh pairing (WPS); auto becomes the controller\n"
 	      "  snooping      IGMP/MLD snooping (MP_MODE)\n"
 	      "  lan-port <n>  LAN port n (0..3) on/off (SW_PORT_TBL.<n>.Enable)\n"
 	      "  voip          reload the VoIP configuration and restart the VoIP stack\n"
@@ -86,7 +110,7 @@ static int ploam_hex(const char *pw, char *out, size_t len)
 	return 1;
 }
 
-static int wan_id, wan_idx;	/* set by wan_record() */
+static int wan_id, wan_idx, wan_size;	/* set by wan_record() */
 
 /* ATM_VC_TBL record <arg> into a malloc'd buffer */
 static void *wan_record(const char *arg)
@@ -114,6 +138,7 @@ static void *wan_record(const char *arg)
 		size = 65536;
 	wan_id = id;
 	wan_idx = (int)n;
+	wan_size = size;
 	rec = calloc(1, size);
 	if (rec && !mib_chain_get(id, (unsigned int)n, rec)) {
 		fprintf(stderr, "rtk-apply: reading WAN record %ld failed\n", n);
@@ -121,6 +146,86 @@ static void *wan_record(const char *arg)
 		rec = NULL;
 	}
 	return rec;
+}
+
+static int is_ppp(const unsigned char *rec)
+{
+	return rec[VC_CMODE] == CHANNEL_MODE_PPPOE || rec[VC_CMODE] == CHANNEL_MODE_PPPOA;
+}
+
+/* formEth (edit) when the connection mode changed, stock V1.1.2 boa
+ * 0x46e3f8. The mode is already written (flash set), the interface index
+ * is still the old one: resolveServiceDependency drops what named the old
+ * interface (IGMP/MLD proxy, port forwards, routes, ...), then the record
+ * gets a PPP unit for PPPoE or none (0xff) otherwise. Unlike the stock form
+ * the connection keeps its VC slot, so its name (PON_<n>) and MAC address
+ * stay. wan-up starts it with the new index. */
+static int wan_mode(const char *arg)
+{
+	unsigned char *rec, *old, *other;
+	unsigned int old_if, new_if, ppp, used = 0, i, total;
+
+	if (!(rec = wan_record(arg)))
+		return 1;
+	if (wan_size != VC_RECSIZE) {
+		fprintf(stderr, "rtk-apply: WAN record is %d bytes, not the known layout\n", wan_size);
+		free(rec);
+		return 1;
+	}
+	other = calloc(1, wan_size);
+	old = malloc(wan_size);
+	if (!other || !old) {
+		free(rec), free(other), free(old);
+		return 1;
+	}
+	memcpy(old, rec, wan_size);
+	memcpy(&old_if, rec, sizeof(old_if));
+
+	/* PPP units of the other PPP connections */
+	total = (unsigned int)mib_chain_total(wan_id);
+	for (i = 0; i < total; i++) {
+		unsigned int ifi;
+
+		if ((int)i == wan_idx || !mib_chain_get(wan_id, i, other) || !is_ppp(other))
+			continue;
+		memcpy(&ifi, other, sizeof(ifi));
+		if (((ifi >> 8) & 0xff) < PPP_UNITS)
+			used |= 1u << ((ifi >> 8) & 0xff);
+	}
+	free(other);
+
+	ppp = NO_PPP;
+	if (is_ppp(rec)) {
+		ppp = (old_if >> 8) & 0xff;
+		if (ppp >= PPP_UNITS || (used & (1u << ppp))) {
+			for (ppp = 0; ppp < PPP_UNITS && (used & (1u << ppp)); ppp++)
+				;
+			if (ppp == PPP_UNITS) {
+				fputs("rtk-apply: no free PPP unit\n", stderr);
+				free(rec), free(old);
+				return 1;
+			}
+		}
+	}
+	new_if = (old_if & 0xff00ffu) | (ppp << 8);
+
+	resolveServiceDependency(wan_idx);
+	if (new_if != old_if) {
+		rtk_layer2bridging_update_wan_interface_mib_table(2, old_if, new_if);
+		updatePortForwarding(old_if, new_if);
+		updateRoutingTable(old_if, new_if);
+		memcpy(rec, &new_if, sizeof(new_if));
+		rtk_tr181_update_wan_interface_entry_list(2, old, rec);
+		if (!mib_chain_update(wan_id, rec, (unsigned int)wan_idx)) {
+			fprintf(stderr, "rtk-apply: updating WAN record %d failed\n", wan_idx);
+			free(rec), free(old);
+			return 1;
+		}
+	}
+	free(rec), free(old);
+	Commit();
+	printf("ifIndex 0x%x -> 0x%x\n", old_if, new_if);
+	return 0;
 }
 
 int main(int argc, char **argv)
@@ -148,6 +253,8 @@ int main(int argc, char **argv)
 		restartWAN(CONFIGONE, rec);
 		free(rec);
 		reSync_reStartVoIP();
+	} else if (!strcmp(cmd, "wan-mode") && argc == 3) {
+		return wan_mode(argv[2]);
 	} else if (!strcmp(cmd, "wan-delete") && (argc == 3 || argc == 4)) {
 		/* formEth (delete), stock V1.1.2 boa 0x46e3f8 */
 		unsigned int ifindex;
@@ -178,6 +285,34 @@ int main(int argc, char **argv)
 	} else if (!strcmp(cmd, "wlan")) {
 		/* formWlanSetup, formWlEncrypt; same as `wlan_apply restart` */
 		config_WLAN(ACT_RESTART, CONFIG_SSID_ALL);
+	} else if (!strcmp(cmd, "easymesh") && argc == 5) {
+		/* formMultiAP (stock V1.1.2 boa 0x44791c), Apply: role, then
+		 * config_WLAN and the commit. The DHCP mode stays the server's:
+		 * the agent role is not offered on the gateway. */
+		unsigned char dhcp[4] = { 2, 0, 0, 0 };
+
+		if (!strcmp(argv[2], "controller"))
+			setupMultiAPController(argv[2], argv[3], argv[4], dhcp);
+		else if (!strcmp(argv[2], "auto"))
+			setupMultiAP_TMAuto();
+		else if (!strcmp(argv[2], "disabled"))
+			setupMultiAPDisabled();
+		else
+			return usage();
+		config_WLAN(ACT_RESTART, CONFIG_SSID_ALL);
+		Commit();
+	} else if (!strcmp(cmd, "easymesh-pair") && argc == 3) {
+		/* formMultiAP, Start PBC: with the auto role the device becomes the
+		 * controller (backhaul on either radio) when nas0 has link, first */
+		unsigned char dhcp[4] = { 2, 0, 0, 0 };
+
+		if (!strcmp(argv[2], "auto")) {
+			setupMultiAPController("controller", "disabled", "3", dhcp);
+			config_WLAN(ACT_RESTART, CONFIG_SSID_ALL);
+			Commit();
+			sleep(5);
+		}
+		system("echo 2 > /tmp/virtual_push_button");
 	} else if (!strcmp(cmd, "wlan-block")) {
 		/* formTcpipLanSetup: BlockEth2Wir */
 		setup_wlan_block();

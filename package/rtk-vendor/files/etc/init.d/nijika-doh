@@ -2,7 +2,7 @@
 # DNS over HTTPS for the LAN and the router itself: https-dns-proxy on
 # 127.0.0.1, used by the stock dnsmasq for every lookup except the ISP's own
 # domains (voice/IMS, TR-069), which keep going to the ISP's DNS.
-# Settings: nijika.doh (LuCI: PON > Settings, CLI: nijika doh).
+# Settings: nijika.doh (LuCI: Nijika > Settings, CLI: nijika doh).
 
 START=60
 USE_PROCD=1

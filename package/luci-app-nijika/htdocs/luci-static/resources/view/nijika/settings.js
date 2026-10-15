@@ -2,6 +2,7 @@
 'require view';
 'require form';
 'require uci';
+'require ui';
 
 return view.extend({
 	render: function() {
@@ -39,6 +40,16 @@ return view.extend({
 		o = s.option(form.Flag, 'inetd', _('Stock telnet (inetd)'),
 			_('Telnet on port 23 into the stock shell. SSH (dropbear) is always provided by OpenWrt.'));
 		o.default = '0';
+
+		o = s.option(form.Flag, 'tr069', _('Stock TR-069 client'),
+			_('The ISP\'s auto-configuration server (ACS) can change the stock configuration through it: WAN, WiFi, VoIP, firmware. Off under NijikaWrt; the TR-069 WAN connection still comes up and gets its address. The stock GUI\'s TR-069 settings, which the stock firmware bank uses, are left as they are. Applied right away.'));
+		o.default = '0';
+		o.rmempty = false;
+
+		o = s.option(form.Flag, 'snmp', _('Stock SNMP agent'),
+			_('The stock snmpd (UDP 161), as configured on the stock GUI\'s SNMP page. Off under NijikaWrt; the stock settings are left as they are. Applied right away.'));
+		o.default = '0';
+		o.rmempty = false;
 
 		o = s.option(form.Flag, 'lan_mgmt', _('Keep LuCI/SSH reachable from LAN'),
 			_('Adds accept rules for TCP 22 and 80 on the LAN bridge to the stock iptables ruleset.'));
@@ -83,9 +94,10 @@ return view.extend({
 
 		s = m.section(form.NamedSection, 'banner', 'banner', _('Login banner'));
 		o = s.option(form.ListValue, 'animate', _('Animation'));
+		o.value('always', _('Always (takes a moment on the 115200 baud serial console)'));
 		o.value('ssh', _('SSH/telnet sessions only'));
-		o.value('always', _('Always (slow on 115200 baud serial)'));
 		o.value('never', _('Never'));
+		o.default = 'always';
 		o = s.option(form.ListValue, 'color', _('Colours'));
 		o.value('auto', _('Auto-detect'));
 		o.value('truecolor', _('24-bit truecolor'));
@@ -99,6 +111,25 @@ return view.extend({
 		o.datatype = 'range(1,300)';
 		o.default = '5';
 
+		s = m.section(form.NamedSection, 'ui', 'ui', _('Developer options'));
+		o = s.option(form.Flag, 'developer', _('Enable'),
+			_('Shows expert pages: PON > ONT Identity (how the ONT presents itself to the OLT).'));
+		o.default = '0';
+		o.rmempty = false;
+
 		return m.render();
+	},
+
+	/* The menu is cached by LuCI (server and browser): rebuild it, and
+	 * reload once the change is applied so PON > ONT Identity shows up or
+	 * goes away. */
+	handleSaveApply: function(ev, mode) {
+		var before = uci.get('nijika', 'ui', 'developer') || '0';
+		document.addEventListener('uci-applied', function() {
+			ui.menu.flushCache();
+			if ((uci.get('nijika', 'ui', 'developer') || '0') != before)
+				window.setTimeout(function() { location.reload(); }, 1000);
+		}, { once: true });
+		return this.super('handleSaveApply', [ ev, mode ]);
 	}
 });

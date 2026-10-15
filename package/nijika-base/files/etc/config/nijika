@@ -18,6 +18,15 @@ config vendor 'vendor'
 	option stock_log '5'
 	# Stock inetd (telnet on 23). OpenWrt's dropbear serves SSH on 22.
 	option inetd '0'
+	# Stock TR-069 client (cwmpClient) and SNMP agent (snmpd): off, so the
+	# ISP's ACS cannot reconfigure the stock stack behind OpenWrt's back.
+	# The TR-069 WAN connection stays up either way, and the stock
+	# configuration (shared with the stock firmware bank) keeps its settings.
+	option tr069 '0'
+	option snmp '0'
+	# wifi_defaults '1' is set once the NijikaWrt WiFi defaults (OFDMA,
+	# 802.11r, 2.4 GHz without 802.11b) were written to the stock
+	# configuration at first boot; delete it to write them again.
 	# Keep SSH/LuCI reachable from the LAN through the stock firewall.
 	option lan_mgmt '1'
 	option lan_ifname 'br0'
@@ -35,8 +44,8 @@ config firewall 'firewall'
 	option spi_ipv6 'off'
 
 config banner 'banner'
-	# ssh | always | never
-	option animate 'ssh'
+	# always | ssh | never (at 115200 baud the serial console takes a moment)
+	option animate 'always'
 	# auto | truecolor | 256 | 16 | none
 	option color 'auto'
 
@@ -59,3 +68,7 @@ config doh 'doh'
 	# Plain DNS used only to look up the resolver's host name.
 	option bootstrap_dns '1.1.1.1,8.8.8.8'
 	option listen_port '5053'
+
+config ui 'ui'
+	# Developer options: show expert pages in LuCI (PON > ONT Identity)
+	option developer '0'

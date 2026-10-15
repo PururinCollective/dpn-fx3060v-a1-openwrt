@@ -22,7 +22,7 @@ import time
 TOP = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 WWW = os.environ.get('LUCI_WWW', os.path.join(TOP, 'build', 'stage', 'www'))
 PORT = int(os.environ.get('PORT', '8080'))
-VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'gpon', 'provision', 'omci', 'identity', 'mib', 'firmware', 'settings']
+VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'voip', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
 BOOT = time.time()
 
 
@@ -132,7 +132,27 @@ def nijika_call(method, args):
     if method == 'mib_get':
         mib = UCI['rtk']['mib']
         return {'values': {k: mib.get(k, '') for k in args.get('keys', [])}}
+    if method == 'voip_get':
+        def proxy(chid, p):
+            return {'enable': '1' if p == 0 and chid == 0 else '0', 'display_name': 'Line %d' % (chid + 1),
+                    'number': '0312345678' if chid == 0 else '', 'login_id': '0312345678@ims.tm.com.my' if chid == 0 else '',
+                    'password': 'mock' if chid == 0 else '', 'addr': 'ims.tm.com.my' if p == 0 else '',
+                    'port': '5060', 'domain_name': 'ims.tm.com.my' if p == 0 else ''}
+        return {'lines': [{'line': c, 'proxies': [proxy(c, 0), proxy(c, 1)]} for c in (0, 1)]}
+    if method == 'voip_set':
+        return {'ok': len(args.get('values', [])), 'failed': [], 'applied': ['voip'], 'reboot_required': False}
     if method == 'wan_delete':
+        return {'ok': True}
+    if method == 'wps':
+        if args.get('action') == 'pin' and not str(args.get('pin', '')).isdigit():
+            return {'error': 'the PIN has 4 or 8 digits'}
+        return {'ok': True}
+    if method == 'easymesh_get':
+        return {'role': UCI['rtk']['mib'].get('_role', 'auto'), 'name': UCI['rtk']['mib'].get('MAP_DEVICE_NAME', ''), 'running': []}
+    if method == 'easymesh_set':
+        UCI['rtk']['mib']['_role'] = args.get('role')
+        return {'ok': True, 'applied': ['wlan'], 'reboot_required': False}
+    if method == 'easymesh_pair':
         return {'ok': True}
     if method in ('mib_set',):
         return {'ok': len(args.get('values', [])), 'failed': [], 'applied': ['wlan'], 'reboot_required': False}
@@ -141,12 +161,14 @@ def nijika_call(method, args):
 
 UCI = {'nijika': {
     'vendor': {'.type': 'vendor', '.name': 'vendor', '.anonymous': False, 'boa': 'hidden', 'live_apply': '1', 'console': '1', 'inetd': '0',
+               'tr069': '0', 'snmp': '0',
                'lan_mgmt': '1', 'lan_ifname': 'br0'},
-    'banner': {'.type': 'banner', '.name': 'banner', '.anonymous': False, 'animate': 'ssh', 'color': 'auto'},
+    'banner': {'.type': 'banner', '.name': 'banner', '.anonymous': False, 'animate': 'always', 'color': 'auto'},
     'pon': {'.type': 'pon', '.name': 'pon', '.anonymous': False, 'cache_ttl': '5'},
     'doh': {'.type': 'doh', '.name': 'doh', '.anonymous': False, 'enabled': '1',
             'resolver_url': 'https://b.hitoha.moe/dns-query', 'bootstrap_dns': '1.1.1.1,8.8.8.8', 'listen_port': '5053'},
-    'firewall': {'.type': 'firewall', '.name': 'firewall', '.anonymous': False, 'spi_ipv4': 'off', 'spi_ipv6': 'off'}}}
+    'firewall': {'.type': 'firewall', '.name': 'firewall', '.anonymous': False, 'spi_ipv4': 'off', 'spi_ipv6': 'off'},
+    'ui': {'.type': 'ui', '.name': 'ui', '.anonymous': False, 'developer': '0'}}}
 
 
 def rtk_uci():
@@ -160,7 +182,13 @@ def rtk_uci():
                       'DEVICE_TYPE': '1', 'OMCI_OLT_MODE': '0', 'LAN_ENABLE_IP2': '0', 'LAN_IP_ADDR2': '192.168.100.1', 'LAN_SUBNET2': '255.255.255.0', 'MP_MODE': '4',
                       'WLAN_BLOCK_ETH2WIR': '0', 'LAN_DHCP_GATEWAY': '192.168.0.1',
                       'SW_PORT_TBL.0.Enable': '1', 'SW_PORT_TBL.1.Enable': '1', 'SW_PORT_TBL.2.Enable': '1',
-                      'SW_PORT_TBL.3.Enable': '1'}}
+                      'SW_PORT_TBL.3.Enable': '1',
+                      'AUTO_CHANNEL': '1', 'CHANNEL': '44', 'WLAN_CHANNELWIDTH': '3', 'WLAN_RFPOWER_SCALE': '0',
+                      'WLAN1_AUTO_CHANNEL': '0', 'WLAN1_CHANNEL': '11', 'WLAN1_CHANNELWIDTH': '1', 'WLAN1_RFPOWER_SCALE': '0',
+                      'SSID': 'NijikaWrt 5GHz', 'WLAN1_SSID': 'NijikaWrt 2.4GHz',
+                      'WLAN_BAND': '204', 'WLAN1_BAND': '139', 'WLAN_OFDMA_ENABLED': '0', 'WLAN1_OFDMA_ENABLED': '0',
+                      'BEACON_INTERVAL': '100', 'DTIM_PERIOD': '1', 'WLAN1_BEACON_INTERVAL': '300', 'WLAN1_DTIM_PERIOD': '1',
+                      'WSC_DISABLE': '0', 'WLAN1_WSC_DISABLE': '0', 'MAP_CONTROLLER': '3', 'MAP_DEVICE_NAME': 'MeshAuto_5a2e'}}
     fix = os.path.join(TOP, 'tests', 'fixtures', 'flash-get-atm_vc_tbl.txt')
     sec = None
     for line in open(fix):
@@ -172,12 +200,19 @@ def rtk_uci():
         elif sec is not None and '=' in line:
             k, v = line.split('=', 1)
             sec[k.strip()] = v.strip()
-    for tbl, ssids in (('WLAN_MBSSIB_TBL', ['NijikaWrt 5GHz', 'Guest 5GHz', '', '', '']),
-                       ('WLAN1_MBSSIB_TBL', ['NijikaWrt 2.4GHz', '', '', '', ''])):
+    for tbl, ssids in (('WLAN_MBSSIB_TBL', ['NijikaWrt 5GHz', 'EasyMeshBH-mock', 'Guest 5GHz', '', '', 'repeater']),
+                       ('WLAN1_MBSSIB_TBL', ['NijikaWrt 2.4GHz', '', '', '', '', 'repeater'])):
         for i, ssid in enumerate(ssids):
             name = '%s_%d' % (tbl, i)
             values[name] = {'.type': tbl, '.name': name, '.anonymous': False, 'ssid': ssid,
-                            'wlanDisabled': '0' if ssid else '1'}
+                            'wlanDisabled': '0' if ssid else '1', 'encrypt': '20' if i == 0 else '4',
+                            'wpaPSK': 'mock-passphrase', 'wpaAuth': '2', 'dotIEEE80211W': '1', 'sha256': '0',
+                            'hidessid': '0', 'userIsolation': '0' if i == 0 else '1',
+                            'wlanBand': '204' if tbl == 'WLAN_MBSSIB_TBL' else '139', 'WLAN_FT_ENABLE': '0',
+                            'WLAN_FT_MDID': 'a1b2', 'WLAN_FT_OVER_DS': '1', 'rm_activated': '1', 'BssTransEnable': '1',
+                            'wmmEnabled': '1', 'mc2u_disable': '0', 'wsc_disabled': '0' if i == 0 else '1',
+                            'wpaGroupRekeyTime': '86400',
+                            'multiap_bss_type': '96' if ssid.startswith('EasyMeshBH') else '32'}
     return values
 
 
@@ -186,7 +221,11 @@ UCI['rtk'] = rtk_uci()
 
 def ubus(obj, method, args):
     if obj == 'nijika':
+        sys.stderr.write('ubus nijika %s %s\n' % (method, json.dumps(args)))
         return [0, nijika_call(method, args)]
+    if obj == 'uci' and method in ('set', 'delete', 'add', 'apply'):
+        # what a page saved, for checking payloads
+        sys.stderr.write('ubus uci %s %s\n' % (method, json.dumps(args, sort_keys=True)))
     if obj == 'session' and method == 'access':
         return [0, {'access': True}]
     if obj == 'uci' and method == 'get':

@@ -1,5 +1,6 @@
 'use strict';
 'require baseclass';
+'require dom';
 'require rpc';
 'require ui';
 
@@ -219,6 +220,12 @@ return baseclass.extend({
 	callMibAll: rpc.declare({ object: 'nijika', method: 'mib_all' }),
 	callMibSet: rpc.declare({ object: 'nijika', method: 'mib_set', params: [ 'values' ] }),
 	callMibGet: rpc.declare({ object: 'nijika', method: 'mib_get', params: [ 'keys' ], expect: { values: {} } }),
+	callVoipGet: rpc.declare({ object: 'nijika', method: 'voip_get', expect: { lines: [] } }),
+	callVoipSet: rpc.declare({ object: 'nijika', method: 'voip_set', params: [ 'values' ] }),
+	callWps: rpc.declare({ object: 'nijika', method: 'wps', params: [ 'radio', 'action', 'pin' ] }),
+	callEasymeshGet: rpc.declare({ object: 'nijika', method: 'easymesh_get' }),
+	callEasymeshSet: rpc.declare({ object: 'nijika', method: 'easymesh_set', params: [ 'role', 'backhaul', 'name' ] }),
+	callEasymeshPair: rpc.declare({ object: 'nijika', method: 'easymesh_pair' }),
 	callChain: rpc.declare({ object: 'nijika', method: 'chain', params: [ 'table' ] }),
 	callQuickGet: rpc.declare({ object: 'nijika', method: 'quick_get' }),
 	callQuickSet: rpc.declare({ object: 'nijika', method: 'quick_set', params: [ 'pon', 'wan', 'wifi', 'voip' ] }),
@@ -281,7 +288,10 @@ return baseclass.extend({
 			.map(function(s) { return s[1]; }).join(' + ') || _('no service');
 	},
 
+	/* the stock list's names: IPoE with a DHCP address is "DHCP" */
 	wanMode: function(rec) {
+		if (rec.ChannelMode == '1' && rec.ChannelAddrType == '1')
+			return 'DHCP';
 		return WAN_MODES[rec.ChannelMode] || _('mode %s').format(rec.ChannelMode);
 	},
 
@@ -356,6 +366,17 @@ return baseclass.extend({
 			});
 		}).catch(function(e) {
 			ui.addNotification(null, E('p', _('Saving failed: %s').format(e.message || e)), 'danger');
+		});
+	},
+
+	/* Load and render a view again in place, e.g. after a save, so the
+	 * page shows what the stock configuration holds now. Notifications are
+	 * outside the view and stay. */
+	reloadView: function(view) {
+		return Promise.resolve(view.load()).then(L.bind(view.render, view)).then(function(nodes) {
+			var vp = document.getElementById('view');
+			dom.content(vp, nodes);
+			dom.append(vp, view.addFooter());
 		});
 	},
 

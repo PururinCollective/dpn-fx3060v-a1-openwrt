@@ -74,6 +74,18 @@ if [ -f "$RTKDIR/bin/dnsmasq" ] && ! grep -q "NijikaWrt wrapper" "$RTKDIR/bin/dn
 	log "moved bin/dnsmasq to lib/nijika/dnsmasq (DoH wrapper)"
 fi
 
+# Stock management agents (TR-069 client, SNMP agent): wrappers
+# (rtk/bin/cwmpClient, rtk/bin/snmpd from rtk-vendor) run them only when
+# nijika.vendor.tr069 / nijika.vendor.snmp are on. The real binaries keep
+# their names so pidof/killall still find them.
+for b in cwmpClient snmpd; do
+	if [ -f "$RTKDIR/bin/$b" ] && ! grep -q "NijikaWrt wrapper" "$RTKDIR/bin/$b" 2>/dev/null; then
+		mkdir -p "$RTKDIR/lib/nijika"
+		mv "$RTKDIR/bin/$b" "$RTKDIR/lib/nijika/$b"
+		log "moved bin/$b to lib/nijika/$b (off unless enabled)"
+	fi
+done
+
 # Stock syslog: /rtk/dev is the system /dev. The stock slogd would take
 # /dev/log away from OpenWrt's logd, and without it the stock services'
 # debug chatter (VoIP_maserati: about a line a second at info level) would

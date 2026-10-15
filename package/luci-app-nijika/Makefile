@@ -2,7 +2,7 @@
 # feed installed (luci.mk). build.sh does not need this: it copies htdocs/
 # and root/ straight into the image.
 
-LUCI_TITLE:=LuCI support for NijikaWrt (PON status, Quick Setup, ME Explorer)
+LUCI_TITLE:=LuCI support for NijikaWrt (stock GUI pages, PON status, OMCI provisioning)
 LUCI_DEPENDS:=+luci-base +nijika
 LUCI_PKGARCH:=all
 

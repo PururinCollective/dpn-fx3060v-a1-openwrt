@@ -375,6 +375,171 @@ m_quick_set() {
 	json_dump
 }
 
+# --- VoIP ------------------------------------------------------------------
+
+# Per line (CHID 0/1) and proxy (0 primary, 1 backup): the keys the stock
+# voipflashcmd knows (stock GUI: VoIP > Port1/Port2).
+VOIP_KEYS="enable display_name number login_id password addr port domain_name"
+
+m_voip_get() {
+	need_vendor
+	local chid proxy k
+	json_init
+	json_add_array lines
+	for chid in 0 1; do
+		json_add_object
+		json_add_int line "$chid"
+		json_add_array proxies
+		for proxy in 0 1; do
+			json_add_object
+			for k in $VOIP_KEYS; do
+				json_add_string "$k" "$(voip_get "$k" "$chid" "$proxy")"
+			done
+			json_close_object
+		done
+		json_close_array
+		json_close_object
+	done
+	json_close_array
+	json_dump
+}
+
+# {"values": [["key","value",chid,proxy], ...]}
+m_voip_set() {
+	need_vendor
+	local i n k v c p ok=0 failed=""
+	json_load "$1"
+	json_select values || err "values missing"
+	json_get_keys n
+	for i in $n; do
+		json_select "$i"
+		json_get_var k 1
+		json_get_var v 2
+		json_get_var c 3
+		json_get_var p 4
+		json_select ..
+		case " $VOIP_KEYS " in *" $k "*) ;; *) failed="$failed $k"; continue ;; esac
+		case "$c$p" in [01][01]) ;; *) failed="$failed $k"; continue ;; esac
+		if rtk /bin/voipflashcmd set "$k" "$v" "$c" "$p" >/dev/null 2>&1; then ok=$((ok + 1)); else failed="$failed $k"; fi
+	done
+	[ $ok -gt 0 ] && apply_detached voip
+	json_init
+	json_add_int ok "$ok"
+	json_add_array failed
+	for k in $failed; do json_add_string "" "$k"; done
+	json_close_array
+	if [ $ok -gt 0 ]; then json_add_apply voip; else json_add_apply; fi
+	json_dump
+}
+
+# --- WiFi: WPS, EasyMesh ------------------------------------------------------
+
+# {"radio": 0|1, "action": "pbc"|"pin"|"cancel", "pin": "..."}: the stock WPS
+# page (formWsc with hostapd): push button, or a client's PIN, on the main
+# SSID of the radio
+m_wps() {
+	need_vendor
+	local radio action pin ifn out ok=0
+	json_load "$1"
+	json_get_var radio radio
+	json_get_var action action
+	json_get_var pin pin
+	case "$radio" in 0|1) ifn=wlan$radio ;; *) err "no radio $radio" ;; esac
+	case "$action" in
+		pbc)
+			out=$(rtk /bin/hostapd_cli wps_pbc -i "$ifn" 2>&1)
+			case "$out" in *OK*) ok=1 ;; esac ;;
+		pin)
+			case "$pin" in
+				[0-9][0-9][0-9][0-9]|[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]) ;;
+				*) err "the PIN has 4 or 8 digits" ;;
+			esac
+			# hostapd answers with the PIN it accepted
+			out=$(rtk /bin/hostapd_cli wps_pin any "$pin" -i "$ifn" 2>&1)
+			case "$out" in *"$pin"*) ok=1 ;; esac ;;
+		cancel)
+			out=$(rtk /bin/hostapd_cli wps_cancel -i "$ifn" 2>&1)
+			case "$out" in *OK*) ok=1 ;; esac ;;
+		*) err "unknown action" ;;
+	esac
+	logger -t nijika-wps "$ifn: $action"
+	json_init
+	if [ $ok = 1 ]; then json_add_boolean ok 1; else json_add_string error "${out:-no answer from hostapd}"; fi
+	json_dump
+}
+
+# EasyMesh, the stock WLAN > EasyMesh page (formMultiAP): MAP_CONTROLLER
+# 0 disabled, 1 controller, 2 agent, 3 auto (D-Link: the role is picked
+# when pairing)
+easymesh_role() {
+	case "$(mib_get MAP_CONTROLLER)" in
+		1) echo controller ;; 2) echo agent ;; 3) echo auto ;; *) echo disabled ;;
+	esac
+}
+
+m_easymesh_get() {
+	need_vendor
+	local d
+	json_init
+	json_add_string role "$(easymesh_role)"
+	json_add_string name "$(mib_get MAP_DEVICE_NAME)"
+	json_add_array running
+	for d in map_controller map_agent map_checker; do
+		pidof "$d" >/dev/null && json_add_string "" "$d"
+	done
+	json_close_array
+	json_dump
+}
+
+# {"role": "disabled"|"controller"|"auto", "backhaul": "0"|"1"|"3", "name": ""}
+# The agent role (a mesh satellite: the LAN becomes a DHCP client) makes no
+# sense on the gateway and is not offered.
+m_easymesh_set() {
+	need_vendor
+	local role backhaul name prev t i
+	json_load "$1"
+	json_get_var role role
+	json_get_var backhaul backhaul
+	json_get_var name name
+	case "$role" in disabled|controller|auto) ;; *) err "role: disabled, controller or auto" ;; esac
+	: "${backhaul:=3}"
+	case "$backhaul" in 0|1|3) ;; *) err "backhaul: 0 (5 GHz), 1 (2.4 GHz) or 3 (auto)" ;; esac
+	prev=$(easymesh_role)
+	[ -n "$name" ] && mib_set MAP_DEVICE_NAME "$name"
+	# formMultiAP needEnable11kv: EasyMesh steers clients with 802.11k/v
+	if [ "$role" != disabled ]; then
+		for t in WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL; do
+			for i in 0 1 2 3 4; do
+				mib_set "$t.$i.rm_activated" 1
+				mib_set "$t.$i.BssTransEnable" 1
+			done
+		done
+	fi
+	( sleep 1; rtk_apply easymesh "$role" "$prev" "$backhaul" ) </dev/null >/dev/null 2>&1 &
+	json_init
+	json_add_boolean ok 1
+	json_add_apply wlan
+	json_dump
+}
+
+# Pairing button (start_wsc). D-Link's auto role turns into the controller
+# here when the PON side has link (always, on a gateway) and names the
+# device MeshController_<MAC>.
+m_easymesh_pair() {
+	need_vendor
+	local role mac
+	role=$(easymesh_role)
+	[ "$role" = disabled ] && err "EasyMesh is disabled"
+	if [ "$role" = auto ]; then
+		mac=$(mib_get ELAN_MAC_ADDR | tr -d ':' | tr 'A-F' 'a-f')
+		mib_set MAP_DEVICE_NAME "MeshController_${mac#????????}"
+	fi
+	( sleep 1; rtk_apply easymesh-pair "$role" ) </dev/null >/dev/null 2>&1 &
+	json_init
+	json_add_boolean ok 1
+	json_dump
+}
+
 # --- PON WAN ---------------------------------------------------------------
 
 # {"index": n}: delete WAN connection n (ATM_VC_TBL record), see wan_delete
@@ -555,7 +720,13 @@ case "$1" in
 	"fw_flash": { "mode": "str", "replace_stock": false },
 	"fw_status": {},
 	"reboot": {},
-	"wan_delete": { "index": 0 }
+	"wan_delete": { "index": 0 },
+	"voip_get": {},
+	"voip_set": { "values": [] },
+	"wps": { "radio": 0, "action": "str", "pin": "str" },
+	"easymesh_get": {},
+	"easymesh_set": { "role": "str", "backhaul": "str", "name": "str" },
+	"easymesh_pair": {}
 }
 EOF
 		;;
@@ -582,6 +753,12 @@ EOF
 			fw_status) m_fw_status ;;
 			reboot) m_reboot ;;
 			wan_delete) m_wan_delete "$input" ;;
+			voip_get) m_voip_get ;;
+			voip_set) m_voip_set "$input" ;;
+			wps) m_wps "$input" ;;
+			easymesh_get) m_easymesh_get ;;
+			easymesh_set) m_easymesh_set "$input" ;;
+			easymesh_pair) m_easymesh_pair ;;
 			*) err "unknown method" ;;
 		esac
 		;;

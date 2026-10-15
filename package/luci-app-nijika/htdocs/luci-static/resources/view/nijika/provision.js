@@ -5,7 +5,8 @@
 'require nijika.common as nc';
 
 /*
- * Provisioning: what the OLT set up over OMCI, drawn the way traffic flows.
+ * PON > OLT Provision: the OMCI configuration received from the OLT, drawn
+ * along the data path.
  *
  *   T-CONT (262) <- GEM port (268) <- GEM IW TP (266) / multicast IW (281)
  *     <- 802.1p mapper (130) <- bridge port, ANI side (47) + VLAN filter (84)
@@ -136,7 +137,7 @@ function buildModel(d) {
  * (single tag), or an untagged frame (vid null). */
 function ruleFor(ext, vid) {
 	if (!ext || !ext.rules.length)
-		return { kind: 'pass', text: _('as is'), title: _('no VLAN rules on this port') };
+		return { kind: 'pass', text: _('forward'), title: _('no ME 171 rule on this UNI') };
 
 	var single = function(r) { return r.filterOuter && r.filterOuter.pri == '15'; },
 	    match = null, dflt = null;
@@ -154,11 +155,11 @@ function ruleFor(ext, vid) {
 
 	var r = match || (vid != null ? dflt : null);
 	if (!r)
-		return { kind: 'pass', text: _('as is'), title: _('no rule matches: the frame passes unchanged') };
+		return { kind: 'pass', text: _('forward'), title: _('no matching rule: forwarded unchanged') };
 
 	var to = r.treatmentOuter || {}, ti = r.treatmentInner || {}, rm = +(to.rm || 0);
 	if (rm == 3)
-		return { kind: 'drop', text: _('drop'), title: match ? _('rule discards it') : _('default rule discards it') };
+		return { kind: 'drop', text: _('drop'), title: match ? _('discarded by rule') : _('discarded by default rule') };
 
 	var addInner = ti.pri && ti.pri != '15', addOuter = to.pri && to.pri != '15';
 	var newVid = function(t) {
@@ -167,21 +168,21 @@ function ruleFor(ext, vid) {
 
 	if (vid == null) {
 		if (addInner && !addOuter)
-			return { kind: 'tag', vid: newVid(ti), text: _('tag VLAN %d').format(newVid(ti)),
-				title: _('untagged frames get VLAN %d').format(newVid(ti)) };
-		return { kind: 'pass', text: _('as is'), title: '' };
+			return { kind: 'tag', vid: newVid(ti), text: _('push VLAN %d').format(newVid(ti)),
+				title: _('untagged -> VLAN %d').format(newVid(ti)) };
+		return { kind: 'pass', text: _('forward'), title: '' };
 	}
 	if (rm == 1 && addInner && !addOuter) {
 		var nv = newVid(ti);
 		return (nv == vid)
-			? { kind: 'pass', text: _('as is'), title: _('tag removed and put back unchanged') }
-			: { kind: 'xlate', vid: nv, text: _('→ VLAN %d').format(nv), title: _('VLAN translated') };
+			? { kind: 'pass', text: _('forward'), title: _('pop + push, same VID') }
+			: { kind: 'xlate', vid: nv, text: _('→ VLAN %d').format(nv), title: _('VID translation') };
 	}
 	if (rm == 0 && addOuter)
-		return { kind: 'stack', vid: newVid(to), text: _('+ outer VLAN %d').format(newVid(to)), title: _('double tagged (Q-in-Q)') };
+		return { kind: 'stack', vid: newVid(to), text: _('+ outer VLAN %d').format(newVid(to)), title: _('Q-in-Q: push outer tag') };
 	if (rm == 1 && !addInner && !addOuter)
-		return { kind: 'strip', text: _('untag'), title: _('the tag is removed') };
-	return { kind: 'pass', text: _('as is'), title: '' };
+		return { kind: 'strip', text: _('pop'), title: _('pop tag') };
+	return { kind: 'pass', text: _('forward'), title: '' };
 }
 
 /* ------------------------------------------------------------- services */
@@ -243,7 +244,7 @@ function buildServices(m, wans) {
 					});
 					out.push({
 						bridge: +bid, uni: u, port: port, ext: ext, vid: vid, ani: a,
-						rule: (vid != null) ? ruleFor(ext, vid) : { kind: 'pass', text: _('as is'), title: '' },
+						rule: (vid != null) ? ruleFor(ext, vid) : { kind: 'pass', text: _('forward'), title: '' },
 						bcast: bc, wan: (port && m.veip[port.id] && vid != null) ? wans[vid] : null
 					});
 				});
@@ -345,17 +346,12 @@ function ordered(map, order) {
 
 /* ------------------------------------------------------------- sections */
 
-var SERVICE_NAMES = [ [ 2, _('Internet') ], [ 8, _('Voice') ], [ 4, _('Other/IPTV') ], [ 1, 'TR-069' ] ];
-
 /* stock WAN connections (ATM_VC_TBL) by VLAN: "PON_0: Internet (PPPoE)" */
 function wanNames(chain) {
 	var out = {};
 	((chain && chain.records) || []).forEach(function(r, i) {
 		if (r.vlan != '1' || !r.vid) return;
-		var t = +r.applicationtype || 0,
-		    svc = SERVICE_NAMES.filter(function(s) { return t & s[0]; }).map(function(s) { return s[1]; }).join(' + ') || _('no service'),
-		    mode = { 0: _('Bridge'), 1: 'IPoE', 2: 'PPPoE' }[r.ChannelMode] || '';
-		out[+r.vid] = { idx: i, text: 'PON_%d: %s%s'.format(i, svc, mode ? ' (' + mode + ')' : '') };
+		out[+r.vid] = { idx: i, text: nc.wanLabel(r, i) };
 	});
 	return out;
 }
@@ -368,18 +364,18 @@ function portName(m, s) {
 function renderIdentity(d) {
 	var o = insts(d.me, 131)[0], t = insts(d.me, 256)[0];
 	var olt = o ? A(o, 'OltVendorId') : null,
-	    oltTxt = (olt && hexId(olt)) ? (nc.hexToAscii(olt) || olt) : _('not known yet');
+	    oltTxt = (olt && hexId(olt)) ? (nc.hexToAscii(olt) || olt) : _('not provisioned');
 	var tm = t ? { 0: _('priority controlled'), 1: _('rate controlled'), 2: _('priority and rate controlled') }[A(t, 'TraffMgtOpt')] : null;
 	var eq = o ? (nc.hexToAscii(A(o, 'EquipId')) || String(A(o, 'EquipId') || '').trim()) : '';
 	var ver = o ? (nc.hexToAscii(A(o, 'Version')) || A(o, 'Version')) : '';
 	return E('div', { 'class': 'nj-cards' }, [
 		E('div', { 'class': 'nj-card' }, [
-			E('div', { 'class': 'nj-card-h' }, _('Your provider (ME 131 OLT-G)')),
+			E('div', { 'class': 'nj-card-h' }, _('OLT-G (ME 131)')),
 			E('div', { 'class': 'nj-big' }, oltTxt),
 			E('div', { 'class': 'nj-s' }, [ eq || _('no equipment ID'), ' · ', (ver && ver != '0') ? ver : _('no version') ])
 		]),
 		E('div', { 'class': 'nj-card' }, [
-			E('div', { 'class': 'nj-card-h' }, _('This ONT (ME 256 ONT-G)')),
+			E('div', { 'class': 'nj-card-h' }, _('ONT-G (ME 256)')),
 			E('div', { 'class': 'nj-big' }, t ? '%s %s'.format(A(t, 'VID') || '', A(t, 'Version') || '') : '-'),
 			E('div', { 'class': 'nj-s' }, t ? [ String(A(t, 'SerialNum') || '').toUpperCase(), ' · ', tm || '' ] : '')
 		])
@@ -393,15 +389,15 @@ function renderServices(m, svcs) {
 			rows.push(E('div', { 'class': 'nj-svc none' }, [
 				E('div', { 'class': 'nj-svc-h' }, [ s.ports.map(function(p) { return portName(m, p); }).join(', '),
 					E('span', { 'class': 'nj-s' }, ' · ' + _('no service')) ]),
-				E('div', { 'class': 'nj-s' }, _('The OLT bridged these ports but gave them no path to the fibre: nothing they send leaves the ONT.'))
+				E('div', { 'class': 'nj-s' }, _('MAC bridge without ANI-side port: no upstream path.'))
 			]));
 			return;
 		}
 		var g = s.ani.gems.map(function(x) { return x.gem; }),
 		    tc = g.map(function(x) { return m.tcont[x.tcont]; }).filter(function(x) { return x && x.used; }),
 		    vidTxt = s.vid != null ? 'VLAN ' + s.vid : _('any VLAN'),
-		    side = (s.port && m.veip[s.port.id]) ? _('Router (stock WAN)') : portName(m, s),
-		    dir = g.length && g.every(function(x) { return x.dir == 2; }) ? _('downstream only') : _('both ways');
+		    side = (s.port && m.veip[s.port.id]) ? _('VEIP (router)') : portName(m, s),
+		    dir = g.length && g.every(function(x) { return x.dir == 2; }) ? _('downstream') : _('bidirectional');
 
 		var title = [ vidTxt ];
 		if (s.wan) title.push(E('span', { 'class': 'nj-wan' }, s.wan.text));
@@ -412,7 +408,7 @@ function renderServices(m, svcs) {
 			E('span', { 'class': 'nj-pill' }, s.untagged ? _('untagged') : vidTxt),
 			E('span', { 'class': 'nj-wire-h' }),
 			E('span', { 'class': 'nj-pill rule ' + s.rule.kind, 'title': s.rule.title || '' },
-				s.untagged ? _('tag VLAN %d').format(s.vid) : s.rule.text),
+				s.untagged ? _('push VLAN %d').format(s.vid) : s.rule.text),
 			E('span', { 'class': 'nj-wire-h' }),
 			E('span', { 'class': 'nj-pill' }, s.rule.kind == 'drop' ? '✕' : vidTxt),
 			E('span', { 'class': 'nj-wire-h' }),
@@ -421,16 +417,16 @@ function renderServices(m, svcs) {
 
 		var words = [];
 		if (s.rule.kind == 'drop')
-			words.push(_('The VLAN is provisioned on the fibre side, but this port\'s VLAN rules discard it.'));
+			words.push(_('Discarded by ME 171 rule on this UNI.'));
 		else if (s.untagged)
-			words.push(_('Send it untagged; the ONT adds VLAN %d.').format(s.vid));
+			words.push(_('Upstream: untagged -> VLAN %d.').format(s.vid));
 		else if (s.vid != null)
-			words.push(_('%s must send VLAN %d; the ONT passes it %s.').format(side, s.vid, s.rule.kind == 'pass' ? _('unchanged') : s.rule.text));
-		words.push(_('GEM port %s → T-CONT %s, %s.').format(
+			words.push(_('Upstream: VLAN %d from %s, %s.').format(s.vid, side, s.rule.kind == 'pass' ? _('forwarded unchanged') : s.rule.text));
+		words.push(_('GEM %s -> T-CONT %s, %s.').format(
 			g.map(function(x) { return x.port; }).join(', ') || '-',
 			tc.map(function(x) { return _('Alloc-ID %d').format(x.alloc); }).join(', ') || '-', dir));
 		if (s.bcast.length)
-			words.push(_('Downstream broadcast also arrives on GEM %s.').format(
+			words.push(_('Downstream broadcast: GEM %s.').format(
 				s.bcast.map(function(b) { return b.gems.map(function(x) { return x.gem.port; }).join(','); }).join(', ')));
 
 		rows.push(E('div', { 'class': 'nj-svc ' + s.rule.kind }, [
@@ -444,12 +440,12 @@ function renderServices(m, svcs) {
 	Object.values(m.mciw).forEach(function(w) {
 		var g = m.gem[w.gem];
 		rows.push(E('div', { 'class': 'nj-svc mcast' }, [
-			E('div', { 'class': 'nj-svc-h' }, _('Multicast (usually IPTV)')),
-			E('div', { 'class': 'nj-s' }, _('Multicast GEM port %s, downstream only.').format(g ? g.port : hex4(w.gem)))
+			E('div', { 'class': 'nj-svc-h' }, _('Multicast')),
+			E('div', { 'class': 'nj-s' }, _('Multicast GEM %s, downstream.').format(g ? g.port : hex4(w.gem)))
 		]));
 	});
 
-	return rows.length ? E('div', {}, rows) : E('em', {}, _('No service provisioned (the OLT has not set up a data path yet).'));
+	return rows.length ? E('div', {}, rows) : E('em', {}, _('No service flow provisioned.'));
 }
 
 /* Upstream rules per port, as a table: what is passed, changed or dropped. */
@@ -471,18 +467,18 @@ function renderRules(m) {
 			if (+(to.rm || 0) == 3) act = E('span', { 'class': 'nj-drop' }, _('drop'));
 			else {
 				var parts = [];
-				if (+(to.rm || 0) > 0) parts.push(_('remove %s tag(s)').format(to.rm));
-				if (to.pri && to.pri != '15') parts.push(_('add outer %s').format(nc.fmtTreat(to)));
-				if (ti.pri && ti.pri != '15') parts.push(_('add %s').format(nc.fmtTreat(ti)));
+				if (+(to.rm || 0) > 0) parts.push(_('pop %s').format(to.rm));
+				if (to.pri && to.pri != '15') parts.push(_('push outer %s').format(nc.fmtTreat(to)));
+				if (ti.pri && ti.pri != '15') parts.push(_('push %s').format(nc.fmtTreat(ti)));
 				var same = (+(to.rm || 0) == 1) && ti.pri && ti.pri != '15' && (ti.vid == fi.vid || ti.vid == '4096') && !(to.pri && to.pri != '15');
-				act = same ? E('span', { 'class': 'nj-pass' }, _('pass as is')) : (parts.join(', ') || _('pass as is'));
+				act = same ? E('span', { 'class': 'nj-pass' }, _('forward')) : (parts.join(', ') || _('forward'));
 			}
 			rows.push([ name, match, act ]);
 		});
-		rows.push([ name, E('em', {}, _('downstream')), x.ds == '0' ? _('the inverse of the rules above') : _('frames pass as they are') ]);
+		rows.push([ name, E('em', {}, _('downstream')), x.ds == '0' ? _('inverse of upstream rules') : _('forward') ]);
 	});
 	return E('table', { 'class': 'table nj-rules' }, [
-		E('tr', { 'class': 'tr table-titles' }, [ _('Port'), _('Frames from the port'), _('ONT does') ].map(function(h) { return E('th', { 'class': 'th left' }, h); }))
+		E('tr', { 'class': 'tr table-titles' }, [ _('UNI'), _('Received frame'), _('Action') ].map(function(h) { return E('th', { 'class': 'th left' }, h); }))
 	].concat(rows.length ? rows.map(function(r) {
 		return E('tr', { 'class': 'tr' }, r.map(function(c) { return E('td', { 'class': 'td left' }, c); }));
 	}) : [ E('tr', { 'class': 'tr placeholder' }, E('td', { 'class': 'td', 'colspan': 3 }, E('em', {}, _('No VLAN rules (ME 171) provisioned')))) ]));
@@ -531,7 +527,7 @@ function renderSetup(m) {
 			mark('u' + b.id);
 			cUni[b.id] = node('uni' + b.id, hex4(b.id), '→ %s %s'.format(TP_TYPES[b.type] || b.type, hex4(b.tp)),
 				(b.type == 11 && port && port.id != b.tp) ? [ { text: _('points to %s, VEIP is %s').format(hex4(b.tp), hex4(port.id)), cls: 'warn',
-					title: _('The OLT addressed the VEIP by another ID; the stock stack maps it anyway.') } ] : []);
+					title: _('OLT references the VEIP by another ME ID; mapped by the stock stack.') } ] : []);
 			links.push({ a: 'br' + bid, b: 'uni' + b.id });
 			if (port) {
 				var ext = m.extOf(port);
@@ -554,10 +550,10 @@ function renderSetup(m) {
 		{ title: _('T-CONTs'), nodes: col(cTcont, 't') },
 		{ title: _('GEM ports'), nodes: col(cGem, 'g') },
 		{ title: _('802.1p mappers'), nodes: col(cMap, 'm') },
-		{ title: _('Bridge ports (fibre side)'), nodes: col(cAni, 'b') },
+		{ title: _('Bridge ports (ANI)'), nodes: col(cAni, 'b') },
 		{ title: _('MAC bridges'), nodes: col(cBr, 'br') },
-		{ title: _('Bridge ports (ONT side)'), nodes: col(cUni, 'u') },
-		{ title: _('ONT ports'), nodes: col(cPort, 'p') }
+		{ title: _('Bridge ports (UNI)'), nodes: col(cUni, 'u') },
+		{ title: _('UNI'), nodes: col(cPort, 'p') }
 	], links);
 }
 
@@ -586,7 +582,7 @@ function renderQos(m, svcs) {
 		if (!isNaN(g.usTd) && g.usTd) chips.push({ text: _('upstream limit: ME 280 %s').format(hex4(g.usTd)), cls: 'warn' });
 		if (!isNaN(g.dsTd) && g.dsTd) chips.push({ text: _('downstream limit: ME 280 %s').format(hex4(g.dsTd)), cls: 'warn' });
 		cGem['qg' + g.port] = node('qg' + g.port, 'GEM ' + g.port,
-			g.dir == 2 ? (m.mciw && Object.values(m.mciw).some(function(w) { return w.gem == g.id; }) ? _('multicast, downstream only') : _('downstream only')) : _('both ways'),
+			g.dir == 2 ? (m.mciw && Object.values(m.mciw).some(function(w) { return w.gem == g.id; }) ? _('multicast, downstream') : _('downstream')) : _('bidirectional'),
 			chips, g.dir == 2 ? 'ds' : '');
 		if (g.dir != 2 && !isNaN(pqId) && pqId) {
 			var p = pqById[pqId];
@@ -596,7 +592,7 @@ function renderQos(m, svcs) {
 				var rate = [];
 				if (p && p.cir) rate.push(_('CIR %d kbit/s').format(p.cir * 8));
 				if (p && p.pir) rate.push(_('PIR %d kbit/s').format(p.pir * 8));
-				cQ[key] = node(key, _('Queue %s').format(hex4(pqId)), p ? '%s · %s'.format(p.policy, w) : _('not in the queue map'),
+				cQ[key] = node(key, _('Queue %s').format(hex4(pqId)), p ? '%s · %s'.format(p.policy, w) : _('not in qmap'),
 					rate.map(function(r) { return { text: r, cls: 'warn' }; }));
 			}
 			links.push({ a: 'qg' + g.port, b: key });
@@ -623,9 +619,9 @@ function renderQos(m, svcs) {
 	return E('div', {}, [
 		E('div', { 'class': 'nj-tags' }, [
 			E('span', { 'class': 'nj-tag' }, _('GEM ports: %d').format(gems.length)),
-			E('span', { 'class': 'nj-tag' }, _('T-CONTs with an Alloc-ID: %d').format((q.tcont || []).length)),
-			E('span', { 'class': 'nj-tag' }, _('Queues in use: %d').format((q.pq || []).length)),
-			E('span', { 'class': 'nj-tag' }, _('Rate limits: %d').format(limits))
+			E('span', { 'class': 'nj-tag' }, _('Allocated T-CONTs: %d').format((q.tcont || []).length)),
+			E('span', { 'class': 'nj-tag' }, _('Priority queues: %d').format((q.pq || []).length)),
+			E('span', { 'class': 'nj-tag' }, _('Traffic descriptors: %d').format(limits))
 		]),
 		graph([
 			{ title: _('Services'), nodes: col(cSvc) },
@@ -633,7 +629,7 @@ function renderQos(m, svcs) {
 			{ title: _('Priority queues'), nodes: col(cQ) },
 			{ title: _('T-CONTs'), nodes: col(cT) }
 		], links),
-		E('p', { 'class': 'nj-s' }, _('Upstream: the p-bits pick the GEM port, it waits in its priority queue, and the T-CONT sends when the OLT grants its Alloc-ID time. Rate limits shown here are the ones set on the ONT; your plan\'s speed is enforced in the OLT.'))
+		E('p', { 'class': 'nj-s' }, _('Upstream: p-bit -> GEM port -> priority queue -> T-CONT (Alloc-ID). Traffic descriptors (ME 280) are ONT-side limits; subscribed bandwidth is enforced on the OLT.'))
 	]);
 }
 
@@ -643,23 +639,23 @@ function findIssues(m, svcs, wans) {
 		var ok = (b.type == 1 && m.lan[b.tp]) || (b.type == 3 && m.mapper[b.tp]) || (b.type == 5 && m.iw[b.tp]) ||
 			(b.type == 6 && m.mciw[b.tp]) || (b.type == 11 && m.veip[b.tp]) || b.type == 4;
 		if (!ok)
-			out.push([ 'info', _('Bridge port %s points to %s %s, which is not in the MIB%s.').format(hex4(b.id), TP_TYPES[b.type] || ('type ' + b.type), hex4(b.tp),
-				(b.type == 11 && Object.keys(m.veip).length) ? _(' (the VEIP is %s; the stock stack maps it anyway)').format(hex4(+Object.keys(m.veip)[0])) : '') ]);
+			out.push([ 'info', _('MAC bridge port %s: TP %s %s not in MIB%s.').format(hex4(b.id), TP_TYPES[b.type] || ('type ' + b.type), hex4(b.tp),
+				(b.type == 11 && Object.keys(m.veip).length) ? _(' (VEIP is %s, mapped by the stock stack)').format(hex4(+Object.keys(m.veip)[0])) : '') ]);
 	});
 	Object.values(m.gem).forEach(function(g) {
 		if (g.dir != 2 && !(m.tcont[g.tcont] && m.tcont[g.tcont].used))
-			out.push([ 'warn', _('GEM port %d sends upstream but its T-CONT %s has no Alloc-ID.').format(g.port, hex4(g.tcont)) ]);
+			out.push([ 'warn', _('GEM %d: upstream T-CONT %s has no Alloc-ID.').format(g.port, hex4(g.tcont)) ]);
 	});
 	var provisioned = {};
 	svcs.forEach(function(s) { if (s.vid != null && s.port && m.veip[s.port.id] && s.rule.kind != 'drop') provisioned[s.vid] = true; });
 	if (Object.keys(m.veip).length && svcs.length)
 		Object.keys(wans).forEach(function(v) {
 			if (!provisioned[v])
-				out.push([ 'info', _('Stock WAN %s (VLAN %s) has no path from the OLT, so it stays down. That is normal when your plan does not include this service (e.g. a legacy IPTV VLAN).').format(wans[v].text, v) ]);
+				out.push([ 'info', _('WAN %s (VLAN %s): no OMCI service flow, interface down (service not provisioned by the OLT).').format(wans[v].text, v) ]);
 		});
 	svcs.forEach(function(s) {
 		if (s.rule && s.rule.kind == 'drop')
-			out.push([ 'warn', _('VLAN %d reaches %s from the fibre, but its VLAN rules drop it.').format(s.vid, portName(m, s)) ]);
+			out.push([ 'warn', _('VLAN %d on %s: discarded by ME 171 rule.').format(s.vid, portName(m, s)) ]);
 	});
 	return out;
 }
@@ -709,7 +705,7 @@ return view.extend({
 	render: function(res) {
 		var d = res[0], wans = wanNames(res[1]);
 		if (!d || d.error)
-			return E('div', {}, [ nc.style(), E('h2', {}, _('Provisioning')),
+			return E('div', {}, [ nc.style(), E('h2', {}, _('OLT Provision')),
 				E('p', { 'class': 'alert-message warning' }, (d && d.error) || _('OMCI data not available')) ]);
 
 		var m = buildModel(d), svcs = buildServices(m, wans), issues = findIssues(m, svcs, wans),
@@ -723,28 +719,28 @@ return view.extend({
 
 		return E('div', {}, [
 			nc.style(), E('style', {}, CSS),
-			E('h2', {}, _('Provisioning')),
+			E('h2', {}, _('OLT Provision')),
 			E('p', { 'class': 'cbi-map-descr' }, [
-				_('What your provider set up on this ONT over OMCI: the services, the path each one takes through the ONT, and how upstream traffic is queued. Read %s.').format(
+				_('OMCI configuration received from the OLT: service flows, managed entity topology and upstream QoS. Last read: %s.').format(
 					d.updated ? new Date(d.updated * 1000).toLocaleTimeString() : '-'), ' ',
-				E('button', { 'class': 'cbi-button cbi-button-action', 'click': function() { location.reload(); } }, _('Read again'))
+				E('button', { 'class': 'cbi-button cbi-button-action', 'click': function() { location.reload(); } }, _('Refresh'))
 			]),
-			truncated.length ? E('p', { 'class': 'alert-message warning' }, _('omcicli cut off the answer for ME %s; that part may be incomplete.').format(truncated.join(', '))) : '',
+			truncated.length ? E('p', { 'class': 'alert-message warning' }, _('omcicli: truncated response for ME %s, data may be incomplete.').format(truncated.join(', '))) : '',
 			renderIdentity(d),
-			empty ? section(_('Nothing provisioned yet'), null, E('p', {}, [
+			empty ? section(_('No OMCI service provisioned'), null, E('p', {}, [
 				_('ONU state'), ' ', nc.stateBadge(st.state, st.los), ' ',
-				_('The OLT has not set up a data path on this ONT. Services, VLAN rules and QoS show up here once the ONT is in operation (O5) and the OLT has configured it; without fibre that never happens.')
+				_('No GEM port or MAC bridge port in the OMCI MIB. Service provisioning requires ONU state O5.')
 			])) : '',
-			(!empty && issues.length) ? section(_('Worth a look'), null, E('div', { 'class': 'nj-issues' }, issues.map(function(i) {
+			(!empty && issues.length) ? section(_('Diagnostics'), null, E('div', { 'class': 'nj-issues' }, issues.map(function(i) {
 				return E('div', { 'class': 'nj-issue ' + i[0] }, [ E('span', { 'class': 'nj-ico' }, i[0] == 'warn' ? '⚠' : 'ⓘ'), E('span', {}, i[1]) ]);
 			}))) : '',
-			empty ? '' : section(_('Services'), _('Each line is one VLAN path between a port of this ONT and the OLT. The middle label says what the ONT does with it (ME 84 VLAN filters + ME 171 VLAN rules).'),
+			empty ? '' : section(_('Service Flows'), _('One row per VLAN flow between a UNI and the OLT. Action: ME 84 VLAN tagging filter + ME 171 extended VLAN tagging.'),
 				renderServices(m, svcs)),
-			empty ? '' : section(_('VLAN rules (ME 171) in words'), _('The extended VLAN tagging rules per port, upstream direction; downstream applies them in reverse.'),
+			empty ? '' : section(_('Extended VLAN Tagging (ME 171)'), _('Upstream rules per UNI; downstream applies the inverse unless noted.'),
 				renderRules(m)),
-			empty ? '' : section(_('The provider\'s set-up'), _('Every ME on the data path, fibre on the left, ONT ports on the right. Dashed: downstream only.'),
+			empty ? '' : section(_('OMCI Topology'), _('Managed entities on the data path, ANI side left, UNI side right. Dashed: downstream only.'),
 				renderSetup(m)),
-			empty ? '' : section(_('Speeds and priorities (QoS)'), null, renderQos(m, svcs))
+			empty ? '' : section(_('Upstream QoS'), null, renderQos(m, svcs))
 		]);
 	},
 

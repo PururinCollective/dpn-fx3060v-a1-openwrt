@@ -10,6 +10,8 @@
 #   apply_after AREA...   after writing; returns 1 when an area needs a reboot
 #
 # Areas, in the order they are applied:
+#   wanmode:<n> connection mode of record n changed: rtk-apply wan-mode
+#             (dependent services, PPP unit) before wan:<n> brings it up
 #   wan:<n>   ATM_VC_TBL record n         boa formEth
 #   port:<n>  LAN port n on/off           formTcpipLanSetup (SW_PORT_TBL.<n>.Enable)
 #   firewall  filters, SPI, DMZ           formFilter, formFilterV6, formDMZ
@@ -39,6 +41,7 @@ apply_area() {
 	case "$1" in
 		ATM_VC_TBL.*)
 			set -- "${1#ATM_VC_TBL.}"
+			case "$1" in *.ChannelMode) echo "wanmode:${1%%.*}" ;; esac
 			echo "wan:${1%%.*}" ;;
 		SW_PORT_TBL.*.Enable)
 			set -- "${1#SW_PORT_TBL.}"
@@ -52,7 +55,7 @@ apply_area() {
 			echo firewall ;;
 		LAN_IP_ADDR|LAN_SUBNET|LAN_IP_ADDR2|LAN_SUBNET2|LAN_ENABLE_IP2|LAN_DHCP*|DHCP_MODE|DHCPS_*|DHCP_SUBNET_MASK)
 			echo lan ;;
-		WLAN_*|WLAN1_*|WSC_*|SSID)
+		WLAN_*|WLAN1_*|WSC_*|SSID|CHANNEL|AUTO_CHANNEL*|HIDDEN_SSID|BEACON_INTERVAL)
 			echo wlan ;;
 		LOID|LOID_PASSWD)
 			echo loid ;;
@@ -72,6 +75,7 @@ apply_areas() {
 		{ seen[$0] = 1 }
 		END {
 			n = split("firewall lan snooping wlanblock wlan loid ploam omci voip reboot", order, " ")
+			for (a in seen) if (a ~ /^wanmode:/) out = out " " a
 			for (a in seen) if (a ~ /^wan:/) out = out " " a
 			for (a in seen) if (a ~ /^port:/) out = out " " a
 			for (i = 1; i <= n; i++) if (order[i] in seen) out = out " " order[i]
@@ -98,6 +102,7 @@ apply_after() {
 	fi
 	for a in "$@"; do
 		case "$a" in
+			wanmode:*) rtk_apply wan-mode "${a#wanmode:}" ;;
 			wan:*) rtk_apply wan-up "${a#wan:}" ;;
 			port:*) rtk_apply lan-port "${a#port:}" ;;
 			snooping) rtk_apply snooping ;;

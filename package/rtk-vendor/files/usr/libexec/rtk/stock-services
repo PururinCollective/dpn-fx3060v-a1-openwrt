@@ -1,0 +1,64 @@
+#!/bin/sh
+# Stock management agents under NijikaWrt: the TR-069 client (cwmpClient)
+# and the SNMP agent (snmpd). Both stay off unless nijika.vendor.tr069 /
+# nijika.vendor.snmp are on; the stock configuration (shared with the stock
+# firmware bank) is not touched. The wrappers /rtk/bin/cwmpClient and
+# /rtk/bin/snmpd read the switch files written here.
+#   stock-services boot   only write the switches (the stock stack starts
+#                         the agents later, through the wrappers)
+#   stock-services        also start or stop the running agents
+
+. /lib/functions.sh
+. /usr/lib/nijika/common.sh
+
+dir=$RTK/var/nijika
+
+config_load nijika
+config_get_bool tr069 vendor tr069 0
+config_get_bool snmp vendor snmp 0
+
+mkdir -p "$dir"
+for s in tr069 snmp; do
+	eval on=\$$s
+	if [ "$on" = 1 ]; then : > "$dir/$s"; else rm -f "$dir/$s"; fi
+done
+
+[ "$1" = boot ] && exit 0
+vendor_up || exit 0
+
+# start NAME ARGS...: detached, inside the chroot (through the wrapper)
+start() {
+	start-stop-daemon -S -b -x "$RTK_RUN" -- "$@"
+}
+
+# stop NAME PIDFILE
+stop() {
+	local pid
+	pid=$(pidof "$1") || return 0
+	logger -t rtk-vendor "stopping the stock $1"
+	kill $pid
+	rm -f "$RTK/var/run/$2"
+}
+
+# TR-069: libmib's startCWMP runs it when CWMP_FLAG has AUTORUN (0x20),
+# the stock GUI's "TR069 Daemon" switch
+if [ "$tr069" = 1 ]; then
+	if ! pidof cwmpClient >/dev/null && [ $(( $(mib_get CWMP_FLAG) + 0 & 32 )) -ne 0 ]; then
+		logger -t rtk-vendor "starting the stock TR-069 client"
+		start /bin/cwmpClient
+	fi
+else
+	stop cwmpClient cwmp.pid
+fi
+
+# SNMP: as libmib's startSnmp when SNMPD_ENABLE is set; it wrote
+# /var/snmpd.conf before running the wrapper
+if [ "$snmp" = 1 ]; then
+	if ! pidof snmpd >/dev/null && [ "$(mib_get SNMPD_ENABLE)" = 1 ] && [ -f "$RTK/var/snmpd.conf" ]; then
+		logger -t rtk-vendor "starting the stock SNMP agent"
+		start /bin/snmpd -r -L -c /var/snmpd.conf -p /var/run/snmpd.pid
+	fi
+else
+	stop snmpd snmpd.pid
+fi
+exit 0

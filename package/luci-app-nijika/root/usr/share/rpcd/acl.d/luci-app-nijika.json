@@ -4,14 +4,15 @@
 		"read": {
 			"ubus": {
 				"nijika": [ "status", "olt", "me", "provision", "diag", "mib_all", "mib_get", "chain",
-				            "quick_get", "ident_get", "boot_get", "fw_status" ]
+				            "quick_get", "ident_get", "boot_get", "fw_status", "voip_get", "easymesh_get" ]
 			},
 			"uci": [ "nijika", "rtk" ]
 		},
 		"write": {
 			"ubus": {
 				"nijika": [ "mib_set", "quick_set", "ident_set", "boot_set",
-				            "fw_check", "fw_flash", "reboot", "wan_delete" ]
+				            "fw_check", "fw_flash", "reboot", "wan_delete", "voip_set",
+				            "wps", "easymesh_set", "easymesh_pair" ]
 			},
 			"uci": [ "nijika", "rtk" ],
 			"cgi-io": [ "upload" ],

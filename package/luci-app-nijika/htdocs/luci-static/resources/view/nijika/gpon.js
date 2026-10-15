@@ -4,7 +4,7 @@
 'require nijika.common as nc';
 
 /*
- * GPON Settings, as the stock GUI's Setup > GPON Settings (formgponConf):
+ * PON > Authentication: the stock GUI's Setup > GPON Settings (formgponConf):
  * LOID, PLOAM password, device type, OMCI OLT mode. Saved like the stock
  * page applies them: the LOID goes to OMCI, a new PLOAM password
  * re-registers with the OLT, a LOID / device type / OLT mode change
@@ -28,7 +28,7 @@ return view.extend({
 		var m, s, o;
 
 		this.orig = v || {};
-		m = new form.JSONMap({ gpon: Object.assign({}, this.orig) }, _('GPON Settings'),
+		m = new form.JSONMap({ gpon: Object.assign({}, this.orig) }, _('Authentication'),
 			_('How this ONT authenticates to the OLT. Changes apply right away, as on the stock GUI: the ONT re-registers with the OLT, which interrupts the PON connection for a moment.'));
 		this.map = m;
 
@@ -57,7 +57,7 @@ return view.extend({
 		o.value('2', _('Hybrid'));
 
 		o = s.option(form.ListValue, 'OMCI_OLT_MODE', _('OMCI OLT mode'),
-			_('OMCI compatibility with the OLT vendor. More identity settings: PON > ONT Identity.'));
+			_('OMCI compatibility with the OLT vendor. More identity settings: PON > ONT Identity (enable Developer options in Nijika > Settings).'));
 		o.value('0', _('Default'));
 		o.value('1', 'Huawei');
 		o.value('2', 'ZTE');
@@ -71,7 +71,11 @@ return view.extend({
 	},
 
 	handleSave: function() {
-		return nc.mibSave(this.map, 'gpon', this.orig, KEYS, _('GPON settings saved.'));
+		var self = this;
+		return nc.mibSave(this.map, 'gpon', this.orig, KEYS, _('Authentication settings saved.')).then(function(r) {
+			if (r)
+				return nc.reloadView(self);
+		});
 	},
 
 	handleSaveApply: function() {

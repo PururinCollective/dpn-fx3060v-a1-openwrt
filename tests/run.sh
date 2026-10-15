@@ -158,7 +158,7 @@ t_parsers() {
 # --------------------------------------------- stock dnsmasq DoH wrapper
 
 t_wrapper() {
-	echo "wrapper (stock dnsmasq, DNS over HTTPS)"
+	echo "wrapper (stock dnsmasq for DNS over HTTPS, TR-069 client, SNMP agent)"
 	local V="$W/dns"
 	mkdir -p "$V/nijika"
 	printf '#!/bin/sh\necho "$*" > %s/real.args\n' "$V" > "$V/real"
@@ -184,6 +184,23 @@ t_wrapper() {
 	echo '127.0.0.1#5053' > "$V/nijika/doh"; run
 	check "restart without a new stock config: exactly proxy + 2 split servers" \
 		sh -c "[ \$(grep -c '^server=' '$V/dnsmasq.conf') -eq 3 ]"
+
+	# TR-069 client / SNMP agent: off unless their switch file exists
+	for b in cwmpClient snmpd; do
+		sed -e "s|^REAL=.*|REAL=$V/real|" -e "s|/var/nijika|$V/nijika|g" \
+			"$TOP/package/rtk-vendor/files/rtk/bin/$b" > "$V/$b"
+	done
+	rm -f "$V/real.args" "$V/nijika/tr069" "$V/nijika/snmp"
+	"$BB" sh "$V/cwmpClient"
+	"$BB" sh "$V/snmpd" -r -L -c /var/snmpd.conf -p /var/run/snmpd.pid
+	check "TR-069 client and SNMP agent stay off without their switch" sh -c "[ ! -e '$V/real.args' ]"
+	: > "$V/nijika/snmp"
+	"$BB" sh "$V/snmpd" -r -L -c /var/snmpd.conf -p /var/run/snmpd.pid
+	check "SNMP switch on: the real snmpd runs with the stock arguments" \
+		grep -qx -- "-r -L -c /var/snmpd.conf -p /var/run/snmpd.pid" "$V/real.args"
+	: > "$V/nijika/tr069"; rm -f "$V/real.args"
+	"$BB" sh "$V/cwmpClient"
+	check "TR-069 switch on: the real cwmpClient runs" test -e "$V/real.args"
 }
 
 # ------------------------------------------------- /etc/config/rtk quoting
@@ -262,6 +279,7 @@ t_apply() {
 	areas() { printf '%s\n' "$@" | "$BB" sh -c ". '$D/env.sh'; apply_areas"; }
 	check "keys -> areas: WAN records first, then fixed order, no repeats" sh -c "[ \"$(areas WLAN_MBSSIB_TBL.0.ssid IPF_IN_ACTION ATM_VC_TBL.0.vid ATM_VC_TBL.0.MTU LAN_IP_ADDR SSID ATM_VC_TBL.2.vid)\" = 'wan:0 wan:2 firewall lan wlan' ]"
 	check "GPON and unknown keys: loid, ploam, reboot" sh -c "[ \"$(areas GPON_SN LOID_PASSWD GPON_PLOAM_PASSWD LOID)\" = 'loid ploam reboot' ]"
+	check "wlan0 keys without the WLAN_ prefix are WiFi" sh -c "[ \"$(areas CHANNEL AUTO_CHANNEL HIDDEN_SSID SSID WLAN_RFPOWER_SCALE)\" = 'wlan' ]"
 	check "LAN page keys: port, LAN, snooping, LAN<->WiFi blocking" sh -c "[ \"$(areas SW_PORT_TBL.3.Enable MP_MODE WLAN_BLOCK_ETH2WIR LAN_IP_ADDR)\" = 'port:3 lan snooping wlanblock' ]"
 	check "device type / OLT mode: one OMCI restart, after the PLOAM" sh -c "[ \"$(areas OMCI_OLT_MODE GPON_PLOAM_PASSWD DEVICE_TYPE)\" = 'ploam omci' ]"
 	check "SPI keys are firewall (IPv4, IPv6, session, MAC, DMZ, rules)" sh -c "[ \"$(areas V6_IPF_OUT_ACTION V6_SESSION_FW_ENABLE MACF_IN_ACTION DMZ_IP IP_PORT_FILTER_TBL.1.dip)\" = 'firewall' ]"
@@ -271,6 +289,8 @@ t_apply() {
 		"$BB" sh -c ". '$D/env.sh'; $2; echo \"rc=\$?\" >> '$D/calls'"
 		tr '\n' ';' < "$D/calls"
 	}
+	check "WAN mode change: wan-mode before the record comes up" sh -c "[ \"$(areas ATM_VC_TBL.1.ChannelMode ATM_VC_TBL.1.vid ATM_VC_TBL.0.MTU)\" = 'wanmode:1 wan:0 wan:1' ]"
+	check "wan-mode, then wan-up, nothing before the write" sh -c "[ \"$(run 1 "apply_before wanmode:1 wan:1; echo WRITE >> '$D/calls'; apply_after wanmode:1 wan:1")\" = '/bin/rtk-apply wan-down 1;WRITE;/bin/rtk-apply wan-mode 1;/bin/rtk-apply wan-up 1;rc=0;' ]"
 	check "WAN edit: wan-down before the write, wan-up after" sh -c "[ \"$(run 1 "apply_before wan:0 firewall; echo WRITE >> '$D/calls'; apply_after wan:0 firewall")\" = '/bin/rtk-apply wan-down 0;WRITE;/bin/rtk-apply wan-up 0;/bin/rtk-apply firewall;rc=0;' ]"
 	check "GPON as formgponConf: omcicli LOID, PLOAM, then OMCI restart" sh -c "[ \"$(run 1 'apply_after loid ploam')\" = '/bin/omcicli set loid TM12345;/bin/rtk-apply gpon-ploam s3cret;/bin/rtk-apply gpon-omci;rc=0;' ]"
 	check "the PLOAM password is never logged" sh -c "! grep -q s3cret '$D/log'"
@@ -304,10 +324,29 @@ t_helpers() {
 		check "reboot releases the WAN: K10rtk-vendor -> shutdown()" sh -c "
 			[ -L '$st/etc/rc.d/K10rtk-vendor' ] && grep -q '^shutdown()' '$st/etc/init.d/rtk-vendor' &&
 			[ -x '$st/usr/libexec/rtk/vendor-shutdown' ]"
-		check "LuCI: PON WAN, LAN, GPON Settings in the menu" sh -c "
-			grep -q 'nijika/wan' '$st/usr/share/luci/menu.d/luci-app-nijika.json' &&
-			grep -q 'nijika/lan' '$st/usr/share/luci/menu.d/luci-app-nijika.json' &&
-			grep -q 'nijika/gpon' '$st/usr/share/luci/menu.d/luci-app-nijika.json'"
+		check "LuCI: stock pages and the PON / Nijika menus" "$PY" -I -c "
+import json, sys
+d = json.load(open(sys.argv[1]))
+views = {v.get('action', {}).get('path') for v in d.values()}
+assert {'nijika/wan', 'nijika/lan', 'nijika/wlan', 'nijika/voip', 'nijika/gpon'} <= views, views
+assert 'nijika/omci' not in views
+assert d['admin/nijika/identity']['depends']['uci'] == {'nijika': {'ui': {'developer': '1'}}}
+order = sorted((v['order'], k) for k, v in d.items() if k.startswith('admin/nijika/'))
+assert [k for _, k in order] == ['admin/nijika/auth', 'admin/nijika/identity', 'admin/nijika/status', 'admin/nijika/provision'], order
+assert {'admin/nijikawrt/settings', 'admin/nijikawrt/firmware', 'admin/nijikawrt/mib'} <= set(d)
+" "$st/usr/share/luci/menu.d/luci-app-nijika.json"
+		check "stock TR-069 client / SNMP agent behind their wrappers, real ones kept" sh -c "
+			grep -q 'NijikaWrt wrapper' '$st/rtk/bin/cwmpClient' && grep -q 'NijikaWrt wrapper' '$st/rtk/bin/snmpd' &&
+			[ -x '$st/rtk/lib/nijika/cwmpClient' ] && [ -x '$st/rtk/lib/nijika/snmpd' ] &&
+			grep -q 'stock-services boot' '$st/usr/libexec/rtk/vendor-boot' &&
+			grep -q \"option tr069 '0'\" '$st/etc/config/nijika'"
+		check "WiFi defaults hook runs before the uci mirror, once" sh -c "
+			[ -x '$st/usr/libexec/rtk/post-boot.d/35-wifi-defaults' ] &&
+			grep -q 'nijika.vendor.wifi_defaults' '$st/usr/libexec/rtk/post-boot.d/35-wifi-defaults'"
+		check "rpcd: WPS and EasyMesh methods are granted" sh -c "
+			grep -q '\"easymesh_set\"' '$st/usr/share/rpcd/acl.d/luci-app-nijika.json' &&
+			grep -q '\"wps\"' '$st/usr/share/rpcd/acl.d/luci-app-nijika.json' &&
+			grep -q 'easymesh_pair) m_easymesh_pair' '$st/usr/libexec/rpcd/nijika'"
 	fi
 }
 

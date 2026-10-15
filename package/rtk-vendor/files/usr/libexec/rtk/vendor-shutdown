@@ -16,7 +16,13 @@
 . /usr/lib/nijika/common.sh
 
 vendor_up || exit 0
-logger -t rtk-vendor "shutdown: releasing the WAN sessions, committing the stock configuration"
+
+# logd is in RAM and gone after the reboot: also to the serial console
+say() {
+	logger -t rtk-vendor "$*"
+	echo "rtk-vendor: $*" > /dev/kmsg 2>/dev/null
+}
+say "shutdown: releasing the WAN sessions, committing the stock configuration"
 
 released=0
 for d in /sys/class/net/ppp[0-9]*; do
@@ -31,6 +37,7 @@ for f in "$RTK"/var/run/udhcpc.pid.*; do
 done
 # Terminate-Ack / PADT and the DHCP release go out (stock: sleep(1))
 [ $released -gt 0 ] && sleep 2
+say "shutdown: $released WAN session(s) released"
 
 rtk /bin/mib commit cs now >/dev/null 2>&1
 sync

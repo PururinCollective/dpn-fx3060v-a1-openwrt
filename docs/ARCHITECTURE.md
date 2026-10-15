@@ -116,10 +116,17 @@ Other build-time changes to `/rtk`:
 * `bin/ccom_linkkit` **removed**: D-Link's Alibaba Cloud Link Kit agent
   (MQTT to `iot-*.aliyuncs.com`, cloud firmware/config push, remote
   property/service calls, AWSS WiFi provisioning, ALCS LAN control). An inert
-  placeholder of the same name keeps `startup`/`libmib` happy. TR-069
-  (`cwmpClient`), TR-369 (`obuspa`), DDNS and speedtest are kept: they only
-  talk to endpoints configured in the MIB (ISP ACS/controller, your DDNS
-  provider) or when used.
+  placeholder of the same name keeps `startup`/`libmib` happy. TR-369
+  (`obuspa`), DDNS and speedtest are kept: they only talk to endpoints
+  configured in the MIB (ISP controller, your DDNS provider) or when used.
+* `bin/cwmpClient` (TR-069 client) and `bin/snmpd` become wrappers that run
+  the real binaries (moved to `lib/nijika/`) only when
+  `nijika.vendor.tr069` / `nijika.vendor.snmp` are on, through switch files
+  in `/var/nijika` (`/usr/libexec/rtk/stock-services`, at boot before the
+  late phase and on every nijika reload). Off by default: the ISP's ACS
+  could otherwise reconfigure WAN, WiFi or VoIP behind OpenWrt's back. libmib
+  starts both once and finds them by pid file only, so an absent agent is
+  never restarted; the TR-069 WAN connection comes up either way.
 * Syslog. `/rtk/dev` is the system `/dev`, so the stock syslog daemon
   (`slogd`) re-created `/dev/log` once the late phase started it and from
   then on received everything OpenWrt logged (`logger`, rpcd, ...);
@@ -197,7 +204,7 @@ priority queues of ME 277) comes back cut off and the rest spills into the
 next `omcicli` call. `omci.sh` therefore asks for one class at a time under a
 lock, checks that each answer starts with the table name of that class
 (`omcicli get tables`), and waits for `omci_app` after a cut-off answer.
-`me.awk` marks such answers `"truncated": true`. The Provisioning page reads
+`me.awk` marks such answers `"truncated": true`. The OLT Provision page reads
 15 classes plus the queue map (about 5 s) and caches it for 30 s.
 
 The awk parsers escape JSON with a character loop: busybox 1.37 awk (OpenWrt)
@@ -309,5 +316,5 @@ replaces the armsr disk logic:
   overlay for a wipe and stores the kept config on it.
 * `platform_do_upgrade` / `platform_copy_config`: nothing left to do.
 
-Stock D-Link images use the factory format, so a forced sysupgrade, *PON →
+Stock D-Link images use the factory format, so a forced sysupgrade, *Nijika →
 Firmware Banks* or `nijika upgrade` also flashes back to stock.

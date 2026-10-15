@@ -17,6 +17,11 @@ case "$(uci -q get nijika.vendor.boa)" in
 esac
 
 # Sections added after r1 (kept settings from an older NijikaWrt).
+uci -q get nijika.vendor.tr069 >/dev/null || uci -q batch <<'END'
+set nijika.vendor.tr069='0'
+set nijika.vendor.snmp='0'
+commit nijika
+END
 uci -q get nijika.doh >/dev/null || uci -q batch <<'END'
 set nijika.doh=doh
 set nijika.doh.enabled='1'
@@ -34,6 +39,12 @@ uci -q get nijika.firewall >/dev/null || uci -q batch <<'END'
 set nijika.firewall=firewall
 set nijika.firewall.spi_ipv4='off'
 set nijika.firewall.spi_ipv6='off'
+commit nijika
+END
+
+uci -q get nijika.ui >/dev/null || uci -q batch <<'END'
+set nijika.ui=ui
+set nijika.ui.developer='0'
 commit nijika
 END
 

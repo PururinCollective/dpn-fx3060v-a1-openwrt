@@ -45,10 +45,29 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   can no longer cut the LAN off. NAT still keeps unsolicited IPv4 out; on IPv6
   every LAN device with a public address is reachable, its own firewall is what
   protects it (`firewall.spi_ipv6 on` restores the stock behaviour).
-* **Stock GUI pages in LuCI**: Network > PON WAN (the stock WAN
-  connections as `PON_<n>`: VLAN, NAT, PPPoE, IPv4/IPv6, port mapping;
-  delete), Network > LAN (address, ports, IGMP snooping, DHCP server) and
-  PON > GPON Settings (LOID, PLOAM, device type, OLT mode).
+* **Stock GUI pages in LuCI**:
+  * Network > PON WAN: the stock WAN connections as `PON_<n>`. Channel mode
+    (Bridged, IPoE, DHCP, PPPoE, DS-Lite, 6rd), VLAN, NAT, PPPoE,
+    IPv4/IPv6, port mapping (untagged) and VLAN tagging (LAN ports carrying
+    the connection's VLAN tagged, so several bridged connections can share
+    a port like a managed switch trunk); delete.
+  * Network > LAN: address, ports, IGMP snooping, DHCP server; the page
+    reloads after saving.
+  * Network > Wireless: a tab per radio (mode incl. "no 802.11b" and
+    "802.11ax only", channel, width, TX power, OFDMA, beacon/DTIM, WMM),
+    main and guest SSIDs (WPA2/WPA3, PMF, 802.11r/k/v), WPS (push button,
+    PIN), and EasyMesh (controller/auto role, backhaul, pairing).
+  * Services > VoIP: SIP accounts of both phone ports (a tab each), primary
+    and backup proxy.
+  * PON > Authentication: LOID, PLOAM, device type, OLT mode.
+* **ISP management off**: the stock TR-069 client and SNMP agent do not run
+  under NijikaWrt (Nijika > Settings turns them back on), so the ISP's ACS
+  cannot reconfigure the stock stack behind OpenWrt's back. The TR-069 WAN
+  connection still comes up; the stock settings, which the stock bank uses,
+  are untouched.
+* **WiFi 6 defaults**: at first boot OFDMA is turned on, 802.11r on the main
+  SSIDs (the stock WiFi stack applies it to WPA2 SSIDs only) and 2.4 GHz
+  drops 802.11b (g/n/ax). Once; later changes stay.
 * **Clean reboot**: like the stock firmware, a reboot (and sysupgrade) first
   ends the PPPoE sessions (LCP Terminate + PADT) and releases DHCP leases, so
   the ISP accepts the next login at once, and writes the stock
@@ -65,22 +84,25 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
 * **Quick Setup** (top menu, next to Log out): GPON serial, PLOAM, LOID,
   PPPoE WAN (VLAN, priority, MTU, ISP presets), WiFi 2.4/5 GHz, VoIP lines 1/2.
 * **LuCI "PON" menu**
+  * *Authentication*: LOID, PLOAM password, device type, OMCI OLT mode (the
+    stock GPON Settings page).
+  * *ONT Identity* (shown with Nijika > Settings > Developer options):
+    vendor/model/version emulation presets (from NIJIKA `emulate.sh`) and
+    every identity value editable.
   * *ONT Status*: ONU state (O1..O7), RX/TX optical power, temperature,
-    voltage, bias, alarms, OLT vendor, and whether the OLT withheld ME 84/171.
-  * *Provisioning*: what the OLT set up over OMCI, for troubleshooting: one
-    line per service (VLAN path, what the ONT does with it, which stock WAN
-    uses it), the VLAN rules (ME 171) in words, the provider's set-up drawn
-    from T-CONT to LAN port / VEIP, and QoS (GEM port → queue → T-CONT /
+    voltage, bias, alarms, and the OMCI provisioning: ME 131 OLT-G, ME 256
+    ONT-G, ME 84 VLAN filters, ME 171 extended VLAN rules.
+  * *OLT Provision*: the OMCI configuration received from the OLT: service
+    flows (VLAN path, ONT action, stock WAN), ME 171 rules, the ME topology
+    from T-CONT to UNI / VEIP, and upstream QoS (GEM port -> queue -> T-CONT /
     Alloc-ID). `tools/omci-capture.sh` saves the same data for a bug report.
-  * *ME Explorer*: decoded OLT provisioning (ME 131/256/84/171), a browser for
-    any OMCI managed entity, read-only diag output.
-  * *ONT Identity*: vendor/model/version emulation presets (from NIJIKA
-    `emulate.sh`) and every identity value editable.
-  * *MIB Browser*: all stock config values and chain tables, editable.
+  * A PON card on *Status → Overview*.
+* **LuCI "Nijika" menu**
+  * *Settings*: boa mode, live apply, vendor console logging, stock SPI
+    firewall, DNS over HTTPS, banner options, developer options.
   * *Firmware Banks*: A/B bank status, try-once/make-default, flash an image to
     the other bank.
-  * *Settings*: boa mode, vendor console logging, banner options.
-  * A PON card on *Status → Overview*.
+  * *MIB Browser*: all stock config values and chain tables, editable.
 * **`nijika` CLI**: `info`, `olt`, `me`, `ploam`, `sn`, `loid`, `ont`,
   `mode`, `isp`, `boot`, `upgrade`, `mib`, `boa`, `reset`, `banner`. Stock
   tools are wrapped too: `diag`, `omcicli`, `flash`, `mib`, `nv`,
@@ -96,7 +118,6 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
 
 Screenshots (LuCI mock with sample data): [banner](docs/screenshots/banner.jpg),
 [ONT Status](docs/screenshots/luci-ont-status.jpg),
-[ME Explorer](docs/screenshots/luci-me-explorer.jpg),
 [Quick Setup](docs/screenshots/luci-quick-setup.jpg).
 
 ## Hardware
@@ -175,7 +196,7 @@ never overwritten.
   GUI. It replaces the old NijikaWrt in the other bank, and OpenWrt settings
   start fresh.
 * **Updates from NijikaWrt: `-sysupgrade.bin`** (sysupgrade, LuCI *System →
-  Backup / Flash Firmware* or *PON → Firmware Banks*, `nijika upgrade`) always
+  Backup / Flash Firmware* or *Nijika → Firmware Banks*, `nijika upgrade`) always
   write the **other** bank. If that bank holds the stock D-Link firmware, they
   **refuse**, so stock is never lost by accident. Override with `sysupgrade -F`,
   `nijika upgrade --replace-stock`, or the confirmation tick box in LuCI. With
@@ -184,7 +205,7 @@ never overwritten.
   new bank is tried once (60 s U-Boot watchdog) and committed after a good boot;
   OpenWrt settings are kept unless `-n` is given.
 * **Back to stock:** `nijika boot <bank>` if a bank still has D-Link firmware.
-  You can also flash the D-Link `.bin` through *PON → Firmware Banks* or
+  You can also flash the D-Link `.bin` through *Nijika → Firmware Banks* or
   `nijika upgrade`. With `sysupgrade`/LuCI *Flash Firmware* you must force it
   (`sysupgrade -F -n DPN-FX3060V_….bin`, or the "Force" checkbox), because a
   stock image carries no board metadata.

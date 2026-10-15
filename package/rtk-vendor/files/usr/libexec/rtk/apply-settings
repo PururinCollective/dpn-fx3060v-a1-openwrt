@@ -3,5 +3,11 @@
 # The stock boa always runs; nijika.vendor.boa only decides who may reach
 # its web GUI, which is a firewall question. The stock SPI firewall
 # switches (nijika.firewall) are written to flash and applied right away.
+
+# LuCI evaluates menu dependencies (nijika.ui.developer shows PON > ONT
+# Identity) once and caches the result: rebuild it on the next request
+rm -f /tmp/luci-indexcache.*.json
+
+/usr/libexec/rtk/stock-services
 /usr/libexec/rtk/spi-firewall | logger -t rtk-firewall
 exec /usr/libexec/rtk/lan-mgmt

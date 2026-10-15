@@ -1,0 +1,15 @@
+#!/bin/sh
+# NijikaWrt wrapper for the stock SNMP agent (the real one is
+# /lib/nijika/snmpd, so pidof/killall snmpd still find it).
+#
+# It only runs when nijika.vendor.snmp is on (/usr/libexec/rtk/stock-services
+# writes the switch /var/nijika/snmp); the stock configuration, which the
+# stock firmware bank shares, is not changed. libmib (startSnmp /
+# restart_snmp) writes /var/snmpd.conf and then runs
+# `snmpd -r -L -c /var/snmpd.conf -p /var/run/snmpd.pid`; it finds the agent
+# through that pid file only.
+
+REAL=/lib/nijika/snmpd
+
+[ -f /var/nijika/snmp ] || exit 0
+exec "$REAL" "$@"

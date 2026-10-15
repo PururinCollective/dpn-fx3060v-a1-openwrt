@@ -1,0 +1,18 @@
+#!/bin/sh
+# NijikaWrt wrapper for the stock TR-069 client (the real one is
+# /lib/nijika/cwmpClient, so pidof/killall cwmpClient still find it).
+#
+# Under NijikaWrt the ISP's ACS should not reconfigure the stock stack
+# behind OpenWrt's back, so the client only runs when nijika.vendor.tr069 is
+# on (/usr/libexec/rtk/stock-services writes the switch /var/nijika/tr069).
+# The stock configuration is not changed: the stock firmware bank keeps its
+# TR-069 settings, and the TR-069 WAN connection stays up and gets its
+# address either way (some ISPs open the other VLANs only then).
+#
+# libmib starts it once (startCWMP) and signals it through
+# /var/run/cwmp.pid, which an absent client never writes.
+
+REAL=/lib/nijika/cwmpClient
+
+[ -f /var/nijika/tr069 ] || exit 0
+exec "$REAL" "$@"

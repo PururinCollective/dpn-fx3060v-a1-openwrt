@@ -10,6 +10,45 @@
 		}
 	},
 
+	"admin/nijika/auth": {
+		"title": "Authentication",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "nijika/gpon"
+		}
+	},
+
+	"admin/nijika/identity": {
+		"title": "ONT Identity",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "nijika/identity"
+		},
+		"depends": {
+			"uci": { "nijika": { "ui": { "developer": "1" } } }
+		}
+	},
+
+	"admin/nijika/status": {
+		"title": "ONT Status",
+		"order": 30,
+		"action": {
+			"type": "view",
+			"path": "nijika/status"
+		}
+	},
+
+	"admin/nijika/provision": {
+		"title": "OLT Provision",
+		"order": 40,
+		"action": {
+			"type": "view",
+			"path": "nijika/provision"
+		}
+	},
+
 	"admin/network/ponwan": {
 		"title": "PON WAN",
 		"order": 10,
@@ -34,15 +73,65 @@
 		}
 	},
 
-	"admin/nijika/gpon": {
-		"title": "GPON Settings",
-		"order": 35,
+	"admin/network/wlan": {
+		"title": "Wireless",
+		"order": 30,
 		"action": {
 			"type": "view",
-			"path": "nijika/gpon"
+			"path": "nijika/wlan"
 		},
 		"depends": {
 			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
+	"admin/services/voip": {
+		"title": "VoIP",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "nijika/voip"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
+	"admin/nijikawrt": {
+		"title": "Nijika",
+		"order": 80,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
+	"admin/nijikawrt/settings": {
+		"title": "Settings",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "nijika/settings"
+		}
+	},
+
+	"admin/nijikawrt/firmware": {
+		"title": "Firmware Banks",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "nijika/firmware"
+		}
+	},
+
+	"admin/nijikawrt/mib": {
+		"title": "MIB Browser",
+		"order": 30,
+		"action": {
+			"type": "view",
+			"path": "nijika/mib"
 		}
 	},
 
@@ -55,69 +144,6 @@
 		},
 		"depends": {
 			"acl": [ "luci-app-nijika" ]
-		}
-	},
-
-	"admin/nijika/status": {
-		"title": "ONT Status",
-		"order": 10,
-		"action": {
-			"type": "view",
-			"path": "nijika/status"
-		}
-	},
-
-	"admin/nijika/provision": {
-		"title": "Provisioning",
-		"order": 25,
-		"action": {
-			"type": "view",
-			"path": "nijika/provision"
-		}
-	},
-
-	"admin/nijika/omci": {
-		"title": "ME Explorer",
-		"order": 30,
-		"action": {
-			"type": "view",
-			"path": "nijika/omci"
-		}
-	},
-
-	"admin/nijika/identity": {
-		"title": "ONT Identity",
-		"order": 40,
-		"action": {
-			"type": "view",
-			"path": "nijika/identity"
-		}
-	},
-
-	"admin/nijika/mib": {
-		"title": "MIB Browser",
-		"order": 50,
-		"action": {
-			"type": "view",
-			"path": "nijika/mib"
-		}
-	},
-
-	"admin/nijika/firmware": {
-		"title": "Firmware Banks",
-		"order": 60,
-		"action": {
-			"type": "view",
-			"path": "nijika/firmware"
-		}
-	},
-
-	"admin/nijika/settings": {
-		"title": "Settings",
-		"order": 70,
-		"action": {
-			"type": "view",
-			"path": "nijika/settings"
 		}
 	}
 }

@@ -58,10 +58,13 @@ queue, no initialisation needed.
 | `lan` | `restart_lanip()`, `restart_dhcp()` |
 | `wan-down <n>` | `deleteConnection(CONFIGONE, &ATM_VC_TBL[n])` |
 | `wan-up <n>` | `restartWAN(CONFIGONE, &ATM_VC_TBL[n])`, `reSync_reStartVoIP()` |
+| `wan-mode <n>` | the connection mode of record n changed (stock formEth, edit): `resolveServiceDependency(n)` while the record has its old interface index, a PPP unit for PPPoE (lowest free, the old one if still free) or none (`0xff`), then `rtk_layer2bridging_update_wan_interface_mib_table(2, old, new)`, `updatePortForwarding(old, new)`, `updateRoutingTable(old, new)`, `rtk_tr181_update_wan_interface_entry_list(2, &old, &new)`, `mib_chain_update`, `Commit()`. Unlike the stock form the VC slot (and the name `PON_<n>`, the MAC) stays. Needs the V1.1.2 record layout (0x3c4 bytes, `cmode` at 0x15). |
 | `wan` | `deleteConnection(CONFIGALL, NULL)`, `restartWAN(CONFIGALL, NULL)`, `reSync_reStartVoIP()` |
 | `wan-delete <n> [dhcpc]` | the stock delete: `rtk_layer2bridging_update_wan_interface_mib_table(0, ifIndex, 0)`, [`delDhcpcOption(ifIndex)`], `rtk_tr181_update_wan_interface_entry_list(0, &e, NULL)`, `clear_delegated_default_wanconn(&e)`, `deleteConnection(CONFIGONE, &e)`, `resolveServiceDependency(n)`, `mib_chain_delete`, `restartWAN(CONFIGONE, NULL)`, `reSync_reStartVoIP()`, `Commit()` |
 | `wlan` | `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)` |
 | `wlan-block` | `setup_wlan_block()` |
+| `easymesh <role> <prev> <backhaul>` | formMultiAP (0x44791c) Apply: `setupMultiAPController(role, prev, backhaul, &dhcp)` / `setupMultiAP_TMAuto()` / `setupMultiAPDisabled()`, `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)`, `Commit()` |
+| `easymesh-pair <role>` | formMultiAP Start PBC: with role auto first `setupMultiAPController("controller", "disabled", "3")` (D-Link picks the controller when `nas0` has link), `config_WLAN`, `Commit()`, 5 s; then `echo 2 > /tmp/virtual_push_button` |
 | `snooping` | `rtk_multicast_snooping()` |
 | `lan-port <n>` | `restart_ethernet(n + 1)` |
 | `voip` | `reSync_reStartVoIP()` |
@@ -92,6 +95,7 @@ set`, `isp`, `ploam`, `loid`) use it.
 
 | Keys | Area | Before writing | After writing |
 |---|---|---|---|
+| `ATM_VC_TBL.<n>.ChannelMode` | `wanmode:<n>` (before `wan:<n>`) | | `wan-mode <n>` |
 | `ATM_VC_TBL.<n>.*` | `wan:<n>` | `wan-down <n>` | `wan-up <n>` |
 | `SW_PORT_TBL.<n>.Enable` | `port:<n>` | | `lan-port <n>` |
 | `MP_MODE` (IGMP snooping, bit 2) | `snooping` | | `snooping` |
@@ -147,3 +151,51 @@ Port mapping (`itfGroup`) bits on the A1 (stock `virt2user` = 1..7,
 (5 GHz), 5-8 its guest SSIDs, 9 wlan1 (2.4 GHz), 10-13 its guest SSIDs. A
 port belongs to one connection (stock `check_itfGroup`).
 
+
+## WAN channel modes and ports (formWanEth, V1.1.2)
+
+D-Link's `retrieveVcRecord` (0x46b5a8, IPv6 part 0x46aae0, bridge part
+0x46b4a4) stores the "Channel Mode" select as:
+
+| Stock GUI | `ChannelMode` | Also |
+|---|---|---|
+| Bridged | 0 | `BridgeType` 0 Ethernet / 1 PPPoE |
+| IPoE | 1 | `ChannelAddrType` 0 (static) |
+| DHCP | 1 | `ChannelAddrType` 1 |
+| PPPoE | 2 | |
+| DS-Lite | 6 | IPv6 only (`IpProtocol` 2); `dslite_enable`, `dslite_aftr_mode` (0 from DHCPv6, 1 manual), `dslite_aftr_hostname` |
+| 6rd | 8 | `IpProtocol` 3, `AddrMode` 8, `SixrdMode` (1 auto, 0 manual), `SixrdBRv4IP`, `SixrdIPv4MaskLen`, `SixrdPrefix`, `SixrdPrefixLen` |
+
+Routed modes have `BridgeType` 2 unless "Enable Bridge" (then 0/1, a hybrid
+connection). The stock page sets MTU 1492 / MSS 1452 / 1432 for PPPoE and
+1500 / 1460 / 1440 otherwise.
+
+Ports: `itfGroup` binds LAN ports (bits 0-3) and SSIDs (4-13) to the
+connection. A LAN port also set in `vlanTagGrp` is bound through a
+`<port>.<VID>` sub-interface instead of the plain port (libmib
+`setup_vlan_tagging_intf`, the port mapping rules in FUN_00203cb0): it
+carries the connection's VLAN tagged. A `vlanTagGrp` bit without the
+`itfGroup` bit binds nothing (the stock page refuses it); WiFi bits are
+ignored. `check_itfGroup` (libmib) takes a port away from another
+connection only when one of the two is routed only (`BridgeType` 2). LuCI
+shows the two masks as "Port mapping" (untagged) and "VLAN tagging"
+(tagged, saved in both masks) and keeps tagged ports out of that check, so
+several bridged connections can carry their VLANs tagged on one port next
+to one untagged connection.
+
+## WiFi (formWlanSetup, formAdvanceSetup, formWsc)
+
+* Band (`WLAN_BAND`, `WLAN1_BAND`, also every record's `wlanBand`): bits
+  1 b, 2 g, 4 a, 8 n, 64 ac, 128 ax. A mode without the older bits makes
+  libmib write `/proc/net/rtk_wifi6/<if>/deny_legacy`: 2.4 GHz 138 (g/n/ax)
+  refuses 802.11b, 136 (n/ax) also g, 128 everything but 802.11ax; 5 GHz
+  200 (n/ac/ax) refuses 802.11a, 192 (ac/ax) also n, 128 everything but
+  802.11ax. hostapd keeps HT/VHT on (`ieee80211n`/`ac` follow the ax bit).
+* OFDMA: `WLAN_OFDMA_ENABLED` / `WLAN1_OFDMA_ENABLED`, off when the band has
+  no 802.11ax.
+* 802.11r per SSID: `WLAN_FT_ENABLE`, `WLAN_FT_MDID`, `WLAN_FT_OVER_DS` (the
+  stock Advanced page sets it on the root SSID). hostapd only gets FT-PSK for
+  WPA2 and WPA/WPA2 (`apply_11r`): no FT with WPA3.
+* WPS (hostapd): enable is the root record's `wsc_disabled` (and
+  `WSC_DISABLE` / `WLAN1_WSC_DISABLE`); `hostapd_cli wps_pbc -i wlanX`,
+  `hostapd_cli wps_pin any <pin> -i wlanX`.
