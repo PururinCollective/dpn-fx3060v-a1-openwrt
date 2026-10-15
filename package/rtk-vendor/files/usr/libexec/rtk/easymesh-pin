@@ -1,0 +1,47 @@
+#!/bin/sh
+# EasyMesh role (nijika.vendor.easymesh) pinned in the stock configuration.
+#
+# The D-Link/TM default role "auto" makes this unit a mesh node when the WPS
+# button is pressed without fibre (stock systemd, read_device_event: no
+# link on nas0 -> setupMultiAPAgent), or when it finds another EasyMesh
+# controller as WiFi starts: the LAN becomes a DHCP client, the DHCP server
+# stops and WPS goes to the backhaul station. Meant for a spare ONT used as
+# a satellite; on the gateway it cuts the LAN off. So NijikaWrt keeps the
+# role at controller (or disabled) unless nijika.vendor.easymesh is auto.
+#   easymesh-pin boot   before the stock WiFi starts: configuration only
+#   easymesh-pin        at runtime (nijika reload): also restarts WiFi
+
+. /lib/functions.sh
+. /usr/lib/nijika/common.sh
+. /usr/lib/nijika/apply.sh
+
+config_load nijika
+config_get want vendor easymesh controller
+case "$want" in
+	controller) id=1 ;;
+	disabled) id=0 ;;
+	*) exit 0 ;;
+esac
+vendor_up || exit 0
+
+cur=$(mib_get MAP_CONTROLLER)
+case "$cur" in
+	1) prev=controller ;; 2) prev=agent ;; 3) prev=auto ;; *) prev=disabled ;;
+esac
+[ "$cur" = "$id" ] && exit 0
+
+logger -t rtk-vendor "EasyMesh role: $prev -> $want (nijika.vendor.easymesh)"
+if [ "$1" = boot ]; then
+	rtk_apply easymesh "$want" "$prev" 3 norestart
+else
+	rtk_apply easymesh "$want" "$prev" 3
+fi
+
+# an agent made the LAN a DHCP client (DHCP_MODE 3): the gateway serves
+# DHCP again
+if [ "$prev" = agent ] && [ "$(mib_get DHCP_MODE)" = 3 ]; then
+	logger -t rtk-vendor "EasyMesh: LAN back to DHCP server"
+	mib_set DHCP_MODE 2
+	[ "$1" = boot ] || apply_after lan
+fi
+exit 0

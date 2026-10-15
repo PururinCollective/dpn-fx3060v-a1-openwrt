@@ -85,6 +85,30 @@
 		}
 	},
 
+	"admin/network/portfw": {
+		"title": "Port Forwarding",
+		"order": 40,
+		"action": {
+			"type": "view",
+			"path": "nijika/portfw"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
+	"admin/network/dmz": {
+		"title": "DMZ",
+		"order": 41,
+		"action": {
+			"type": "view",
+			"path": "nijika/dmz"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
 	"admin/services/voip": {
 		"title": "VoIP",
 		"order": 10,

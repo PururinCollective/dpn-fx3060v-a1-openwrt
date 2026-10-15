@@ -92,12 +92,21 @@ release="$NIJIKA_DISTRO $NIJIKA_REVISION${NIJIKA_CODENAME:+ ($NIJIKA_CODENAME)}"
 sed -i "s|^DISTRIB_DESCRIPTION=.*|DISTRIB_DESCRIPTION='$release / OpenWrt $DISTRIB_RELEASE $DISTRIB_REVISION'|" \
 	"$R/etc/openwrt_release"
 
+# Status > Overview: System, PON / ONT, WAN (luci-app-nijika), memory,
+# storage. OpenWrt's network, DHCP, DSL, WiFi and port cards stay empty or
+# wrong here: the stock stack owns WAN, DHCP, WiFi and the switch ports.
+rm -f "$R"/www/luci-static/resources/view/status/include/29_ports.js \
+	"$R"/www/luci-static/resources/view/status/include/30_network.js \
+	"$R"/www/luci-static/resources/view/status/include/40_dhcp.js \
+	"$R"/www/luci-static/resources/view/status/include/50_dsl.js \
+	"$R"/www/luci-static/resources/view/status/include/60_wifi.js
+
 # Executable bits for everything we ship (git may not keep them).
 chmod 0755 "$R"/usr/sbin/nijika "$R"/usr/libexec/rtk/* "$R"/usr/libexec/rtk/post-boot.d/* \
 	"$R"/usr/libexec/nijika/* "$R"/usr/libexec/rpcd/nijika "$R"/etc/init.d/rtk-vendor \
 	"$R"/etc/init.d/nijika-housekeep "$R"/etc/init.d/nijika-doh "$R"/etc/uci-defaults/90-nijika-defaults \
 	"$R"/rtk/bin/ccom_linkkit "$R"/rtk/bin/dnsmasq "$R"/rtk/bin/slogd "$R"/rtk/bin/cwmpClient \
-	"$R"/rtk/bin/snmpd "$R"/rtk/etc/nijika/rcS 2>/dev/null || true
+	"$R"/rtk/bin/snmpd "$R"/rtk/etc/nijika/rcS "$R"/usr/libexec/rtk/easymesh-pin 2>/dev/null || true
 chmod 0755 "$R/rtk/var" "$R/rtk/run" "$R/rtk/proc" "$R/rtk/sys" "$R/rtk/dev"
 
 # Enable our services (IB only enables packages it installed itself).

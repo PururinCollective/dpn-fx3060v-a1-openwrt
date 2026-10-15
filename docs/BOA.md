@@ -63,8 +63,9 @@ queue, no initialisation needed.
 | `wan-delete <n> [dhcpc]` | the stock delete: `rtk_layer2bridging_update_wan_interface_mib_table(0, ifIndex, 0)`, [`delDhcpcOption(ifIndex)`], `rtk_tr181_update_wan_interface_entry_list(0, &e, NULL)`, `clear_delegated_default_wanconn(&e)`, `deleteConnection(CONFIGONE, &e)`, `resolveServiceDependency(n)`, `mib_chain_delete`, `restartWAN(CONFIGONE, NULL)`, `reSync_reStartVoIP()`, `Commit()` |
 | `wlan` | `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)` |
 | `wlan-block` | `setup_wlan_block()` |
-| `easymesh <role> <prev> <backhaul>` | formMultiAP (0x44791c) Apply: `setupMultiAPController(role, prev, backhaul, &dhcp)` / `setupMultiAP_TMAuto()` / `setupMultiAPDisabled()`, `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)`, `Commit()` |
-| `easymesh-pair <role>` | formMultiAP Start PBC: with role auto first `setupMultiAPController("controller", "disabled", "3")` (D-Link picks the controller when `nas0` has link), `config_WLAN`, `Commit()`, 5 s; then `echo 2 > /tmp/virtual_push_button` |
+| `portfw` | formPortFw (0x45d730) after its `Commit()`: `reWriteAllDhcpcScript()`, `setupPortFW()` |
+| `easymesh <role> <prev> <backhaul> [norestart]` | formMultiAP (0x44791c) Apply: `setupMultiAPController(role, prev, backhaul, &dhcp)` / `setupMultiAP_TMAuto()` / `setupMultiAPDisabled()`, `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)`, `Commit()` |
+| `easymesh-pair` | formMultiAP Start PBC (controller): `echo 2 > /tmp/virtual_push_button` |
 | `snooping` | `rtk_multicast_snooping()` |
 | `lan-port <n>` | `restart_ethernet(n + 1)` |
 | `voip` | `reSync_reStartVoIP()` |
@@ -199,3 +200,28 @@ to one untagged connection.
 * WPS (hostapd): enable is the root record's `wsc_disabled` (and
   `WSC_DISABLE` / `WLAN1_WSC_DISABLE`); `hostapd_cli wps_pbc -i wlanX`,
   `hostapd_cli wps_pin any <pin> -i wlanX`.
+
+## EasyMesh "auto" and the WPS button
+
+The stock `systemd` (Realtek's, not the init system) reads the buttons
+(`read_device_event`, 0x40bdf0): the WPS key (0x211) with `MAP_CONTROLLER`
+3 (auto, the D-Link/TM default) first picks a role, controller when `nas0`
+has link, otherwise **agent** (`setupMultiAPAgent`, name MeshAgent_xxxx,
+`DHCP_MODE` 3: the LAN becomes a DHCP client, udhcpd is stopped,
+`config_WLAN`, committed) and then runs WPS on the backhaul station
+(`wlan0-vxd`). TM's way to turn a spare ONT into a mesh node; on the
+gateway it cuts the LAN off. `/usr/libexec/rtk/easymesh-pin` keeps the role
+at `nijika.vendor.easymesh` (controller by default; disabled; auto = leave
+it) at boot before the WiFi starts (`rtk-apply easymesh ... norestart`) and
+on a settings change, and puts `DHCP_MODE` back to 2 after an agent.
+
+## Port forwarding (formPortFw, PORT_FW_TBL)
+
+Record fields: `IP`, `PortStart`/`PortEnd` (internal), `externalportStart`/
+`externalportEnd` (0: the internal ones), `Protocol` (1 TCP, 2 UDP, 3 both:
+D-Link maps the form's "4" to 3), `remotehost`, `OutInf` (WAN ifIndex,
+65535 any), `Comment` (59 characters), `enable`, `Dynamic` (UPnP, not
+editable). The stock page adds up to 12 rules per submit; the table's size
+is libmib's (`flash all`, MIB Chain Information; SDK: 8, 32 in the TRUE
+build). rpcd `portfw_set` rewrites the static rules with `flash del/add/set`
+(TM build: through configd, committed) and runs `rtk-apply portfw`.

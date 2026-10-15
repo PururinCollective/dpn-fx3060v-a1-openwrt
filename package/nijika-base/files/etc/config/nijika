@@ -24,6 +24,13 @@ config vendor 'vendor'
 	# configuration (shared with the stock firmware bank) keeps its settings.
 	option tr069 '0'
 	option snmp '0'
+	# EasyMesh role pinned in the stock configuration at every boot:
+	#   controller  this router runs the mesh, satellites pair with it
+	#   disabled    no EasyMesh
+	#   auto        D-Link/TM default, left alone: with no fibre the WPS
+	#               button turns this unit into a mesh node (satellite:
+	#               LAN DHCP client, no DHCP server) - for a spare unit only
+	option easymesh 'controller'
 	# wifi_defaults '1' is set once the NijikaWrt WiFi defaults (OFDMA,
 	# 802.11r, 2.4 GHz without 802.11b) were written to the stock
 	# configuration at first boot; delete it to write them again.

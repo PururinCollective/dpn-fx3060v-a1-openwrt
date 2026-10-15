@@ -9,5 +9,6 @@
 rm -f /tmp/luci-indexcache.*.json
 
 /usr/libexec/rtk/stock-services
+/usr/libexec/rtk/easymesh-pin
 /usr/libexec/rtk/spi-firewall | logger -t rtk-firewall
 exec /usr/libexec/rtk/lan-mgmt

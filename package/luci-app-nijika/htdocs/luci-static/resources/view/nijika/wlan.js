@@ -368,7 +368,7 @@ return view.extend({
 		/* EasyMesh: applied with its own button (the stock stack sets up
 		 * roles, backhaul SSID and 802.11k/v itself) */
 		s = m.section(form.NamedSection, 'mib', 'mib', _('EasyMesh'),
-			_('Wi-Fi EasyMesh joins mesh access points (satellites) to this router: they take over its SSIDs, and clients roam between them. This router is the controller; turning it on enables 802.11k/v on every SSID, and the stock stack sets up a backhaul SSID for the satellites.'));
+			_('Wi-Fi EasyMesh joins mesh access points (satellites) to this router: they take over its SSIDs, and clients roam between them. As the controller this router enables 802.11k/v on every SSID, and the stock stack sets up a backhaul SSID for the satellites. NijikaWrt keeps the chosen role at every boot.'));
 
 		o = s.option(form.DummyValue, '_em_state', _('Status'));
 		o.cfgvalue = function() {
@@ -377,12 +377,13 @@ return view.extend({
 				run.length ? _('running: %s').format(run.join(', ')) : _('no mesh daemon running'));
 		};
 
-		o = unsaved(s.option(form.ListValue, '_em_role', _('Role')));
-		o.value('disabled', _('Disabled'));
+		o = unsaved(s.option(form.ListValue, '_em_role', _('Role'),
+			_('Auto is the D-Link / TM default for a spare unit: with no fibre, its WPS button turns it into a mesh node (satellite), whose LAN is a DHCP client without a DHCP server. Not for the router that serves the LAN.')));
 		o.value('controller', _('Controller'));
-		o.value('auto', _('Auto (controller once paired)'));
+		o.value('disabled', _('Disabled'));
+		o.value('auto', _('Auto (D-Link/TM: mesh node without fibre)'));
 		if (em.role == 'agent')
-			o.value('agent', _('Agent (set on the stock GUI)'));
+			o.value('agent', _('Agent / mesh node (set on the stock GUI or by the WPS button)'));
 		o.cfgvalue = function() { return em.role || 'disabled'; };
 
 		o = unsaved(s.option(form.ListValue, '_em_backhaul', _('Backhaul'), _('Radio the satellites connect over.')));
@@ -415,7 +416,7 @@ return view.extend({
 		o.onclick = function() {
 			return nc.callEasymeshPair().then(function(res) { notify(res, _('EasyMesh pairing started.')); });
 		};
-		o.depends('_em_role', /^(controller|auto)$/);
+		o.depends('_em_role', 'controller');
 
 		s.children.forEach(function(c) { c.retain = true; });
 

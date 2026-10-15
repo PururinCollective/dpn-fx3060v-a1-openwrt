@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 /* libmib (stock), prototypes from the SDK's utility.h / sysconfig.h /
  * subr_wlan.h. WAN records are passed through as opaque buffers. */
@@ -44,6 +43,8 @@ extern void Commit(void);
 extern void rtk_multicast_snooping(void);
 extern int restart_ethernet(int instnum);
 extern int setup_wlan_block(void);
+extern int setupPortFW(void);
+extern void reWriteAllDhcpcScript(void);
 /* EasyMesh (D-Link libmib, as called by boa's formMultiAP) */
 extern int setupMultiAPController(char *role, char *role_prev, char *backhaul_link,
 				  unsigned char *dhcp_mode);
@@ -76,6 +77,7 @@ static int usage(void)
 {
 	fputs("usage: rtk-apply <command>\n"
 	      "  firewall      IPv4/IPv6 filter rules, SPI default action, DMZ, MAC filter\n"
+	      "  portfw        port forwarding (PORT_FW_ENABLE, PORT_FW_TBL)\n"
 	      "  lan           LAN address and DHCP server\n"
 	      "  wan-down <n>  before ATM_VC_TBL record <n> changes: take its connection down\n"
 	      "  wan-up <n>    after the change: bring record <n> up again, resync VoIP\n"
@@ -86,9 +88,10 @@ static int usage(void)
 	      "                IPoE DHCP client), as the stock WAN page does\n"
 	      "  wlan          restart WiFi (every radio and SSID)\n"
 	      "  wlan-block    LAN <-> WiFi blocking (WLAN_BLOCK_ETH2WIR)\n"
-	      "  easymesh <role> <previous role> <backhaul>  EasyMesh role (controller,\n"
-	      "                auto, disabled; backhaul 0 wlan0, 1 wlan1, 3 auto), WiFi restart\n"
-	      "  easymesh-pair <role>  EasyMesh pairing (WPS); auto becomes the controller\n"
+	      "  easymesh <role> <previous role> <backhaul> [norestart]  EasyMesh role\n"
+	      "                (controller, auto, disabled; backhaul 0 wlan0, 1 wlan1, 3 auto),\n"
+	      "                then a WiFi restart unless norestart (before WiFi starts)\n"
+	      "  easymesh-pair EasyMesh pairing (WPS push button of the controller)\n"
 	      "  snooping      IGMP/MLD snooping (MP_MODE)\n"
 	      "  lan-port <n>  LAN port n (0..3) on/off (SW_PORT_TBL.<n>.Enable)\n"
 	      "  voip          reload the VoIP configuration and restart the VoIP stack\n"
@@ -236,6 +239,10 @@ int main(int argc, char **argv)
 	if (!strcmp(cmd, "firewall")) {
 		/* formFilter, formFilterV6, formDMZ */
 		restart_IPFilter_DMZ_MACFilter();
+	} else if (!strcmp(cmd, "portfw")) {
+		/* formPortFw (stock V1.1.2 boa 0x45d730), after its Commit */
+		reWriteAllDhcpcScript();
+		setupPortFW();
 	} else if (!strcmp(cmd, "lan")) {
 		/* formTcpipLanSetup (LAN IP change), formDhcpd */
 		restart_lanip();
@@ -285,10 +292,12 @@ int main(int argc, char **argv)
 	} else if (!strcmp(cmd, "wlan")) {
 		/* formWlanSetup, formWlEncrypt; same as `wlan_apply restart` */
 		config_WLAN(ACT_RESTART, CONFIG_SSID_ALL);
-	} else if (!strcmp(cmd, "easymesh") && argc == 5) {
+	} else if (!strcmp(cmd, "easymesh") && (argc == 5 || (argc == 6 && !strcmp(argv[5], "norestart")))) {
 		/* formMultiAP (stock V1.1.2 boa 0x44791c), Apply: role, then
 		 * config_WLAN and the commit. The DHCP mode stays the server's:
-		 * the agent role is not offered on the gateway. */
+		 * the agent role is not offered on the gateway. The role setups
+		 * only write the configuration, so before the stock WiFi starts
+		 * (norestart) the commit is enough. */
 		unsigned char dhcp[4] = { 2, 0, 0, 0 };
 
 		if (!strcmp(argv[2], "controller"))
@@ -299,19 +308,12 @@ int main(int argc, char **argv)
 			setupMultiAPDisabled();
 		else
 			return usage();
-		config_WLAN(ACT_RESTART, CONFIG_SSID_ALL);
-		Commit();
-	} else if (!strcmp(cmd, "easymesh-pair") && argc == 3) {
-		/* formMultiAP, Start PBC: with the auto role the device becomes the
-		 * controller (backhaul on either radio) when nas0 has link, first */
-		unsigned char dhcp[4] = { 2, 0, 0, 0 };
-
-		if (!strcmp(argv[2], "auto")) {
-			setupMultiAPController("controller", "disabled", "3", dhcp);
+		if (argc == 5)
 			config_WLAN(ACT_RESTART, CONFIG_SSID_ALL);
-			Commit();
-			sleep(5);
-		}
+		Commit();
+	} else if (!strcmp(cmd, "easymesh-pair")) {
+		/* formMultiAP, Start PBC (hostapd WPS): the mesh daemons pick up
+		 * the virtual push button */
 		system("echo 2 > /tmp/virtual_push_button");
 	} else if (!strcmp(cmd, "wlan-block")) {
 		/* formTcpipLanSetup: BlockEth2Wir */

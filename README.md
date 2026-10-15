@@ -53,13 +53,22 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
     a port like a managed switch trunk); delete.
   * Network > LAN: address, ports, IGMP snooping, DHCP server; the page
     reloads after saving.
+  * Network > Port Forwarding and DMZ: the stock rules (table size as the
+    stock configuration has it, UPnP rules shown read-only), DMZ host.
   * Network > Wireless: a tab per radio (mode incl. "no 802.11b" and
     "802.11ax only", channel, width, TX power, OFDMA, beacon/DTIM, WMM),
     main and guest SSIDs (WPA2/WPA3, PMF, 802.11r/k/v), WPS (push button,
-    PIN), and EasyMesh (controller/auto role, backhaul, pairing).
+    PIN), and EasyMesh (role, backhaul, pairing). The role is pinned at boot
+    (`nijika.vendor.easymesh`, default controller): D-Link/TM's "auto" turns
+    the unit into a mesh node when the WPS button is pressed without fibre
+    (LAN DHCP client, no DHCP server), which only suits a spare unit.
   * Services > VoIP: SIP accounts of both phone ports (a tab each), primary
     and backup proxy.
   * PON > Authentication: LOID, PLOAM, device type, OLT mode.
+* **Status > Overview**: System, then PON / ONT (the fibre link drawn as
+  OLT ⇄ NijikaWrt with live 1490/1310 nm light, RX/TX power, WAN address),
+  then the WAN connections (VLAN, type, protocol, address, gateway, state)
+  like the stock Device Status page.
 * **ISP management off**: the stock TR-069 client and SNMP agent do not run
   under NijikaWrt (Nijika > Settings turns them back on), so the ISP's ACS
   cannot reconfigure the stock stack behind OpenWrt's back. The TR-069 WAN

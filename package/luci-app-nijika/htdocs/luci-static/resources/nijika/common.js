@@ -226,6 +226,9 @@ return baseclass.extend({
 	callEasymeshGet: rpc.declare({ object: 'nijika', method: 'easymesh_get' }),
 	callEasymeshSet: rpc.declare({ object: 'nijika', method: 'easymesh_set', params: [ 'role', 'backhaul', 'name' ] }),
 	callEasymeshPair: rpc.declare({ object: 'nijika', method: 'easymesh_pair' }),
+	callPortfwGet: rpc.declare({ object: 'nijika', method: 'portfw_get' }),
+	callPortfwSet: rpc.declare({ object: 'nijika', method: 'portfw_set', params: [ 'enable', 'rules' ] }),
+	callWanStatus: rpc.declare({ object: 'nijika', method: 'wan_status', expect: { wans: [] } }),
 	callChain: rpc.declare({ object: 'nijika', method: 'chain', params: [ 'table' ] }),
 	callQuickGet: rpc.declare({ object: 'nijika', method: 'quick_get' }),
 	callQuickSet: rpc.declare({ object: 'nijika', method: 'quick_set', params: [ 'pon', 'wan', 'wifi', 'voip' ] }),
@@ -252,6 +255,16 @@ return baseclass.extend({
 
 	style: function() {
 		return E('style', {}, CSS);
+	},
+
+	/* wan_status for the Overview cards of one poll (PON and WAN share it) */
+	wanStatus: function() {
+		var now = Date.now();
+		if (!this._wanAt || now - this._wanAt > 2500) {
+			this._wanAt = now;
+			this._wan = L.resolveDefault(this.callWanStatus(), []);
+		}
+		return this._wan;
 	},
 
 	meName: function(cls, fallback) {
@@ -313,7 +326,7 @@ return baseclass.extend({
 		var names = {
 			firewall: _('firewall'), lan: _('LAN'), wlan: _('WiFi'), loid: _('PON registration'),
 			ploam: _('PON registration'), omci: _('PON registration'), voip: _('VoIP'),
-			snooping: _('IGMP snooping'), wlanblock: _('LAN/WiFi blocking')
+			snooping: _('IGMP snooping'), wlanblock: _('LAN/WiFi blocking'), portfw: _('port forwarding')
 		};
 		var seen = {}, list = [];
 		(res && res.applied || []).forEach(function(a) {

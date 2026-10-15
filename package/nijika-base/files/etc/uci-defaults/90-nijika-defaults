@@ -17,6 +17,10 @@ case "$(uci -q get nijika.vendor.boa)" in
 esac
 
 # Sections added after r1 (kept settings from an older NijikaWrt).
+uci -q get nijika.vendor.easymesh >/dev/null || uci -q batch <<'END'
+set nijika.vendor.easymesh='controller'
+commit nijika
+END
 uci -q get nijika.vendor.tr069 >/dev/null || uci -q batch <<'END'
 set nijika.vendor.tr069='0'
 set nijika.vendor.snmp='0'

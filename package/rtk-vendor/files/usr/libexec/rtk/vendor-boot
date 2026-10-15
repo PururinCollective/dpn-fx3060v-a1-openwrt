@@ -62,6 +62,8 @@ early() {
 	# Stock SPI firewall switches (nijika.firewall): configd is up now, the
 	# stock `startup` (late phase) builds the iptables chains from them.
 	/usr/libexec/rtk/spi-firewall boot
+	# EasyMesh role (nijika.vendor.easymesh), before the stock WiFi starts
+	/usr/libexec/rtk/easymesh-pin boot
 }
 
 late() {

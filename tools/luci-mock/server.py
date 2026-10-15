@@ -22,7 +22,7 @@ import time
 TOP = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 WWW = os.environ.get('LUCI_WWW', os.path.join(TOP, 'build', 'stage', 'www'))
 PORT = int(os.environ.get('PORT', '8080'))
-VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'voip', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
+VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'voip', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
 BOOT = time.time()
 
 
@@ -147,8 +147,27 @@ def nijika_call(method, args):
         if args.get('action') == 'pin' and not str(args.get('pin', '')).isdigit():
             return {'error': 'the PIN has 4 or 8 digits'}
         return {'ok': True}
+    if method == 'wan_status':
+        return {'wans': [
+            {'index': 0, 'name': 'PON_0', 'ifname': 'ppp0', 'ifIndex': '65536', 'ChannelMode': '2', 'ChannelAddrType': '0',
+             'applicationtype': '2', 'vid': '500', 'default_route': True, 'ip4': '203.0.113.7', 'prefix4': '32',
+             'gw4': '198.51.100.1', 'ip6': '2001:db8:1::7/64', 'state': 'up'},
+            {'index': 1, 'name': 'PON_2', 'ifname': 'nas0_2', 'ifIndex': '130818', 'ChannelMode': '1', 'ChannelAddrType': '1',
+             'applicationtype': '8', 'vid': '400', 'default_route': False, 'ip4': '10.198.82.51', 'prefix4': '22',
+             'gw4': '10.198.80.1', 'ip6': '', 'state': 'up'},
+            {'index': 2, 'name': 'PON_3', 'ifname': 'nas0_3', 'ifIndex': '130819', 'ChannelMode': '1', 'ChannelAddrType': '1',
+             'applicationtype': '1', 'vid': '209', 'default_route': False, 'ip4': '', 'prefix4': '', 'gw4': '', 'ip6': '',
+             'state': 'connecting'}]}
+    if method == 'portfw_get':
+        return {'enable': True, 'max': 32, 'chain': {'table': 'PORT_FW_TBL', 'num': 2, 'records': [
+            {'IP': '192.168.0.10', 'PortStart': '443', 'PortEnd': '443', 'Protocol': '1', 'Comment': 'nas', 'OutInf': '65535',
+             'enable': '1', 'remotehost': '0.0.0.0', 'externalportStart': '8443', 'externalportEnd': '8443', 'Dynamic': '0'},
+            {'IP': '192.168.0.20', 'PortStart': '3074', 'PortEnd': '3074', 'Protocol': '2', 'Comment': 'upnp game', 'OutInf': '65536',
+             'enable': '1', 'remotehost': '0.0.0.0', 'externalportStart': '3074', 'externalportEnd': '3074', 'Dynamic': '1'}]}}
+    if method == 'portfw_set':
+        return {'ok': len(args.get('rules', [])), 'applied': ['portfw'], 'reboot_required': False}
     if method == 'easymesh_get':
-        return {'role': UCI['rtk']['mib'].get('_role', 'auto'), 'name': UCI['rtk']['mib'].get('MAP_DEVICE_NAME', ''), 'running': []}
+        return {'role': UCI['rtk']['mib'].get('_role', 'controller'), 'pinned': 'controller', 'name': UCI['rtk']['mib'].get('MAP_DEVICE_NAME', ''), 'running': []}
     if method == 'easymesh_set':
         UCI['rtk']['mib']['_role'] = args.get('role')
         return {'ok': True, 'applied': ['wlan'], 'reboot_required': False}
@@ -188,7 +207,8 @@ def rtk_uci():
                       'SSID': 'NijikaWrt 5GHz', 'WLAN1_SSID': 'NijikaWrt 2.4GHz',
                       'WLAN_BAND': '204', 'WLAN1_BAND': '139', 'WLAN_OFDMA_ENABLED': '0', 'WLAN1_OFDMA_ENABLED': '0',
                       'BEACON_INTERVAL': '100', 'DTIM_PERIOD': '1', 'WLAN1_BEACON_INTERVAL': '300', 'WLAN1_DTIM_PERIOD': '1',
-                      'WSC_DISABLE': '0', 'WLAN1_WSC_DISABLE': '0', 'MAP_CONTROLLER': '3', 'MAP_DEVICE_NAME': 'MeshAuto_5a2e'}}
+                      'WSC_DISABLE': '0', 'WLAN1_WSC_DISABLE': '0', 'MAP_CONTROLLER': '3', 'MAP_DEVICE_NAME': 'MeshAuto_5a2e',
+                      'DMZ_ENABLE': '0', 'DMZ_IP': '0.0.0.0', 'DMZ_WAN': '65535'}}
     fix = os.path.join(TOP, 'tests', 'fixtures', 'flash-get-atm_vc_tbl.txt')
     sec = None
     for line in open(fix):

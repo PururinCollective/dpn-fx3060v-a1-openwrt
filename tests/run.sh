@@ -4,7 +4,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint parsers wrapper ucimirror spi apply helpers stockshell bootenv fwu banner
+# Groups: syntax json lint parsers wrapper ucimirror spi apply easymesh helpers stockshell bootenv fwu banner
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -289,6 +289,7 @@ t_apply() {
 		"$BB" sh -c ". '$D/env.sh'; $2; echo \"rc=\$?\" >> '$D/calls'"
 		tr '\n' ';' < "$D/calls"
 	}
+	check "port forwarding keys: portfw, after the firewall (DMZ)" sh -c "[ \"$(areas PORT_FW_TBL.0.IP DMZ_IP PORT_FW_ENABLE)\" = 'firewall portfw' ]"
 	check "WAN mode change: wan-mode before the record comes up" sh -c "[ \"$(areas ATM_VC_TBL.1.ChannelMode ATM_VC_TBL.1.vid ATM_VC_TBL.0.MTU)\" = 'wanmode:1 wan:0 wan:1' ]"
 	check "wan-mode, then wan-up, nothing before the write" sh -c "[ \"$(run 1 "apply_before wanmode:1 wan:1; echo WRITE >> '$D/calls'; apply_after wanmode:1 wan:1")\" = '/bin/rtk-apply wan-down 1;WRITE;/bin/rtk-apply wan-mode 1;/bin/rtk-apply wan-up 1;rc=0;' ]"
 	check "WAN edit: wan-down before the write, wan-up after" sh -c "[ \"$(run 1 "apply_before wan:0 firewall; echo WRITE >> '$D/calls'; apply_after wan:0 firewall")\" = '/bin/rtk-apply wan-down 0;WRITE;/bin/rtk-apply wan-up 0;/bin/rtk-apply firewall;rc=0;' ]"
@@ -298,6 +299,46 @@ t_apply() {
 	check "reboot area: the live parts run, return 1" sh -c "[ \"$(run 1 'apply_after wlan reboot')\" = '/bin/rtk-apply wlan;rc=1;' ]"
 	check "live_apply=0: nothing runs, reboot needed" sh -c "[ \"$(run 0 'apply_before wan:0; apply_after wan:0 wlan')\" = 'rc=1;' ]"
 	check "live_apply=0, nothing written: no reboot" sh -c "[ \"$(run 0 'apply_after')\" = 'rc=0;' ]"
+}
+
+# ------------------------------------- EasyMesh role pinned (easymesh-pin)
+
+# The D-Link/TM role "auto" turns the unit into a mesh node when the WPS
+# button is pressed without fibre (LAN DHCP client, no DHCP server): the
+# gateway keeps controller/disabled, an earlier agent's DHCP client mode is
+# undone.
+t_easymesh() {
+	echo "easymesh (role pinned: the gateway never turns into a mesh node)"
+	local D="$W/em"
+	mkdir -p "$D"
+	{
+		echo "config_load() { :; }"
+		echo "config_get() { local v; v=\$(cat '$D/want'); [ -n \"\$v\" ] || v=\$4; eval \"\$1=\\\$v\"; }"
+		echo "vendor_up() { :; }"
+		echo "mib_get() { sed -n \"s/^\$1=//p\" '$D/mib'; }"
+		echo "mib_set() { echo \"set \$1 \$2\" >> '$D/calls'; }"
+		echo "rtk_apply() { echo \"rtk-apply \$*\" >> '$D/calls'; }"
+		echo "apply_after() { echo \"apply \$*\" >> '$D/calls'; }"
+		echo "logger() { :; }"
+	} > "$D/env.sh"
+	sed '/^\. /d' "$TOP/package/rtk-vendor/files/usr/libexec/rtk/easymesh-pin" > "$D/pin"
+	pin() { # setting MAP_CONTROLLER DHCP_MODE [boot] -> calls, one line
+		printf '%s' "$1" > "$D/want"
+		printf 'MAP_CONTROLLER=%s\nDHCP_MODE=%s\n' "$2" "$3" > "$D/mib"
+		: > "$D/calls"
+		"$BB" sh -c ". '$D/env.sh'; set -- $4; . '$D/pin'"
+		tr '\n' ';' < "$D/calls"
+	}
+	check "boot, stock auto: controller before the WiFi starts" \
+		sh -c "[ \"$(pin controller 3 2 boot)\" = 'rtk-apply easymesh controller auto 3 norestart;' ]"
+	check "boot after a WPS press without fibre (agent): controller, DHCP server again" \
+		sh -c "[ \"$(pin controller 2 3 boot)\" = 'rtk-apply easymesh controller agent 3 norestart;set DHCP_MODE 2;' ]"
+	check "runtime: WiFi restart and the LAN applied" \
+		sh -c "[ \"$(pin '' 2 3)\" = 'rtk-apply easymesh controller agent 3;set DHCP_MODE 2;apply lan;' ]"
+	check "disabled is pinned too, a LAN DHCP client of its own stays" \
+		sh -c "[ \"$(pin disabled 1 3 boot)\" = 'rtk-apply easymesh disabled controller 3 norestart;' ]"
+	check "nothing to do when the role matches; auto is left to the stock stack" \
+		sh -c "[ -z \"$(pin controller 1 2 boot)$(pin auto 2 3 boot)\" ]"
 }
 
 # ------------------------------------------- native helpers (rtk-apply)
@@ -328,7 +369,7 @@ t_helpers() {
 import json, sys
 d = json.load(open(sys.argv[1]))
 views = {v.get('action', {}).get('path') for v in d.values()}
-assert {'nijika/wan', 'nijika/lan', 'nijika/wlan', 'nijika/voip', 'nijika/gpon'} <= views, views
+assert {'nijika/wan', 'nijika/lan', 'nijika/wlan', 'nijika/portfw', 'nijika/dmz', 'nijika/voip', 'nijika/gpon'} <= views, views
 assert 'nijika/omci' not in views
 assert d['admin/nijika/identity']['depends']['uci'] == {'nijika': {'ui': {'developer': '1'}}}
 order = sorted((v['order'], k) for k, v in d.items() if k.startswith('admin/nijika/'))
@@ -340,6 +381,11 @@ assert {'admin/nijikawrt/settings', 'admin/nijikawrt/firmware', 'admin/nijikawrt
 			[ -x '$st/rtk/lib/nijika/cwmpClient' ] && [ -x '$st/rtk/lib/nijika/snmpd' ] &&
 			grep -q 'stock-services boot' '$st/usr/libexec/rtk/vendor-boot' &&
 			grep -q \"option tr069 '0'\" '$st/etc/config/nijika'"
+		check "Overview: System, PON / ONT, WAN, memory, storage (no empty OpenWrt cards)" sh -c "
+			[ \"\$(ls '$st/www/luci-static/resources/view/status/include' | tr '\n' ' ')\" = '10_system.js 15_nijika.js 17_nijika_wan.js 20_memory.js 25_storage.js ' ]"
+		check "EasyMesh role pinned before the stock WiFi starts" sh -c "
+			grep -q 'easymesh-pin boot' '$st/usr/libexec/rtk/vendor-boot' && [ -x '$st/usr/libexec/rtk/easymesh-pin' ] &&
+			grep -q \"option easymesh 'controller'\" '$st/etc/config/nijika'"
 		check "WiFi defaults hook runs before the uci mirror, once" sh -c "
 			[ -x '$st/usr/libexec/rtk/post-boot.d/35-wifi-defaults' ] &&
 			grep -q 'nijika.vendor.wifi_defaults' '$st/usr/libexec/rtk/post-boot.d/35-wifi-defaults'"
@@ -477,10 +523,10 @@ t_banner() {
 
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint parsers wrapper ucimirror spi apply helpers stockshell bootenv fwu banner}"
+groups="${*:-syntax json lint parsers wrapper ucimirror spi apply easymesh helpers stockshell bootenv fwu banner}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|helpers|stockshell|bootenv|fwu|banner) "t_$g" ;;
+		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|easymesh|helpers|stockshell|bootenv|fwu|banner) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

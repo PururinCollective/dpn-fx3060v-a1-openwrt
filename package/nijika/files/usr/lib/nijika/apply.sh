@@ -15,6 +15,7 @@
 #   wan:<n>   ATM_VC_TBL record n         boa formEth
 #   port:<n>  LAN port n on/off           formTcpipLanSetup (SW_PORT_TBL.<n>.Enable)
 #   firewall  filters, SPI, DMZ           formFilter, formFilterV6, formDMZ
+#   portfw    port forwarding             formPortFw
 #   lan       LAN address, DHCP server    formTcpipLanSetup, formDhcpd
 #   snooping  IGMP/MLD snooping (MP_MODE) formTcpipLanSetup
 #   wlanblock LAN <-> WiFi blocking       formTcpipLanSetup
@@ -53,6 +54,8 @@ apply_area() {
 		IPF_*|V6_IPF_*|MACF_*|DMZ_*|IPFILTER_SPI_ENABLE|V6_SESSION_FW_ENABLE|\
 		IP_PORT_FILTER_TBL*|V6_IP_PORT_FILTER_TBL*|MAC_FILTER_TBL*|MAC_FILTER_EBTABLES_ENABLE)
 			echo firewall ;;
+		PORT_FW_ENABLE|PORT_FW_TBL*)
+			echo portfw ;;
 		LAN_IP_ADDR|LAN_SUBNET|LAN_IP_ADDR2|LAN_SUBNET2|LAN_ENABLE_IP2|LAN_DHCP*|DHCP_MODE|DHCPS_*|DHCP_SUBNET_MASK)
 			echo lan ;;
 		WLAN_*|WLAN1_*|WSC_*|SSID|CHANNEL|AUTO_CHANNEL*|HIDDEN_SSID|BEACON_INTERVAL)
@@ -74,7 +77,7 @@ apply_areas() {
 	while IFS= read -r k; do apply_area "$k"; done | awk '
 		{ seen[$0] = 1 }
 		END {
-			n = split("firewall lan snooping wlanblock wlan loid ploam omci voip reboot", order, " ")
+			n = split("firewall portfw lan snooping wlanblock wlan loid ploam omci voip reboot", order, " ")
 			for (a in seen) if (a ~ /^wanmode:/) out = out " " a
 			for (a in seen) if (a ~ /^wan:/) out = out " " a
 			for (a in seen) if (a ~ /^port:/) out = out " " a
@@ -107,7 +110,7 @@ apply_after() {
 			port:*) rtk_apply lan-port "${a#port:}" ;;
 			snooping) rtk_apply snooping ;;
 			wlanblock) rtk_apply wlan-block ;;
-			firewall|lan|wlan|voip) rtk_apply "$a" ;;
+			firewall|portfw|lan|wlan|voip) rtk_apply "$a" ;;
 			loid)
 				loid=$(mib_get LOID) pw=$(mib_get LOID_PASSWD)
 				logger -t rtk-apply "omcicli set loid"
