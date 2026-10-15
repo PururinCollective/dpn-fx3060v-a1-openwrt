@@ -86,6 +86,15 @@ for b in cwmpClient snmpd; do
 	fi
 done
 
+# Stock hostapd: a wrapper (rtk/bin/hostapd) adds what libmib leaves out of
+# the generated config (BSS colouring, nijika.wifi) before the real one,
+# kept as lib/nijika/hostapd, starts.
+if [ -f "$RTKDIR/bin/hostapd" ] && ! grep -q "NijikaWrt wrapper" "$RTKDIR/bin/hostapd" 2>/dev/null; then
+	mkdir -p "$RTKDIR/lib/nijika"
+	mv "$RTKDIR/bin/hostapd" "$RTKDIR/lib/nijika/hostapd"
+	log "moved bin/hostapd to lib/nijika/hostapd (BSS colouring)"
+fi
+
 # Stock syslog: /rtk/dev is the system /dev. The stock slogd would take
 # /dev/log away from OpenWrt's logd, and without it the stock services'
 # debug chatter (VoIP_maserati: about a line a second at info level) would

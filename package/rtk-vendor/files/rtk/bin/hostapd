@@ -1,0 +1,28 @@
+#!/bin/sh
+# NijikaWrt wrapper for the stock hostapd (the real one is /lib/nijika/hostapd,
+# so pidof/killall hostapd still find it). libmib writes
+# /var/hostapd.conf.<radio> and starts `hostapd <conf> -s -g ... -B -P ...` on
+# every WiFi (re)start.
+#
+# BSS colouring (802.11ax): libmib never sets he_bss_color, so hostapd leaves
+# it off. With the switch /var/nijika/bss_color.<radio> (nijika.wifi,
+# written by /usr/libexec/rtk/stock-services) the radio gets a colour of its
+# own, 1-63 from the last byte of its BSSID, added to the config before
+# hostapd reads it.
+
+REAL=/lib/nijika/hostapd
+SW=/var/nijika
+
+for a in "$@"; do
+	case "$a" in *hostapd.conf*) ;; *) continue ;; esac
+	[ -f "$a" ] || continue
+	ifn=$(sed -n 's/^interface=//p' "$a" | head -n 1)
+	[ -n "$ifn" ] && [ -f "$SW/bss_color.$ifn" ] || continue
+	grep -q '^he_bss_color=' "$a" && continue
+	mac=$(sed -n 's/^bssid=//p' "$a" | head -n 1)
+	last=${mac##*:}
+	case "$last" in [0-9a-fA-F][0-9a-fA-F]) color=$(( 0x$last % 63 + 1 )) ;; *) color=1 ;; esac
+	echo "he_bss_color=$color" >> "$a"
+done
+
+exec "$REAL" "$@"

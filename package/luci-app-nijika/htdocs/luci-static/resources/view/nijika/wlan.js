@@ -30,6 +30,9 @@
  *   *RFPOWER_SCALE 0 100%, 1 70%, 2 50%, 3 35%, 4 15%
  *   802.11r: the stock hostapd config (libmib apply_11r, V1.1.2) adds
  *   FT-PSK / FT-SAE for WPA2, WPA/WPA2, WPA3 and WPA2+WPA3 SSIDs.
+ *   BSS colouring is not in the stock configuration: nijika.wifi
+ *   bss_color_<radio>, added to hostapd's config by /rtk/bin/hostapd.
+ *   TWT: not available (the driver core reports no TWT support).
  *   Band steering (WIFI_STA_CONTROL: bit 0 on, bit 1 prefer 2.4 GHz) only
  *   works when both main SSIDs have the same name and security
  *   (rtk_wlan_get_band_steering_status); the stock stack turns it off
@@ -125,7 +128,8 @@ return view.extend({
 	load: function() {
 		return Promise.all([
 			uci.load('rtk'),
-			L.resolveDefault(nc.callEasymeshGet(), {})
+			L.resolveDefault(nc.callEasymeshGet(), {}),
+			uci.load('nijika')
 		]);
 	},
 
@@ -325,6 +329,14 @@ return view.extend({
 			o = mibOption(s, 'advanced', form.Flag, r.ofdma, _('OFDMA'),
 				_('802.11ax multi-user transmission: several clients share one transmission. Needs an 802.11ax mode.'));
 			o.rmempty = false;
+			o.depends('_m_' + r.band, axBands);
+
+			o = s.taboption('advanced', form.Flag, '_bss_color', _('BSS colouring'),
+				_('802.11ax: marks this network\'s frames with a colour (from the radio\'s MAC address), so clients and nearby WiFi 6 networks can reuse the channel instead of backing off. The stock firmware leaves it off.'));
+			o.rmempty = false;
+			o.cfgvalue = function() { return uci.get('nijika', 'wifi', 'bss_color_wlan' + r.idx) == '0' ? '0' : '1'; };
+			o.write = function(sid, val) { uci.set('nijika', 'wifi', 'bss_color_wlan' + r.idx, val); };
+			o.remove = function() {};
 			o.depends('_m_' + r.band, axBands);
 
 			o = s.taboption('advanced', form.Flag, 'wmmEnabled', _('WMM'), _('Wi-Fi multimedia (QoS); 802.11n and newer need it.'));

@@ -17,6 +17,12 @@ case "$(uci -q get nijika.vendor.boa)" in
 esac
 
 # Sections added after r1 (kept settings from an older NijikaWrt).
+uci -q get nijika.wifi >/dev/null || uci -q batch <<'END'
+set nijika.wifi=wifi
+set nijika.wifi.bss_color_wlan0='1'
+set nijika.wifi.bss_color_wlan1='1'
+commit nijika
+END
 uci -q get nijika.vendor.easymesh >/dev/null || uci -q batch <<'END'
 set nijika.vendor.easymesh='controller'
 commit nijika

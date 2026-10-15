@@ -1,9 +1,11 @@
 #!/bin/sh
-# Stock management agents under NijikaWrt: the TR-069 client (cwmpClient)
-# and the SNMP agent (snmpd). Both stay off unless nijika.vendor.tr069 /
-# nijika.vendor.snmp are on; the stock configuration (shared with the stock
-# firmware bank) is not touched. The wrappers /rtk/bin/cwmpClient and
-# /rtk/bin/snmpd read the switch files written here.
+# Switches for the wrappers of stock programs, in /rtk/var/nijika:
+#   tr069, snmp        the TR-069 client (cwmpClient) and the SNMP agent
+#                      (snmpd) run only when nijika.vendor.tr069 / snmp are
+#                      on; the stock configuration (shared with the stock
+#                      firmware bank) is not touched
+#   bss_color.<radio>  hostapd gets a BSS colour (nijika.wifi.bss_color_<radio>,
+#                      on by default); a change restarts WiFi
 #   stock-services boot   only write the switches (the stock stack starts
 #                         the agents later, through the wrappers)
 #   stock-services        also start or stop the running agents
@@ -23,8 +25,25 @@ for s in tr069 snmp; do
 	if [ "$on" = 1 ]; then : > "$dir/$s"; else rm -f "$dir/$s"; fi
 done
 
+wifi_changed=0
+for r in wlan0 wlan1; do
+	config_get_bool on wifi "bss_color_$r" 1
+	f="$dir/bss_color.$r"
+	if [ "$on" = 1 ]; then
+		[ -f "$f" ] || { : > "$f"; wifi_changed=1; }
+	else
+		[ -f "$f" ] && { rm -f "$f"; wifi_changed=1; }
+	fi
+done
+
 [ "$1" = boot ] && exit 0
 vendor_up || exit 0
+
+# BSS colouring changed: hostapd reads it when WiFi starts
+if [ $wifi_changed = 1 ]; then
+	. /usr/lib/nijika/apply.sh
+	apply_after wlan
+fi
 
 # start NAME ARGS...: detached, inside the chroot (through the wrapper)
 start() {

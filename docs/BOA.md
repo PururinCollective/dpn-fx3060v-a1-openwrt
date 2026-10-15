@@ -203,10 +203,12 @@ to one untagged connection.
   (`wlan_manager`). Only when both main SSIDs have the same name and
   security (`rtk_wlan_get_band_steering_status`); libmib clears bit 0 when
   they differ. The Wireless page sets bit 0 whenever they match.
-* TWT and BSS colouring: the driver (rtk_wifi6.ko) has TWT (mib `twt_enable`,
-  0 on this unit) and a BSS colour register routine, the stock hostapd knows
-  `he_bss_color` / `he_twt_responder`, but libmib sets neither: TWT is off and
-  hostapd's default leaves BSS colouring disabled.
+* TWT: not available, BSS colouring: added by NijikaWrt (hostapd wrapper).
+  Details and the test: [WIFI.md](WIFI.md).
+* `flash all` reads the flash tool's copy of the committed configuration
+  (`_mib_get`), `flash set` goes through configd, which delays the commit:
+  right after a write, `flash all` still shows the old value. uci-mirror runs
+  `mib commit cs now` between its writes and the read-back.
 * WPS (hostapd): enable is the root record's `wsc_disabled` (and
   `WSC_DISABLE` / `WLAN1_WSC_DISABLE`); `hostapd_cli wps_pbc -i wlanX`,
   `hostapd_cli wps_pin any <pin> -i wlanX`.

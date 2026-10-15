@@ -158,7 +158,7 @@ t_parsers() {
 # --------------------------------------------- stock dnsmasq DoH wrapper
 
 t_wrapper() {
-	echo "wrapper (stock dnsmasq for DNS over HTTPS, TR-069 client, SNMP agent)"
+	echo "wrapper (stock dnsmasq for DNS over HTTPS, TR-069 client, SNMP agent, hostapd)"
 	local V="$W/dns"
 	mkdir -p "$V/nijika"
 	printf '#!/bin/sh\necho "$*" > %s/real.args\n' "$V" > "$V/real"
@@ -201,6 +201,24 @@ t_wrapper() {
 	: > "$V/nijika/tr069"; rm -f "$V/real.args"
 	"$BB" sh "$V/cwmpClient"
 	check "TR-069 switch on: the real cwmpClient runs" test -e "$V/real.args"
+
+	# hostapd: BSS colour from the BSSID's last byte when the radio's
+	# switch exists, once; the real hostapd gets the stock arguments
+	sed -e "s|^REAL=.*|REAL=$V/real|" -e "s|^SW=.*|SW=$V/nijika|" \
+		"$TOP/package/rtk-vendor/files/rtk/bin/hostapd" > "$V/hostapd"
+	printf '%s\n' 'interface=wlan0' 'ssid=test' 'bssid=c8:78:7d:61:5a:2f' 'bss=wlan0-vap0' 'bssid=c8:78:7d:61:5a:30' > "$V/hostapd.conf.wlan0"
+	cp "$V/hostapd.conf.wlan0" "$V/stock.conf"
+	cp "$V/hostapd.conf.wlan0" "$V/hostapd.pid.wlan0"	# a pid file that looks like a config
+	rm -f "$V/real.args" "$V/nijika/bss_color.wlan0"
+	"$BB" sh "$V/hostapd" "$V/hostapd.conf.wlan0" -s -g /var/run/hostapd/global.wlan0 -B -P "$V/hostapd.pid.wlan0"
+	check "BSS colouring off: hostapd config left as libmib wrote it" cmp -s "$V/hostapd.conf.wlan0" "$V/stock.conf"
+	: > "$V/nijika/bss_color.wlan0"
+	"$BB" sh "$V/hostapd" "$V/hostapd.conf.wlan0" -s -g /var/run/hostapd/global.wlan0 -B -P "$V/hostapd.pid.wlan0"
+	"$BB" sh "$V/hostapd" "$V/hostapd.conf.wlan0" -s -g /var/run/hostapd/global.wlan0 -B -P "$V/hostapd.pid.wlan0"
+	check "BSS colouring on: colour 48 (0x2f % 63 + 1) added once, only to the config" sh -c "
+		[ \$(grep -c '^he_bss_color=48\$' '$V/hostapd.conf.wlan0') -eq 1 ] &&
+		[ \$(wc -l < '$V/hostapd.conf.wlan0') -eq 6 ] && cmp -s '$V/hostapd.pid.wlan0' '$V/stock.conf'"
+	check "real hostapd started with the stock arguments" grep -qx -- "$V/hostapd.conf.wlan0 -s -g /var/run/hostapd/global.wlan0 -B -P $V/hostapd.pid.wlan0" "$V/real.args"
 }
 
 # ------------------------------------------------- /etc/config/rtk quoting
@@ -366,6 +384,8 @@ t_helpers() {
 		check "reboot releases the WAN: K10rtk-vendor -> shutdown()" sh -c "
 			[ -L '$st/etc/rc.d/K10rtk-vendor' ] && grep -q '^shutdown()' '$st/etc/init.d/rtk-vendor' &&
 			[ -x '$st/usr/libexec/rtk/vendor-shutdown' ]"
+		check "uci mirror commits configd's delayed writes before it reads flash back" sh -c "
+			awk '/push < /{p=NR} /mib commit cs now/{c=NR} /^\tdump > /{d=NR} END{exit !(p && c > p && d > c)}' '$st/usr/libexec/rtk/uci-mirror'"
 		check "LuCI: stock pages and the PON / Nijika menus" "$PY" -I -c "
 import json, sys
 d = json.load(open(sys.argv[1]))
@@ -387,6 +407,9 @@ assert {'admin/nijikawrt/settings', 'admin/nijikawrt/firmware', 'admin/nijikawrt
 		check "EasyMesh role pinned before the stock WiFi starts" sh -c "
 			grep -q 'easymesh-pin boot' '$st/usr/libexec/rtk/vendor-boot' && [ -x '$st/usr/libexec/rtk/easymesh-pin' ] &&
 			grep -q \"option easymesh 'controller'\" '$st/etc/config/nijika'"
+		check "stock hostapd behind its wrapper (BSS colouring), real one kept" sh -c "
+			grep -q 'NijikaWrt wrapper' '$st/rtk/bin/hostapd' && [ -x '$st/rtk/lib/nijika/hostapd' ] &&
+			grep -q \"option bss_color_wlan0 '1'\" '$st/etc/config/nijika'"
 		check "WiFi defaults hook runs before the uci mirror, once" sh -c "
 			[ -x '$st/usr/libexec/rtk/post-boot.d/35-wifi-defaults' ] &&
 			grep -q 'nijika.vendor.wifi_defaults' '$st/usr/libexec/rtk/post-boot.d/35-wifi-defaults'"
@@ -445,6 +468,8 @@ t_stockshell() {
 		sed -n '/^phy_ids() {/,/^}/p' "$TOP/firmware/fwu.sh"
 		echo 'echo "[$(phy_ids)]"'
 	} > "$W/phy.sh"
+	check "hostapd wrapper's colour arithmetic works in the stock ash (hex)" sh -c "
+		[ \"\$(qemu-aarch64-static -L '$R' '$R/bin/busybox' sh -c 'last=2f; echo \$(( 0x\$last % 63 + 1 ))')\" = 48 ]"
 	check "fwu.sh reads the A1 PHY IDs under the stock ash" sh -c "
 		[ \"\$(qemu-aarch64-static -L '$R' '$R/bin/busybox' sh '$W/phy.sh')\" = '[001ccac4 001ccac4 001ccac4 001ccac4 ffffffff ffffffff ffffffff]' ]"
 }

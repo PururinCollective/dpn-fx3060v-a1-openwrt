@@ -149,6 +149,10 @@ do_sync() {
 			areas=$(while IFS= read -r line; do flash_key "${line%%=*}"; done < "$cur.chg" | apply_areas)
 			apply_before $areas
 			push < "$cur.chg"
+			# configd holds the writes in RAM for a while ("delay mib
+			# commit") and `flash all` (step 2) reads the committed copy:
+			# commit now, or the file is rebuilt with the old values
+			rtk /bin/mib commit cs now >/dev/null 2>&1
 			if apply_after $areas; then
 				echo "rtk: applied ($areas)"
 			else

@@ -77,7 +77,10 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
 * **WiFi 6 defaults**: at first boot OFDMA is turned on, 802.11r on the main
   SSIDs (FT-PSK and FT-SAE, WPA3 included) and 2.4 GHz drops 802.11b
   (g/n/ax). Once; later changes stay. Band steering (prefer 5 GHz) follows
-  the SSIDs: on whenever both bands share name and password.
+  the SSIDs: on whenever both bands share name and password. BSS colouring,
+  which the stock firmware leaves off, is on per radio; TWT is not
+  available (the stock driver does not support it). What the WiFi stack can
+  and cannot do: [docs/WIFI.md](docs/WIFI.md).
 * **Clean reboot**: like the stock firmware, a reboot (and sysupgrade) first
   ends the PPPoE sessions (LCP Terminate + PADT) and releases DHCP leases, so
   the ISP accepts the next login at once, and writes the stock

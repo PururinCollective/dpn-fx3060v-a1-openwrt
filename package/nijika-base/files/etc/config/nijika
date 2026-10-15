@@ -39,6 +39,13 @@ config vendor 'vendor'
 	option lan_mgmt '1'
 	option lan_ifname 'br0'
 
+config wifi 'wifi'
+	# 802.11ax BSS colouring per radio (wlan0 5 GHz, wlan1 2.4 GHz): the
+	# stock firmware leaves it off; NijikaWrt gives each radio a colour from
+	# its MAC address (see /rtk/bin/hostapd).
+	option bss_color_wlan0 '1'
+	option bss_color_wlan1 '1'
+
 config firewall 'firewall'
 	# The stock "SPI Firewall" switches (stock GUI: Firewall > IPv4/IPv6
 	# Port Filtering), pinned in the stock configuration at every boot:
