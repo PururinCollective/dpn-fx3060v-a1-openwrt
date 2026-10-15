@@ -7,6 +7,7 @@
 . /usr/lib/nijika/omci.sh
 . /usr/lib/nijika/pon.sh
 . /usr/lib/nijika/fw.sh
+. /usr/lib/nijika/apply.sh
 
 FW_PATH=/tmp/nijika-fw.bin
 FW_LOG=/tmp/nijika-fw.log
@@ -121,26 +122,58 @@ m_mib_get() {
 	json_dump
 }
 
+# apply_detached AREA...: apply after the reply went out (a WiFi or WAN
+# restart can outlast the LuCI call)
+apply_detached() {
+	[ $# -gt 0 ] || return 0
+	( sleep 1; apply_after "$@" ) </dev/null >/dev/null 2>&1 &
+}
+
+# reply fields: applied areas, reboot_required
+json_add_apply() {
+	local a reboot=0 live=""
+	if apply_enabled; then
+		for a in "$@"; do [ "$a" = reboot ] && reboot=1 || live="$live $a"; done
+	else
+		[ $# -gt 0 ] && reboot=1
+	fi
+	json_add_array applied
+	for a in $live; do json_add_string "" "$a"; done
+	json_close_array
+	json_add_boolean reboot_required "$reboot"
+}
+
 # {"values": [["KEY","VALUE"], ...]}
 m_mib_set() {
 	need_vendor
-	local i n k v ok=0 failed=""
+	local i n k v ok=0 failed="" keys="" vals="$NIJIKA_RUNDIR/mib_set.$$" areas
 	json_load "$1"
 	json_select values || err "values missing"
 	json_get_keys n
+	mkdir -p "$NIJIKA_RUNDIR"
+	: > "$vals"
 	for i in $n; do
 		json_select "$i"
 		json_get_var k 1
 		json_get_var v 2
 		json_select ..
 		case "$k" in ''|*[!A-Za-z0-9_.]*) failed="$failed $k"; continue ;; esac
-		if rtk /bin/flash set "$k" "$v" >/dev/null 2>&1; then ok=$((ok + 1)); else failed="$failed $k"; fi
+		printf '%s\n%s\n' "$k" "$v" >> "$vals"
+		keys="$keys $k"
 	done
+	areas=$(printf '%s\n' $keys | apply_areas)
+	apply_before $areas
+	while IFS= read -r k && IFS= read -r v; do
+		if rtk /bin/flash set "$k" "$v" >/dev/null 2>&1; then ok=$((ok + 1)); else failed="$failed $k"; fi
+	done < "$vals"
+	rm -f "$vals"
+	apply_detached $areas
 	json_init
 	json_add_int ok "$ok"
 	json_add_array failed
 	for k in $failed; do json_add_string "" "$k"; done
 	json_close_array
+	json_add_apply $areas
 	json_dump
 }
 
@@ -215,10 +248,25 @@ m_quick_get() {
 	printf ']}\n'
 }
 
+# Quick Setup writes go through qs_set: it remembers the keys for the apply
+# step. A WAN record is taken down with its old settings before the first
+# write to it (apply_before), as the stock WAN form does.
+QS_KEYS=""
+QS_WAN=""
+QS_VOIP=0
+qs_set() { # key value
+	case "$1" in
+		ATM_VC_TBL.*)
+			local n=${1#ATM_VC_TBL.}; n=${n%%.*}
+			case " $QS_WAN " in *" $n "*) ;; *) QS_WAN="$QS_WAN $n"; apply_before "wan:$n" ;; esac ;;
+	esac
+	mib_set "$1" "$2" && QS_KEYS="$QS_KEYS $1"
+}
+
 set_if() { # key value  (only when a value is given and it differs)
 	[ -n "$2" ] || return 0
 	[ "$(mib_get "$1")" = "$2" ] && return 0
-	mib_set "$1" "$2"
+	qs_set "$1" "$2"
 }
 
 m_quick_set() {
@@ -228,13 +276,13 @@ m_quick_set() {
 
 	# PON authentication
 	if json_select pon 2>/dev/null; then
-		json_get_var v sn; [ -n "$v" ] && mib_set GPON_SN "$v"
+		json_get_var v sn; set_if GPON_SN "$v"
 		json_get_var v ploam; json_get_var p ploam_set
-		[ "$p" = 1 ] && mib_set GPON_PLOAM_PASSWD "$v"
+		[ "$p" = 1 ] && [ "$(mib_get GPON_PLOAM_PASSWD)" != "$v" ] && qs_set GPON_PLOAM_PASSWD "$v"
 		json_get_var v loid; json_get_var p loid_set
-		[ "$p" = 1 ] && mib_set LOID "$v"
+		[ "$p" = 1 ] && [ "$(mib_get LOID)" != "$v" ] && qs_set LOID "$v"
 		json_get_var v loid_pw
-		[ "$p" = 1 ] && mib_set LOID_PASSWD "$v"
+		[ "$p" = 1 ] && [ "$(mib_get LOID_PASSWD)" != "$v" ] && qs_set LOID_PASSWD "$v"
 		json_select ..
 	fi
 
@@ -273,13 +321,13 @@ m_quick_set() {
 			json_select ..
 			if [ "$radio" = 0 ]; then chain=WLAN_MBSSIB_TBL; p=""; else chain=WLAN1_MBSSIB_TBL; p=WLAN1_; fi
 			if [ -n "$ssid" ]; then
-				mib_set "$chain.0.ssid" "$ssid"
-				mib_set "${p}SSID" "$ssid"
+				set_if "$chain.0.ssid" "$ssid"
+				set_if "${p}SSID" "$ssid"
 			fi
 			if [ -n "$key" ]; then
 				[ ${#key} -ge 8 ] && [ ${#key} -le 64 ] || err "WiFi key must be 8..64 characters"
-				mib_set "$chain.0.wpaPSK" "$key"
-				mib_set "${p:-WLAN_}WPA_PSK" "$key"
+				set_if "$chain.0.wpaPSK" "$key"
+				set_if "${p:-WLAN_}WPA_PSK" "$key"
 			fi
 		done
 		json_select ..
@@ -302,6 +350,7 @@ m_quick_set() {
 			json_get_var disp display
 			json_select ..
 			case "$chid" in 0|1) ;; *) continue ;; esac
+			QS_VOIP=1
 			rtk /bin/voipflashcmd set enable "${en:-0}" "$chid" 0 >/dev/null 2>&1
 			# A disabled line keeps its stored account (fields are hidden in the UI).
 			[ "$en" = 1 ] || continue
@@ -316,9 +365,13 @@ m_quick_set() {
 		json_select ..
 	fi
 
+	local areas
+	areas=$(printf '%s\n' $QS_KEYS | apply_areas)
+	[ "$QS_VOIP" = 1 ] && areas="${areas:+$areas }voip"
+	apply_detached $areas
 	json_init
 	json_add_boolean ok 1
-	json_add_boolean reboot_required 1
+	json_add_apply $areas
 	json_dump
 }
 

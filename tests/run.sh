@@ -4,7 +4,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint parsers wrapper ucimirror spi bootenv fwu banner
+# Groups: syntax json lint parsers wrapper ucimirror spi apply helpers bootenv fwu banner
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -79,6 +79,12 @@ t_json() {
 
 t_lint() {
 	echo "lint"
+	check "chroot entry closes procd's lock fd 1000 before starting stock programs" sh -c "
+		f='$TOP/package/rtk-vendor/files/usr/libexec/rtk/run'
+		[ \$(grep -n '^exec 1000>&-' \"\$f\" | cut -d: -f1) -lt \$(grep -n 'chroot \"\$RTK\"' \"\$f\" | cut -d: -f1) ]"
+	check "stock slogd replaced (OpenWrt logd keeps /dev/log)" sh -c "
+		grep -q 'NijikaWrt placeholder' '$TOP/package/rtk-vendor/files/rtk/bin/slogd' &&
+		grep -q 'lib/nijika/slogd' '$TOP/scripts/patch-vendor.sh'"
 	# gsub()/sub() whose replacement string holds a backslash: busybox 1.37
 	# awk (OpenWrt) drops it ("\\\"" becomes a bare quote, "\\n" an n).
 	local hits
@@ -226,6 +232,59 @@ t_spi() {
 	check "flash set failing: no partial state recorded" sh -c "[ -z \"$(spi "$factory" off off readonly)\" ]"
 }
 
+# ---------------------------------------------------- live apply layer
+
+t_apply() {
+	echo "apply (stock config changes -> rtk-apply, like the boa forms)"
+	local D="$W/apply"
+	mkdir -p "$D"
+	# stubs: rtk records its arguments, mib_get reads a file, uci answers
+	# nijika.vendor.live_apply, logger records what would be logged
+	{
+		echo "rtk() { echo \"\$*\" >> '$D/calls'; }"
+		echo "logger() { [ \"\$1\" = -t ] && shift 2; echo \"\$*\" >> '$D/log'; }"
+		echo "mib_get() { sed -n \"s/^\$1=//p\" '$D/mib'; }"
+		echo "uci() { cat '$D/live' 2>/dev/null; }"
+		echo ". '$LIB/apply.sh'"
+	} > "$D/env.sh"
+	areas() { printf '%s\n' "$@" | "$BB" sh -c ". '$D/env.sh'; apply_areas"; }
+	check "keys -> areas: WAN records first, then fixed order, no repeats" sh -c "[ \"$(areas WLAN_MBSSIB_TBL.0.ssid IPF_IN_ACTION ATM_VC_TBL.0.vid ATM_VC_TBL.0.MTU LAN_IP_ADDR SSID ATM_VC_TBL.2.vid)\" = 'wan:0 wan:2 firewall lan wlan' ]"
+	check "GPON and unknown keys: loid, ploam, reboot" sh -c "[ \"$(areas GPON_SN LOID_PASSWD GPON_PLOAM_PASSWD LOID)\" = 'loid ploam reboot' ]"
+	check "SPI keys are firewall (IPv4, IPv6, session, MAC, DMZ, rules)" sh -c "[ \"$(areas V6_IPF_OUT_ACTION V6_SESSION_FW_ENABLE MACF_IN_ACTION DMZ_IP IP_PORT_FILTER_TBL.1.dip)\" = 'firewall' ]"
+	run() { # live_apply code -> rtk calls and the return code, one line
+		: > "$D/calls"; : > "$D/log"; printf '%s' "$1" > "$D/live"
+		printf '%s\n' 'LOID=TM12345' 'LOID_PASSWD=' 'GPON_PLOAM_PASSWD=s3cret' > "$D/mib"
+		"$BB" sh -c ". '$D/env.sh'; $2; echo \"rc=\$?\" >> '$D/calls'"
+		tr '\n' ';' < "$D/calls"
+	}
+	check "WAN edit: wan-down before the write, wan-up after" sh -c "[ \"$(run 1 "apply_before wan:0 firewall; echo WRITE >> '$D/calls'; apply_after wan:0 firewall")\" = '/bin/rtk-apply wan-down 0;WRITE;/bin/rtk-apply wan-up 0;/bin/rtk-apply firewall;rc=0;' ]"
+	check "GPON as formgponConf: omcicli LOID, PLOAM, then OMCI restart" sh -c "[ \"$(run 1 'apply_after loid ploam')\" = '/bin/omcicli set loid TM12345;/bin/rtk-apply gpon-ploam s3cret;/bin/rtk-apply gpon-omci;rc=0;' ]"
+	check "the PLOAM password is never logged" sh -c "! grep -q s3cret '$D/log'"
+	check "reboot area: the live parts run, return 1" sh -c "[ \"$(run 1 'apply_after wlan reboot')\" = '/bin/rtk-apply wlan;rc=1;' ]"
+	check "live_apply=0: nothing runs, reboot needed" sh -c "[ \"$(run 0 'apply_before wan:0; apply_after wan:0 wlan')\" = 'rc=1;' ]"
+	check "live_apply=0, nothing written: no reboot" sh -c "[ \"$(run 0 'apply_after')\" = 'rc=0;' ]"
+}
+
+# ------------------------------------------- native helpers (rtk-apply)
+
+t_helpers() {
+	echo "helpers (rtk-apply against the stock libraries)"
+	local bin="$TOP/build/helpers/rtk-apply" rtk="$TOP/build/stage/rtk"
+	[ -x "$bin" ] || { skp "rtk-apply" "not built (./build.sh assemble)"; return; }
+	readelf -d "$bin" | grep NEEDED > "$W/needed"
+	check "DT_NEEDED: librtk.so and libmib.so.0 by name, no build-host paths" sh -c "
+		grep -qF '[librtk.so]' '$W/needed' && grep -qF '[libmib.so.0]' '$W/needed' && ! grep -q / '$W/needed'"
+	check "symbol versions within the stock glibc 2.30" sh -c "
+		[ -z \"\$(readelf -V '$bin' | grep -oE 'GLIBC_2\.[0-9]+' | awk -F. '\$2 > 30')\" ]"
+	if command -v qemu-aarch64-static >/dev/null && [ -f "$rtk/lib/libmib.so" ]; then
+		check "loads with every symbol bound (qemu, stock /lib)" sh -c "
+			cp '$bin' '$rtk/bin/rtk-apply' &&
+			LD_BIND_NOW=1 qemu-aarch64-static -L '$rtk' '$rtk/bin/rtk-apply' 2>&1 | grep -q '^usage: rtk-apply'"
+	else
+		skp "qemu load test" "no qemu-aarch64-static or stock tree"
+	fi
+}
+
 # ------------------------------------------------ preinit boot-env hook
 
 t_bootenv() {
@@ -301,10 +360,10 @@ t_banner() {
 
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint parsers wrapper ucimirror spi bootenv fwu banner}"
+groups="${*:-syntax json lint parsers wrapper ucimirror spi apply helpers bootenv fwu banner}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|parsers|wrapper|ucimirror|spi|bootenv|fwu|banner) "t_$g" ;;
+		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|helpers|bootenv|fwu|banner) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

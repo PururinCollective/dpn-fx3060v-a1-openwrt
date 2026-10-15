@@ -120,6 +120,23 @@ Other build-time changes to `/rtk`:
   (`cwmpClient`), TR-369 (`obuspa`), DDNS and speedtest are kept: they only
   talk to endpoints configured in the MIB (ISP ACS/controller, your DDNS
   provider) or when used.
+* `bin/slogd` moved to `lib/nijika/slogd`, an inert placeholder in its place.
+  `/rtk/dev` is the system `/dev`, so the stock syslog daemon re-created
+  `/dev/log` once the late phase started it and from then on received
+  everything OpenWrt logged (`logger`, rpcd, ...); `logread` only showed
+  daemons that had connected before. Without it the stock services log to
+  OpenWrt's logd as well (`logread` shows both, the stock GUI's System Log
+  page stays empty); the default log ring is raised to 512 KiB.
+* `bin/dnsmasq` moved to `lib/nijika/dnsmasq` behind the DNS over HTTPS
+  wrapper (see below).
+
+Every command enters the chroot through `/usr/libexec/rtk/run`, which closes
+fd 1000 first: `rc.common` holds its `procd_lock` flock on that fd during
+`start`/`reload`, and a stock daemon started from an init script (the
+vendor boot itself, `rtk-apply` restarting pppd from a reload) inherited it
+and kept the lock for ever. Until r20 every `reload` of `rtk-vendor`
+(`nijika.vendor.*`, `nijika.firewall.*` from LuCI) hung in `flock`: the
+stock `omci_app` and `pondetect` held the lock taken at boot.
 
 ## boa (stock web server)
 
@@ -185,6 +202,10 @@ Quick Setup writes:
 | WiFi | `WLAN_MBSSIB_TBL.0.{ssid,wpaPSK}` + `SSID`/`WLAN_WPA_PSK` (wlan0), `WLAN1_MBSSIB_TBL.0.*` + `WLAN1_SSID`/`WLAN1_WPA_PSK` (wlan1); band from `WLAN*_PHY_BAND_SELECT` |
 | VoIP | `voipflashcmd set … <line> 0` |
 
+Only values that differ are written, and each area is applied the way the
+stock GUI applies it ([BOA.md](BOA.md)); the reply lists the applied areas
+and sets `reboot_required` only for keys without a live path (`GPON_SN`).
+
 ### /etc/config/rtk
 
 `/usr/libexec/rtk/uci-mirror` keeps `/etc/config/rtk` as a UCI view of the
@@ -193,7 +214,10 @@ flash MIB: `rtk.mib.<KEY>` for every scalar of `flash all`, and
 A sync first writes the options that changed in UCI since the previous sync
 (compared against a snapshot in `/tmp/nijika`) with `flash set`, then rebuilds
 the file from flash; the file is only rewritten when its content changed.
-Without a snapshot (first sync after boot) flash wins. Syncs run from the
+Without a snapshot (first sync after boot) flash wins. Written options are
+applied to the running stack through `/usr/lib/nijika/apply.sh` and
+`/rtk/bin/rtk-apply`, the libmib calls of the stock web forms
+([BOA.md](BOA.md)). Syncs run from the
 `40-uci-mirror` post-boot hook, every 10 minutes from `nijika-housekeep`, and
 on a `rtk` config change through the reload trigger of `nijika-housekeep`
 (`reload_config`, LuCI apply).
@@ -246,7 +270,8 @@ from `nijika.firewall.spi_ipv4` / `spi_ipv6` between the early phase (configd
 is up) and the late one (`startup` builds the chains), writing only values
 that differ. `off` (default) sets both directions to `1`, `on` restores the
 factory pair, `keep` leaves them alone; outgoing ON is never written. A uci
-reload of `nijika` writes them too, effective from the next boot. The MIB is
+reload of `nijika` writes them too and rebuilds the running stock firewall
+(`rtk-apply firewall`, see [BOA.md](BOA.md)). The MIB is
 shared with the stock bank, which therefore boots with the same switches.
 
 ## A/B upgrades

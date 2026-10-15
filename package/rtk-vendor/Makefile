@@ -28,7 +28,7 @@ endef
 define Package/rtk-vendor/install
 	$(CP) ./files/* $(1)/
 	$(INSTALL_DIR) $(1)/usr/bin $(1)/usr/sbin
-	for t in mib flash diag omcicli nv voipflashcmd smuxctl spppctl; do \
+	for t in mib flash diag omcicli nv voipflashcmd smuxctl spppctl iptables ip6tables ebtables; do \
 		$(LN) ../libexec/rtk/wrap $(1)/usr/bin/$$$$t; \
 	done
 	$(LN) ../libexec/rtk/run $(1)/usr/sbin/rtk

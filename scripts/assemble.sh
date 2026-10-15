@@ -30,11 +30,14 @@ if [ -d "$BUILD_DIR/files-rtk" ]; then
 	cp -a "$BUILD_DIR/files-rtk/." "$STAGE_DIR/rtk/"
 fi
 
+# Native helpers (rtk-apply), linked against the stock libraries just unpacked
+"$TOPDIR/scripts/build-helpers.sh" "$STAGE_DIR/rtk"
+
 # --- OpenWrt side fix-ups ----------------------------------------------------
 R="$STAGE_DIR"
 
 # Stock tool wrappers in PATH.
-for t in mib flash diag omcicli nv voipflashcmd smuxctl spppctl; do
+for t in mib flash diag omcicli nv voipflashcmd smuxctl spppctl iptables ip6tables ebtables; do
 	ln -sf ../libexec/rtk/wrap "$R/usr/bin/$t"
 done
 ln -sf ../libexec/rtk/run "$R/usr/sbin/rtk"
@@ -92,7 +95,7 @@ sed -i "s|^DISTRIB_DESCRIPTION=.*|DISTRIB_DESCRIPTION='$release / OpenWrt $DISTR
 chmod 0755 "$R"/usr/sbin/nijika "$R"/usr/libexec/rtk/* "$R"/usr/libexec/rtk/post-boot.d/* \
 	"$R"/usr/libexec/nijika/* "$R"/usr/libexec/rpcd/nijika "$R"/etc/init.d/rtk-vendor \
 	"$R"/etc/init.d/nijika-housekeep "$R"/etc/init.d/nijika-doh "$R"/etc/uci-defaults/90-nijika-defaults \
-	"$R"/rtk/bin/ccom_linkkit "$R"/rtk/bin/dnsmasq "$R"/rtk/etc/nijika/rcS 2>/dev/null || true
+	"$R"/rtk/bin/ccom_linkkit "$R"/rtk/bin/dnsmasq "$R"/rtk/bin/slogd "$R"/rtk/etc/nijika/rcS 2>/dev/null || true
 chmod 0755 "$R/rtk/var" "$R/rtk/run" "$R/rtk/proc" "$R/rtk/sys" "$R/rtk/dev"
 
 # Enable our services (IB only enables packages it installed itself).

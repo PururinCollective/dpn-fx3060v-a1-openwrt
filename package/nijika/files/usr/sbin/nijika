@@ -9,6 +9,7 @@
 . /usr/lib/nijika/omci.sh
 . /usr/lib/nijika/pon.sh
 . /usr/lib/nijika/fw.sh
+. /usr/lib/nijika/apply.sh
 
 CMD="$1"
 [ $# -gt 0 ] && shift
@@ -243,6 +244,38 @@ EOF
 	echo "OMCI_CUSTOM_BDP=$bdp RDP=$rdp ME=$me. Reboot to take effect."
 }
 
+# ------------------------------------------------------- live apply ----
+
+# cli_apply WHAT AREA...: apply written keys, say what happened
+cli_apply() {
+	local what="$1"; shift
+	if apply_after "$@"; then
+		echo "$what set and applied."
+	else
+		echo "$what set. Reboot to take effect."
+	fi
+}
+
+nijika_apply() {
+	need_vendor
+	case "$1" in
+		wan)
+			if [ -n "$2" ]; then
+				rtk_apply wan-down "$2" && rtk_apply wan-up "$2"
+			else
+				rtk_apply wan
+			fi ;;
+		firewall|lan|wlan|voip) rtk_apply "$1" ;;
+		gpon) rtk_apply gpon-omci ;;
+		*)
+			echo "usage: nijika apply wan [n]|firewall|lan|wlan|voip|gpon"
+			echo "Makes the running stock stack follow the stock configuration, like the"
+			echo "stock GUI's Apply (Quick Setup, the MIB editor and 'nijika uci' do it"
+			echo "after writing). wan/gpon interrupt the Internet connection briefly."
+			return 1 ;;
+	esac
+}
+
 # --------------------------------------------------- PON credentials ----
 
 nijika_ploam() {
@@ -250,7 +283,11 @@ nijika_ploam() {
 	if [ -n "$1" ]; then
 		[ ${#1} -le 36 ] || die "PLOAM password too long"
 		mib_set GPON_PLOAM_PASSWD "$1"
-		echo "PLOAM password set. Reboot to re-register."
+		if [ ${#1} -le 10 ]; then
+			cli_apply "PLOAM password" ploam
+		else
+			echo "PLOAM password set. Reboot to re-register."
+		fi
 	else
 		echo "GPON_PLOAM_PASSWD=$(mib_get GPON_PLOAM_PASSWD)"
 	fi
@@ -273,7 +310,7 @@ nijika_loid() {
 	if [ $# -ge 1 ]; then
 		mib_set LOID "$1"
 		[ $# -ge 2 ] && mib_set LOID_PASSWD "$2"
-		echo "LOID set. Reboot to re-register."
+		cli_apply "LOID" loid
 	else
 		echo "LOID=$(mib_get LOID)"
 		echo "LOID_PASSWD=$(mib_get LOID_PASSWD)"
@@ -297,12 +334,13 @@ nijika_isp() {
 	[ -n "$line" ] || die "unknown ISP '$id'"
 	idx="${2:-$(wan_internet_index)}"
 	vid=$(echo "$line" | cut -f3); prio=$(echo "$line" | cut -f4); mtu=$(echo "$line" | cut -f5)
+	apply_before "wan:$idx"
 	mib_set "ATM_VC_TBL.$idx.vlan" 1
 	mib_set "ATM_VC_TBL.$idx.vid" "$vid"
 	mib_set "ATM_VC_TBL.$idx.vprio" "$prio"
 	mib_set "ATM_VC_TBL.$idx.MTU" "$mtu"
-	echo "WAN $idx: VLAN $vid priority $prio MTU $mtu ($(echo "$line" | cut -f2))."
-	echo "Set PPPoE credentials with Quick Setup or 'nijika mib set', then reboot."
+	cli_apply "WAN $idx: VLAN $vid priority $prio MTU $mtu ($(echo "$line" | cut -f2))" "wan:$idx"
+	echo "PPPoE credentials: Quick Setup or 'nijika mib set ATM_VC_TBL.$idx.pppUser ...'."
 }
 
 # Index of the first PPPoE WAN (ChannelMode 2), else 0.
@@ -386,7 +424,11 @@ nijika_mib() {
 			;;
 		set)
 			[ $# -ge 2 ] || die "usage: nijika mib set KEY VALUE"
-			rtk /bin/flash set "$1" "$2"
+			local area
+			area=$(apply_area "$1")
+			apply_before "$area"
+			rtk /bin/flash set "$1" "$2" || return 1
+			cli_apply "$1" "$area"
 			;;
 		all)
 			if has_flag --json "$@"; then
@@ -577,6 +619,9 @@ System
   uci [sync|diff]                 /etc/config/rtk = stock config as UCI:
                                   uci get rtk.mib.LAN_IP_ADDR,
                                   uci set ...; uci commit rtk; reload_config
+  apply wan [n]|firewall|lan|wlan|voip|gpon
+                                  Apply the stock config to the running stack
+                                  (like the stock GUI's Apply)
   boa [hidden|lan]                Stock D-Link GUI on :8080: router-only or LAN
   reset [--all]                   Factory reset (keeps PON identity)
   banner                          Show the login banner
@@ -584,7 +629,8 @@ System
   hw                              Hardware revision check (switch PHY IDs)
 
 Stock tools are also available directly: diag, omcicli, flash, mib, nv,
-voipflashcmd, smuxctl. `nijika rtk` opens a stock (vendor) shell.
+voipflashcmd, smuxctl, iptables, ip6tables, ebtables (the stock firewall).
+`nijika rtk` opens a stock (vendor) shell.
 EOF
 }
 
@@ -603,6 +649,7 @@ case "$CMD" in
 	mib) nijika_mib "$@" ;;
 	boa) nijika_boa "$@" ;;
 	uci) nijika_uci "$@" ;;
+	apply) nijika_apply "$@" ;;
 	doh) nijika_doh "$@" ;;
 	reset) nijika_reset "$@" ;;
 	banner) NIJIKA_BANNER_FORCE=1 exec /usr/libexec/nijika/banner ;;

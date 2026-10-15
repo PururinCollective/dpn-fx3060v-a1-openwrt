@@ -5,6 +5,10 @@ config vendor 'vendor'
 	# on port 8080:  'hidden' = only from the router itself (SSH tunnel),
 	#                'lan'    = also from the LAN.
 	option boa 'hidden'
+	# Apply stock configuration changes (Quick Setup, MIB editor,
+	# /etc/config/rtk, SPI firewall) to the running stack like the stock
+	# web forms do (/rtk/bin/rtk-apply); 0: every change waits for a reboot.
+	option live_apply '1'
 	# Print the stock vendor boot output on the serial console (1) or
 	# send it to the system log (0, see: logread -e rtk).
 	option console '1'

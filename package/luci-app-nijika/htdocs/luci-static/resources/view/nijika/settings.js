@@ -18,6 +18,11 @@ return view.extend({
 		o.value('lan', _('Reachable from the LAN'));
 		o.default = 'hidden';
 
+		o = s.option(form.Flag, 'live_apply', _('Live apply'),
+			_('Apply stock configuration changes (Quick Setup, MIB editor, <code>/etc/config/rtk</code>, SPI firewall) to the running stack the way the stock web GUI does, instead of waiting for a reboot. WAN, firewall, LAN, WiFi, GPON registration and VoIP are covered.'));
+		o.default = '1';
+		o.rmempty = false;
+
 		o = s.option(form.Flag, 'console', _('Vendor boot output on console'),
 			_('Show the stock boot messages on the serial console. When off they go to the system log (<code>logread -e rtk</code>). Applies on next boot.'));
 		o.default = '1';
@@ -53,7 +58,7 @@ return view.extend({
 		o.depends('enabled', '1');
 
 		s = m.section(form.NamedSection, 'firewall', 'firewall', _('Stock SPI firewall'),
-			_('The <em>SPI Firewall</em> switches of the stock GUI (Firewall &gt; IPv4/IPv6 Port Filtering): the default action of the stock forwarding filter. <em>Off</em> allows new connections both ways, <em>On</em> drops new incoming ones (stock default; outgoing stays allowed). NijikaWrt writes them to the stock configuration at every boot; a change here applies after the next reboot. The router\'s own services (LuCI, SSH, stock GUI) are guarded by separate rules either way. The stock configuration is shared with the stock firmware bank.'));
+			_('The <em>SPI Firewall</em> switches of the stock GUI (Firewall &gt; IPv4/IPv6 Port Filtering): the default action of the stock forwarding filter. <em>Off</em> allows new connections both ways, <em>On</em> drops new incoming ones (stock default; outgoing stays allowed). NijikaWrt writes them to the stock configuration at every boot; a change here is applied right away (with live apply on). The router\'s own services (LuCI, SSH, stock GUI) are guarded by separate rules either way. The stock configuration is shared with the stock firmware bank.'));
 		o = s.option(form.ListValue, 'spi_ipv4', _('IPv4'),
 			_('Unsolicited incoming IPv4 connections still need a port forward or DMZ (NAT).'));
 		o.value('off', _('Off'));

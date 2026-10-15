@@ -12,6 +12,12 @@ grep -q " $RTK/proc " /proc/mounts || {
 
 [ $# -gt 0 ] || set -- /bin/sh -l
 
+# procd_lock (rc.common start/reload) holds a flock on fd 1000. A stock
+# daemon started from an init script (vendor boot, rtk-apply restarting
+# pppd or dhcpd from a reload) would inherit it and keep the lock for
+# ever: every later reload of that service then waits in flock for ever.
+exec 1000>&-
+
 # Same environment the stock busybox init gives its rc scripts and daemons
 # (its compiled-in PATH includes /etc/scripts: fw_loaded.sh, cmd, cmd1, ...).
 exec env -i \

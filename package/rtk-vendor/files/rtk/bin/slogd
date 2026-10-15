@@ -1,0 +1,23 @@
+#!/bin/sh
+# NijikaWrt placeholder for /bin/slogd (runs inside the /rtk chroot).
+#
+# The stock syslog daemon creates /dev/log. /rtk/dev is the system /dev, so
+# it would take the socket away from OpenWrt's logd: everything logged on
+# the OpenWrt side after the vendor boot (logger, dropbear, rpcd, ...) would
+# end up in slogd's private buffer instead of `logread`. Without it the
+# stock services log through /dev/log to OpenWrt's logd as well, so
+# `logread` shows both. The real binary is kept as /lib/nijika/slogd
+# (scripts/patch-vendor.sh).
+#
+# libmib's startLog/stopLog start and kill it by name and pid file, so this
+# placeholder keeps that contract and does nothing else.
+
+echo $$ > /var/run/syslogd.pid 2>/dev/null
+
+trap '' HUP USR1 USR2 PIPE
+trap 'rm -f /var/run/syslogd.pid; exit 0' TERM INT QUIT
+
+while :; do
+	sleep 3600 &
+	wait $!
+done

@@ -45,6 +45,11 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   can no longer cut the LAN off. NAT still keeps unsolicited IPv4 out; on IPv6
   every LAN device with a public address is reachable, its own firewall is what
   protects it (`firewall.spi_ipv6 on` restores the stock behaviour).
+* **Live apply, like the stock GUI**: a change to the WAN, firewall, LAN,
+  WiFi, GPON registration or VoIP takes effect right away. `rtk-apply` makes
+  the same libmib calls the stock web forms make after "Apply"
+  ([docs/BOA.md](docs/BOA.md)); only a few keys (GPON serial, ONT identity)
+  still need a reboot.
 * **The stock configuration as UCI**: `/etc/config/rtk` mirrors the flash MIB
   (`uci get rtk.mib.LAN_IP_ADDR`, `uci get rtk.ATM_VC_TBL_0.vid`); a commit plus
   `reload_config` (or LuCI "Save & Apply") writes the changed options back
@@ -71,7 +76,8 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
 * **`nijika` CLI**: `info`, `olt`, `me`, `ploam`, `sn`, `loid`, `ont`,
   `mode`, `isp`, `boot`, `upgrade`, `mib`, `boa`, `reset`, `banner`. Stock
   tools are wrapped too: `diag`, `omcicli`, `flash`, `mib`, `nv`,
-  `voipflashcmd`, `smuxctl`, and `rtk` opens a stock shell.
+  `voipflashcmd`, `smuxctl`, `iptables`/`ip6tables`/`ebtables` (the stock
+  firewall), and `rtk` opens a stock shell.
 * **Animated login banner**: the NijikaWrt logo, "ft. <model>" and the project
   links, lit by a grey → cyan/blue/purple sweep. The two rules are the ONT's
   lights: the downstream light (RX 1490 nm) flows in as a wave, then the laser
@@ -117,9 +123,12 @@ switch PHY IDs of the unit with the image's profile and refuse a mismatch
 ## Building
 
 Requirements (Debian/Ubuntu): `bash curl tar zstd xz-utils make fakeroot
-squashfs-tools python3`. No toolchain is needed: OpenWrt comes from the
-official ImageBuilder (armsr/armv8, aarch64), and the kernel and vendor stack
-come from the stock firmware.
+squashfs-tools python3` and [uv](https://docs.astral.sh/uv/) (or a `zig`
+binary, see `ZIG` in `build.conf`). OpenWrt comes from the official
+ImageBuilder (armsr/armv8, aarch64), and the kernel and vendor stack come
+from the stock firmware. The only compiled part is the small `rtk-apply`
+helper ([docs/BOA.md](docs/BOA.md)): `zig cc` builds it for the stock glibc
+2.30; uv fetches zig 0.15.2 from PyPI (about 90 MB, once) on first use.
 
 ```bash
 git clone <this repo> && cd dpn-fx3060v-a1-openwrt
@@ -225,6 +234,7 @@ nijika mib get|set|def|all|chain      stock configuration database
 nijika boa [hidden|lan]               stock D-Link GUI on :8080: router-only or LAN
 nijika doh [on|off|url <URL>]         DNS over HTTPS status / switch / resolver
 nijika uci [sync|diff]                /etc/config/rtk against the stock flash
+nijika apply wan [n]|firewall|lan|wlan|voip|gpon   apply the stock config to the running stack
 nijika reset [--all]                  factory reset, keeps serial/PLOAM/MAC
 nijika banner | version | rtk [cmd]
 ```
@@ -237,6 +247,7 @@ nijika banner | version | rtk [cmd]
 | `vendor.console` | `1` | stock boot output on ttyS0 (`0` sends it to `logread -e rtk`) |
 | `vendor.inetd` | `0` | stock telnet (port 23) |
 | `vendor.lan_mgmt` | `1` | keep TCP 22/80 open on `br0` in the stock iptables |
+| `vendor.live_apply` | `1` | apply stock config changes to the running stack like the stock GUI ([docs/BOA.md](docs/BOA.md)); `0`: wait for a reboot |
 | `banner.animate` | `ssh` | `always`, `ssh`, `never` (serial at 115200 is slow) |
 | `banner.color` | `auto` | `truecolor`, `256`, `16`, `none` |
 | `pon.cache_ttl` | `5` | PON status is read on demand (LuCI, `nijika info`, banner) and reused this many seconds |
@@ -262,8 +273,9 @@ The file is rebuilt from flash after boot, every 10 minutes and after each
 apply: an option missing from UCI is filled in with its flash value, and
 `uci delete` brings the flash value back. Only options changed in UCI since the
 last sync are written, so a value the stock web GUI or TR-069 changed in the
-meantime is not overwritten. The stock services read their configuration when
-they start, so most changes need a reboot. The file holds the same secrets as
+meantime is not overwritten. Written options are applied to the running stack
+the way the stock web form for them does ([docs/BOA.md](docs/BOA.md));
+`nijika uci diff` also shows which. The file holds the same secrets as
 the stock configuration (PPPoE, WiFi keys) and is readable by root only.
 
 ## Development

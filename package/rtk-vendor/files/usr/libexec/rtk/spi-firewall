@@ -18,11 +18,13 @@
 #   spi-firewall boot   from vendor-boot, between the early phase (configd
 #                       up) and the late one (stock `startup` builds the
 #                       iptables chains from these values)
-#   spi-firewall        uci reload of nijika: written to flash, the stock
-#                       firewall uses them from the next boot on
+#   spi-firewall        uci reload of nijika: written to flash and applied
+#                       to the running stock firewall like the stock GUI's
+#                       Apply (rtk-apply firewall)
 
 . /lib/functions.sh
 . /usr/lib/nijika/common.sh
+. /usr/lib/nijika/apply.sh
 
 # pin KEY VALUE: write the MIB value when it differs
 pin() {
@@ -55,8 +57,12 @@ main() {
 	changed=0
 	spi_apply "$v4" ""
 	spi_apply "$v6" V6_
-	[ "$1" = boot ] || [ $changed -eq 0 ] ||
+	[ "$1" = boot ] || [ $changed -eq 0 ] && return 0
+	if apply_after firewall; then
+		echo "stock SPI firewall: $changed value(s) written and applied"
+	else
 		echo "stock SPI firewall: $changed value(s) written, effective after the next reboot"
+	fi
 }
 
 [ -n "$SPI_FIREWALL_LIB" ] || main "$@"

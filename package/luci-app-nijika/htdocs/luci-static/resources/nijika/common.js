@@ -245,6 +245,27 @@ return baseclass.extend({
 		return a ? '%s (%s)'.format(v, a) : (v == null ? '-' : v);
 	},
 
+	/* Reply of mib_set / quick_set -> notification text. applied: areas the
+	 * running stack was told about (as the stock GUI's Apply does),
+	 * reboot_required: something else is only read at boot. */
+	applyText: function(res, what) {
+		var names = {
+			firewall: _('firewall'), lan: _('LAN'), wlan: _('WiFi'), loid: _('PON registration'),
+			ploam: _('PON registration'), voip: _('VoIP')
+		};
+		var seen = {}, list = [];
+		(res && res.applied || []).forEach(function(a) {
+			var n = /^wan:(\d+)$/.test(a) ? _('WAN PON_%s').format(a.substr(4)) : (names[a] || a);
+			if (!seen[n]) { seen[n] = true; list.push(n); }
+		});
+		var msg = what || _('Saved to the stock configuration.');
+		if (list.length)
+			msg += ' ' + _('Applying to the running stack: %s.').format(list.join(', '));
+		if (res && res.reboot_required)
+			msg += ' ' + _('Some of it takes effect after a reboot.');
+		return msg;
+	},
+
 	rebootPrompt: function(self, msg) {
 		ui.showModal(_('Reboot required'), [
 			E('p', {}, msg || _('The stock configuration was saved. The PON/WAN stack picks it up after a reboot.')),

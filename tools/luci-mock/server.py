@@ -130,12 +130,12 @@ def nijika_call(method, args):
     if method == 'diag':
         return {'cmd': args.get('cmd'), 'output': 'ONU state: Operation State(O5)\n(sample output)'}
     if method in ('mib_set',):
-        return {'ok': len(args.get('values', [])), 'failed': []}
+        return {'ok': len(args.get('values', [])), 'failed': [], 'applied': ['wlan'], 'reboot_required': False}
     return {'ok': True, 'message': 'mock: %s %s' % (method, json.dumps(args))}
 
 
 UCI = {'nijika': {
-    'vendor': {'.type': 'vendor', '.name': 'vendor', '.anonymous': False, 'boa': 'hidden', 'console': '1', 'inetd': '0',
+    'vendor': {'.type': 'vendor', '.name': 'vendor', '.anonymous': False, 'boa': 'hidden', 'live_apply': '1', 'console': '1', 'inetd': '0',
                'lan_mgmt': '1', 'lan_ifname': 'br0'},
     'banner': {'.type': 'banner', '.name': 'banner', '.anonymous': False, 'animate': 'ssh', 'color': 'auto'},
     'pon': {'.type': 'pon', '.name': 'pon', '.anonymous': False, 'cache_ttl': '5'},

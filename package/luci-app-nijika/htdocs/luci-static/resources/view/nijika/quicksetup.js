@@ -6,8 +6,9 @@
 
 /*
  * Quick Setup: PON authentication, PPPoE Internet WAN, WiFi and VoIP.
- * Values are written to the stock MIB (flash set / voipflashcmd); the stock
- * stack applies them after a reboot.
+ * Values are written to the stock MIB (flash set / voipflashcmd) and applied
+ * to the running stock stack the way the stock GUI does (rtk-apply); the
+ * GPON serial number takes effect after a reboot.
  */
 
 /* ATM_VC_TBL.applicationtype is a service bitmask (stock GUI: TR069,
@@ -74,7 +75,7 @@ return view.extend({
 
 		var m, s, o;
 		m = new form.JSONMap(data, _('Quick Setup'),
-			_('Get the built-in ONT online in one step. Settings are stored in the stock configuration and take effect after a reboot.'));
+			_('Get the built-in ONT online in one step. Settings are stored in the stock configuration and applied right away, like the stock GUI does; a changed serial number needs a reboot. Changing the PON or WAN settings briefly interrupts the Internet connection.'));
 		this.map = m;
 
 		/* PON */
@@ -225,7 +226,7 @@ return view.extend({
 		}, this)).then(function(res) {
 			if (res && res.error)
 				throw new Error(res.error);
-			ui.addNotification(null, E('p', _('Quick Setup saved to the stock configuration. Reboot to apply.')), 'info');
+			ui.addNotification(null, E('p', nc.applyText(res, _('Quick Setup saved to the stock configuration.'))), 'info');
 			return res;
 		}).catch(function(e) {
 			ui.addNotification(null, E('p', _('Saving failed: %s').format(e.message || e)), 'danger');
@@ -234,8 +235,9 @@ return view.extend({
 	},
 
 	handleSaveApply: function(ev) {
-		return this.handleSave(ev).then(function() {
-			nc.rebootPrompt(nc);
+		return this.handleSave(ev).then(function(res) {
+			if (res && res.reboot_required)
+				nc.rebootPrompt(nc, _('The GPON serial number is read when the PON stack starts: reboot to use the new one.'));
 		});
 	},
 

@@ -7,8 +7,9 @@
 /*
  * Browser/editor for the stock Realtek configuration database (MIB):
  * scalar values (`flash all`) and chain tables (`flash get <TBL>`).
- * Writes use `flash set` and persist immediately; most take effect after
- * a reboot.
+ * Writes use `flash set` and persist immediately; keys a stock web form
+ * applies live (WAN, firewall, LAN, WiFi, GPON) are applied the same way,
+ * the rest after a reboot.
  */
 
 function editValue(key, value, done) {
@@ -24,7 +25,7 @@ function editValue(key, value, done) {
 					ui.hideModal();
 					if (!r || r.error || (r.failed && r.failed.length))
 						return ui.addNotification(null, E('p', _('Setting %s failed').format(key)), 'danger');
-					ui.addNotification(null, E('p', _('%s saved. Reboot for the stock stack to apply it.').format(key)), 'info');
+					ui.addNotification(null, E('p', nc.applyText(r, _('%s saved.').format(key))), 'info');
 					done(nv);
 				});
 			}) }, _('Save'))
@@ -104,7 +105,7 @@ return view.extend({
 			nc.style(),
 			E('h2', {}, _('MIB Browser')),
 			E('div', { 'class': 'cbi-map-descr' }, [
-				_('The stock Realtek configuration database. Changes are written to flash immediately (same as `flash set`) and are applied by the stock stack after a reboot.'),
+				_('The stock Realtek configuration database. Changes are written to flash immediately (same as `flash set`). WAN, firewall, LAN, WiFi and GPON keys are applied to the running stack like the stock GUI does; other keys take effect after a reboot.'),
 				' ', E('strong', {}, _('Wrong values can make the device unreachable; use Quick Setup for the common settings.'))
 			]),
 			E('div', { 'class': 'cbi-section' }, [

@@ -74,4 +74,13 @@ if [ -f "$RTKDIR/bin/dnsmasq" ] && ! grep -q "NijikaWrt wrapper" "$RTKDIR/bin/dn
 	log "moved bin/dnsmasq to lib/nijika/dnsmasq (DoH wrapper)"
 fi
 
+# Stock syslog: slogd would take /dev/log (the system /dev) away from
+# OpenWrt's logd. A placeholder (rtk/bin/slogd from rtk-vendor) replaces it;
+# the stock services then log to logd too. The real binary is kept.
+if [ -f "$RTKDIR/bin/slogd" ] && ! grep -q "NijikaWrt placeholder" "$RTKDIR/bin/slogd" 2>/dev/null; then
+	mkdir -p "$RTKDIR/lib/nijika"
+	mv "$RTKDIR/bin/slogd" "$RTKDIR/lib/nijika/slogd"
+	log "moved bin/slogd to lib/nijika/slogd (stock services log to logd)"
+fi
+
 log "vendor tree patched"

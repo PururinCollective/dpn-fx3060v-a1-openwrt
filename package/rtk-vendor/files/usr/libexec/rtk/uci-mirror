@@ -14,11 +14,13 @@
 # Runs after the vendor boot, on `reload_config` / LuCI "Save & Apply" of
 # the rtk config, and every 10 minutes. Only options that differ from the
 # last sync are written, so a value the stock stack changed meanwhile (web
-# GUI, TR-069) is never overwritten with an old copy. The stock services
-# read the MIB when they start: most changes need a reboot.
+# GUI, TR-069) is never overwritten with an old copy. Written options are
+# applied to the running stack the way the stock web forms do
+# (/usr/lib/nijika/apply.sh); the rest is read at the next boot.
 
 . /lib/functions.sh
 . /usr/lib/nijika/common.sh
+. /usr/lib/nijika/apply.sh
 
 # RTK_UCI_DIR / NIJIKA_RUNDIR only change for tests
 UCI_DIR=${RTK_UCI_DIR:-/etc/config}
@@ -135,13 +137,25 @@ push() {
 }
 
 do_sync() {
-	local new="$NIJIKA_RUNDIR/rtk.new" cur="$NIJIKA_RUNDIR/rtk.current"
+	local new="$NIJIKA_RUNDIR/rtk.new" cur="$NIJIKA_RUNDIR/rtk.current" areas
 
-	# 1. UCI -> flash, only what changed since the last sync. Without a
-	#    snapshot (first run after boot) flash wins.
+	# 1. UCI -> flash, only what changed since the last sync, applied to
+	#    the running stack. Without a snapshot (first run after boot) flash
+	#    wins.
 	if [ -f "$SNAP" ] && [ -f "$CONF" ]; then
 		from_uci > "$cur"
-		changed "$SNAP" "$cur" | push
+		changed "$SNAP" "$cur" > "$cur.chg"
+		if [ -s "$cur.chg" ]; then
+			areas=$(while IFS= read -r line; do flash_key "${line%%=*}"; done < "$cur.chg" | apply_areas)
+			apply_before $areas
+			push < "$cur.chg"
+			if apply_after $areas; then
+				echo "rtk: applied ($areas)"
+			else
+				echo "rtk: written, some changes take effect after a reboot ($areas)"
+			fi
+		fi
+		rm -f "$cur.chg"
 	fi
 
 	# 2. flash -> UCI
@@ -159,10 +173,13 @@ do_sync() {
 do_diff() {
 	[ -f "$SNAP" ] || { echo "no sync yet"; return 0; }
 	from_uci > "$NIJIKA_RUNDIR/rtk.current"
-	changed "$SNAP" "$NIJIKA_RUNDIR/rtk.current" | while IFS= read -r line; do
+	changed "$SNAP" "$NIJIKA_RUNDIR/rtk.current" > "$NIJIKA_RUNDIR/rtk.chg"
+	while IFS= read -r line; do
 		echo "flash set $(flash_key "${line%%=*}") ${line#*=}"
-	done
-	rm -f "$NIJIKA_RUNDIR/rtk.current"
+	done < "$NIJIKA_RUNDIR/rtk.chg"
+	[ -s "$NIJIKA_RUNDIR/rtk.chg" ] && echo "# then applies: $(while IFS= read -r line; do
+		flash_key "${line%%=*}"; done < "$NIJIKA_RUNDIR/rtk.chg" | apply_areas)"
+	rm -f "$NIJIKA_RUNDIR/rtk.current" "$NIJIKA_RUNDIR/rtk.chg"
 }
 
 vendor_up || { echo "vendor stack is not running" >&2; exit 1; }
