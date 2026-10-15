@@ -118,7 +118,9 @@ var card = {
 			el[l[0] + 'Head'].setAttribute('class', 'head ' + l[1]);
 		});
 
-		el.oltVendor.textContent = st.olt_vendor ? '(%s)'.format(st.olt_vendor) : (los ? _('no light') : '');
+		/* vendor id of ME 131; some OLTs (and OLT sticks) send none */
+		var vendor = /[A-Za-z0-9]{2}/.test(st.olt_vendor || '') ? st.olt_vendor : '';
+		el.oltVendor.textContent = vendor ? '(%s)'.format(vendor) : (los ? _('no light') : '');
 		el.rx.textContent = 'RX  ' + (los || isNaN(rx) ? _('no light') : '%.1f dBm'.format(rx));
 		el.rx.setAttribute('class', 'val ' + rc);
 		el.tx.textContent = 'TX  ' + (isNaN(tx) ? _('off') : '%.1f dBm'.format(tx));

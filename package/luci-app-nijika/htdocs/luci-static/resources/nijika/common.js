@@ -2,6 +2,7 @@
 'require baseclass';
 'require dom';
 'require rpc';
+'require uci';
 'require ui';
 
 /*
@@ -391,6 +392,20 @@ return baseclass.extend({
 			dom.content(vp, nodes);
 			dom.append(vp, view.addFooter());
 		});
+	},
+
+	/* uci-backed pages of the stock configuration (/etc/config/rtk): once
+	 * Save & Apply is confirmed, read the configuration again and redraw,
+	 * so the page shows what the stock stack now holds (the mirror writes
+	 * it to flash and rebuilds the file from there). */
+	reloadAfterApply: function(view, config) {
+		var self = this;
+		document.addEventListener('uci-applied', function() {
+			window.setTimeout(function() {
+				uci.unload(config || 'rtk');
+				self.reloadView(view);
+			}, 1500);
+		}, { once: true });
 	},
 
 	rebootPrompt: function(self, msg) {

@@ -52,5 +52,10 @@ return view.extend({
 		s.children.forEach(function(c) { c.retain = true; });
 
 		return m.render();
+	},
+
+	handleSaveApply: function(ev, mode) {
+		nc.reloadAfterApply(this, 'rtk');
+		return this.super('handleSaveApply', [ ev, mode ]);
 	}
 });

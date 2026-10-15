@@ -279,7 +279,8 @@ t_apply() {
 	areas() { printf '%s\n' "$@" | "$BB" sh -c ". '$D/env.sh'; apply_areas"; }
 	check "keys -> areas: WAN records first, then fixed order, no repeats" sh -c "[ \"$(areas WLAN_MBSSIB_TBL.0.ssid IPF_IN_ACTION ATM_VC_TBL.0.vid ATM_VC_TBL.0.MTU LAN_IP_ADDR SSID ATM_VC_TBL.2.vid)\" = 'wan:0 wan:2 firewall lan wlan' ]"
 	check "GPON and unknown keys: loid, ploam, reboot" sh -c "[ \"$(areas GPON_SN LOID_PASSWD GPON_PLOAM_PASSWD LOID)\" = 'loid ploam reboot' ]"
-	check "wlan0 keys without the WLAN_ prefix are WiFi" sh -c "[ \"$(areas CHANNEL AUTO_CHANNEL HIDDEN_SSID SSID WLAN_RFPOWER_SCALE)\" = 'wlan' ]"
+	check "wlan0 keys without the WLAN_ prefix are WiFi" sh -c "[ \"$(areas CHANNEL AUTO_CHANNEL HIDDEN_SSID SSID WLAN_RFPOWER_SCALE DTIM_PERIOD)\" = 'wlan' ]"
+	check "band steering and EasyMesh keys restart WiFi" sh -c "[ \"$(areas WIFI_STA_CONTROL MAP_DEVICE_NAME)\" = 'wlan' ]"
 	check "LAN page keys: port, LAN, snooping, LAN<->WiFi blocking" sh -c "[ \"$(areas SW_PORT_TBL.3.Enable MP_MODE WLAN_BLOCK_ETH2WIR LAN_IP_ADDR)\" = 'port:3 lan snooping wlanblock' ]"
 	check "device type / OLT mode: one OMCI restart, after the PLOAM" sh -c "[ \"$(areas OMCI_OLT_MODE GPON_PLOAM_PASSWD DEVICE_TYPE)\" = 'ploam omci' ]"
 	check "SPI keys are firewall (IPv4, IPv6, session, MAC, DMZ, rules)" sh -c "[ \"$(areas V6_IPF_OUT_ACTION V6_SESSION_FW_ENABLE MACF_IN_ACTION DMZ_IP IP_PORT_FILTER_TBL.1.dip)\" = 'firewall' ]"

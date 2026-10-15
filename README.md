@@ -75,8 +75,9 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   connection still comes up; the stock settings, which the stock bank uses,
   are untouched.
 * **WiFi 6 defaults**: at first boot OFDMA is turned on, 802.11r on the main
-  SSIDs (the stock WiFi stack applies it to WPA2 SSIDs only) and 2.4 GHz
-  drops 802.11b (g/n/ax). Once; later changes stay.
+  SSIDs (FT-PSK and FT-SAE, WPA3 included) and 2.4 GHz drops 802.11b
+  (g/n/ax). Once; later changes stay. Band steering (prefer 5 GHz) follows
+  the SSIDs: on whenever both bands share name and password.
 * **Clean reboot**: like the stock firmware, a reboot (and sysupgrade) first
   ends the PPPoE sessions (LCP Terminate + PADT) and releases DHCP leases, so
   the ISP accepts the next login at once, and writes the stock

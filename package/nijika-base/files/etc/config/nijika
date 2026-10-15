@@ -31,9 +31,10 @@ config vendor 'vendor'
 	#               button turns this unit into a mesh node (satellite:
 	#               LAN DHCP client, no DHCP server) - for a spare unit only
 	option easymesh 'controller'
-	# wifi_defaults '1' is set once the NijikaWrt WiFi defaults (OFDMA,
-	# 802.11r, 2.4 GHz without 802.11b) were written to the stock
-	# configuration at first boot; delete it to write them again.
+	# wifi_defaults: the last step of the NijikaWrt WiFi defaults written to
+	# the stock configuration at first boot (1: OFDMA, 802.11r, 2.4 GHz
+	# without 802.11b; 2: band steering when the SSIDs match); delete it to
+	# write them again.
 	# Keep SSH/LuCI reachable from the LAN through the stock firewall.
 	option lan_mgmt '1'
 	option lan_ifname 'br0'

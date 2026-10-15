@@ -244,8 +244,13 @@ def ubus(obj, method, args):
         sys.stderr.write('ubus nijika %s %s\n' % (method, json.dumps(args)))
         return [0, nijika_call(method, args)]
     if obj == 'uci' and method in ('set', 'delete', 'add', 'apply'):
-        # what a page saved, for checking payloads
+        # what a page saved, for checking payloads; kept so the page reads
+        # it back like on the router
         sys.stderr.write('ubus uci %s %s\n' % (method, json.dumps(args, sort_keys=True)))
+        if method == 'set':
+            sec = UCI.get(args.get('config'), {}).get(args.get('section'))
+            if sec is not None:
+                sec.update(args.get('values', {}))
     if obj == 'session' and method == 'access':
         return [0, {'access': True}]
     if obj == 'uci' and method == 'get':

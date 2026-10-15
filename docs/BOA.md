@@ -195,8 +195,18 @@ to one untagged connection.
 * OFDMA: `WLAN_OFDMA_ENABLED` / `WLAN1_OFDMA_ENABLED`, off when the band has
   no 802.11ax.
 * 802.11r per SSID: `WLAN_FT_ENABLE`, `WLAN_FT_MDID`, `WLAN_FT_OVER_DS` (the
-  stock Advanced page sets it on the root SSID). hostapd only gets FT-PSK for
-  WPA2 and WPA/WPA2 (`apply_11r`): no FT with WPA3.
+  stock Advanced page sets it on the root SSID). D-Link's libmib
+  (`apply_11r` 0x1fc3dc, `hapd_get_wpa_key_mgmt` 0x1fcbe8) adds FT-PSK and
+  FT-SAE for WPA2, WPA/WPA2, WPA3 and WPA2+WPA3 (the SDK copy in ~/Public/rsdk
+  is older: WPA2 only).
+* Band steering: `WIFI_STA_CONTROL` bit 0 on, bit 1 prefer 2.4 GHz
+  (`wlan_manager`). Only when both main SSIDs have the same name and
+  security (`rtk_wlan_get_band_steering_status`); libmib clears bit 0 when
+  they differ. The Wireless page sets bit 0 whenever they match.
+* TWT and BSS colouring: the driver (rtk_wifi6.ko) has TWT (mib `twt_enable`,
+  0 on this unit) and a BSS colour register routine, the stock hostapd knows
+  `he_bss_color` / `he_twt_responder`, but libmib sets neither: TWT is off and
+  hostapd's default leaves BSS colouring disabled.
 * WPS (hostapd): enable is the root record's `wsc_disabled` (and
   `WSC_DISABLE` / `WLAN1_WSC_DISABLE`); `hostapd_cli wps_pbc -i wlanX`,
   `hostapd_cli wps_pin any <pin> -i wlanX`.

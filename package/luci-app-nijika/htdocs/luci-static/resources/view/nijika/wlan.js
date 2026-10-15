@@ -28,8 +28,12 @@
  *   encrypt 0 none, 1 WEP, 4 WPA2, 6 WPA/WPA2, 16 WPA3, 20 WPA2+WPA3
  *   *CHANNELWIDTH 0 20, 1 40, 2 80, 3 160, 4 20-160 (2.4 GHz: 3 = 20/40)
  *   *RFPOWER_SCALE 0 100%, 1 70%, 2 50%, 3 35%, 4 15%
- *   802.11r: the stock hostapd config only adds FT-PSK for WPA2 and
- *   WPA/WPA2 (apply_11r): no fast roaming with WPA3 (SAE).
+ *   802.11r: the stock hostapd config (libmib apply_11r, V1.1.2) adds
+ *   FT-PSK / FT-SAE for WPA2, WPA/WPA2, WPA3 and WPA2+WPA3 SSIDs.
+ *   Band steering (WIFI_STA_CONTROL: bit 0 on, bit 1 prefer 2.4 GHz) only
+ *   works when both main SSIDs have the same name and security
+ *   (rtk_wlan_get_band_steering_status); the stock stack turns it off
+ *   itself otherwise. This page turns it on whenever they match.
  */
 
 var RADIOS = [
@@ -66,6 +70,20 @@ function securityFields(enc, pmf) {
 	case '20': return { wpaAuth: '2', unicastCipher: '0', wpa2UnicastCipher: '2', dotIEEE80211W: '1', sha256: '0', sae_pwe: '2' };
 	default: return { unicastCipher: '0', wpa2UnicastCipher: '0', dotIEEE80211W: '0', sha256: '0' };
 	}
+}
+
+/* both main SSIDs alike: band steering possible */
+function steerable() {
+	var a = uci.get('rtk', 'WLAN_MBSSIB_TBL_0') || {}, b = uci.get('rtk', 'WLAN1_MBSSIB_TBL_0') || {};
+	return a.ssid != null && a.ssid === b.ssid && a.encrypt === b.encrypt &&
+		(a.encrypt == '0' || a.wpaPSK === b.wpaPSK);
+}
+
+function updateSteering() {
+	var cur = +uci.get('rtk', 'mib', 'WIFI_STA_CONTROL') || 0;
+	var want = steerable() ? (1 | (cur & 2)) : (cur & 2);
+	if (want != cur)
+		uci.set('rtk', 'mib', 'WIFI_STA_CONTROL', String(want));
 }
 
 function recIndex(sid) {
@@ -117,6 +135,7 @@ return view.extend({
 		m = new form.Map('rtk', _('Wireless'),
 			_('Both radios, their SSIDs and EasyMesh, as on the stock GUI\'s WLAN pages. Save & Apply restarts WiFi (a few seconds without wireless).'));
 		m.tabbed = true;
+		this.map = m;
 
 		RADIOS.forEach(function(r) {
 			var axBands = new RegExp('^(' + r.bands.filter(function(b) { return +b[0] & 128; }).map(function(b) { return b[0]; }).join('|') + ')$');
@@ -275,7 +294,7 @@ return view.extend({
 			o.depends('encrypt', /^(4|6|16|20)$/);
 
 			o = ss.taboption('roaming', form.Flag, 'WLAN_FT_ENABLE', _('802.11r fast roaming'),
-				_('Fast BSS transition between access points of this SSID (EasyMesh nodes). The stock WiFi stack applies it with WPA2 and WPA/WPA2 security only: with WPA3 it has no effect.'));
+				_('Fast BSS transition between access points of this SSID (EasyMesh nodes): FT-PSK for WPA2, FT-SAE for WPA3.'));
 			o.modalonly = true;
 			o.rmempty = false;
 			o = ss.taboption('roaming', form.Value, 'WLAN_FT_MDID', _('Mobility domain'), _('4 hex digits, the same on every access point.'));
@@ -297,7 +316,7 @@ return view.extend({
 			o.cfgvalue = function(sid) {
 				if (uci.get('rtk', sid, 'WLAN_FT_ENABLE') != '1')
 					return _('off');
-				return /^(4|6)$/.test(uci.get('rtk', sid, 'encrypt')) ? _('on') : _('on (no effect with WPA3)');
+				return /^(4|6|16|20)$/.test(uci.get('rtk', sid, 'encrypt')) ? _('on') : _('on (needs WPA2/WPA3)');
 			};
 
 			ss.children.forEach(function(c) { c.retain = true; });
@@ -315,6 +334,24 @@ return view.extend({
 			o.rmempty = false;
 			o.cfgvalue = function(sid) { return uci.get('rtk', sid, 'mc2u_disable') == '1' ? '0' : '1'; };
 			o.write = function(sid, val) { uci.set('rtk', sid, 'mc2u_disable', val == '1' ? '0' : '1'); };
+
+			o = s.taboption('advanced', form.DummyValue, '_steer', _('Band steering'));
+			o.cfgvalue = function() {
+				return steerable()
+					? _('on: both bands have the same name and password, dual-band clients are steered to the preferred band')
+					: _('off: give the 5 GHz and 2.4 GHz main SSIDs the same name and password to turn it on');
+			};
+			if (r.idx == 0) {
+				o = s.taboption('advanced', form.ListValue, '_steer_pref', _('Preferred band'), _('Used while band steering is on.'));
+				o.value('5', _('5 GHz'));
+				o.value('2', _('2.4 GHz'));
+				o.cfgvalue = function() { return (+uci.get('rtk', 'mib', 'WIFI_STA_CONTROL') & 2) ? '2' : '5'; };
+				o.write = function(sid, val) {
+					var v = +uci.get('rtk', 'mib', 'WIFI_STA_CONTROL') || 0;
+					uci.set('rtk', 'mib', 'WIFI_STA_CONTROL', String(val == '2' ? (v | 2) : (v & ~2)));
+				};
+				o.remove = function() {};
+			}
 
 			o = mibOption(s, 'advanced', form.Value, r.beacon, _('Beacon interval (ms)'));
 			o.datatype = 'range(20,1024)';
@@ -421,5 +458,15 @@ return view.extend({
 		s.children.forEach(function(c) { c.retain = true; });
 
 		return m.render();
+	},
+
+	/* band steering follows the main SSIDs (after the fields are parsed) */
+	handleSave: function() {
+		return this.map.save(function() { updateSteering(); });
+	},
+
+	handleSaveApply: function(ev, mode) {
+		nc.reloadAfterApply(this, 'rtk');
+		return this.super('handleSaveApply', [ ev, mode ]);
 	}
 });

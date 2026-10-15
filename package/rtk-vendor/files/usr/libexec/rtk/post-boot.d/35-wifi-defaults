@@ -1,18 +1,22 @@
 #!/bin/sh
-# Once per installation (marker nijika.vendor.wifi_defaults): the WiFi
-# settings NijikaWrt prefers over the D-Link factory ones, written to the
-# stock configuration (shared with the stock firmware bank) and applied:
-#   OFDMA on (802.11ax multi-user) on both radios
-#   802.11r (fast roaming) on the main SSIDs; the stock WiFi stack uses it
-#     with WPA2 and WPA/WPA2 security only (no FT for WPA3)
-#   2.4 GHz without 802.11b (b/g/n/ax -> g/n/ax): no slow CCK rates
+# Once per installation (marker nijika.vendor.wifi_defaults = the last step
+# done): the WiFi settings NijikaWrt prefers over the D-Link factory ones,
+# written to the stock configuration (shared with the stock firmware bank)
+# and applied:
+#   1  OFDMA on (802.11ax multi-user) on both radios
+#      802.11r (fast roaming) on the main SSIDs (FT-PSK / FT-SAE)
+#      2.4 GHz without 802.11b (b/g/n/ax -> g/n/ax): no slow CCK rates
+#   2  band steering on (prefer 5 GHz) when both main SSIDs already share
+#      name and security; the Wireless page keeps it in step afterwards
 # What is changed later (LuCI Network > Wireless, stock GUI) stays.
 
 . /lib/functions.sh
 . /usr/lib/nijika/common.sh
 . /usr/lib/nijika/apply.sh
 
-[ "$(uci -q get nijika.vendor.wifi_defaults)" = 1 ] && exit 0
+done=$(uci -q get nijika.vendor.wifi_defaults)
+case "$done" in ''|*[!0-9]*) done=0 ;; esac
+[ "$done" -ge 2 ] && exit 0
 vendor_up || exit 0
 
 changed=0
@@ -21,22 +25,34 @@ set_if() { # key value
 	mib_set "$1" "$2" && changed=1
 }
 
-for r in WLAN WLAN1; do
-	band=$(mib_get "${r}_BAND")
-	[ $(( ${band:-0} & 128 )) -ne 0 ] && set_if "${r}_OFDMA_ENABLED" 1
-	set_if "${r}_MBSSIB_TBL.0.WLAN_FT_ENABLE" 1
-done
-if [ "$(mib_get WLAN1_BAND)" = 139 ]; then
-	set_if WLAN1_BAND 138
-	for i in 0 1 2 3 4 5; do
-		[ "$(mib_get "WLAN1_MBSSIB_TBL.$i.wlanBand")" = 139 ] && set_if "WLAN1_MBSSIB_TBL.$i.wlanBand" 138
+if [ "$done" -lt 1 ]; then
+	for r in WLAN WLAN1; do
+		band=$(mib_get "${r}_BAND")
+		[ $(( ${band:-0} & 128 )) -ne 0 ] && set_if "${r}_OFDMA_ENABLED" 1
+		set_if "${r}_MBSSIB_TBL.0.WLAN_FT_ENABLE" 1
 	done
+	if [ "$(mib_get WLAN1_BAND)" = 139 ]; then
+		set_if WLAN1_BAND 138
+		for i in 0 1 2 3 4 5; do
+			[ "$(mib_get "WLAN1_MBSSIB_TBL.$i.wlanBand")" = 139 ] && set_if "WLAN1_MBSSIB_TBL.$i.wlanBand" 138
+		done
+	fi
 fi
 
-uci -q set nijika.vendor.wifi_defaults=1
+# 2: band steering when the main SSIDs match (stock rule:
+# rtk_wlan_get_band_steering_status)
+same=1
+for f in ssid encrypt wpaPSK; do
+	[ "$(mib_get "WLAN_MBSSIB_TBL.0.$f")" = "$(mib_get "WLAN1_MBSSIB_TBL.0.$f")" ] || same=0
+done
+sc=$(mib_get WIFI_STA_CONTROL)
+case "$sc" in ''|*[!0-9]*) sc=0 ;; esac
+[ $same = 1 ] && [ $((sc & 1)) = 0 ] && set_if WIFI_STA_CONTROL $((sc | 1))
+
+uci -q set nijika.vendor.wifi_defaults=2
 uci -q commit nijika
 
 [ $changed = 1 ] || exit 0
-logger -t rtk-vendor "WiFi defaults: OFDMA, 802.11r, 2.4 GHz without 802.11b"
+logger -t rtk-vendor "WiFi defaults applied (step $done -> 2)"
 apply_after wlan
 exit 0
