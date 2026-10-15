@@ -12,6 +12,10 @@ config vendor 'vendor'
 	# Print the stock vendor boot output on the serial console (1) or
 	# send it to the system log (0, see: logread -e rtk).
 	option console '1'
+	# Syslog of the stock services in `logread` up to this level:
+	# 3 err, 4 warning, 5 notice (stock default), 6 info, 7 debug
+	# (6/7: VoIP_maserati alone logs about a line a second).
+	option stock_log '5'
 	# Stock inetd (telnet on 23). OpenWrt's dropbear serves SSH on 22.
 	option inetd '0'
 	# Keep SSH/LuCI reachable from the LAN through the stock firewall.

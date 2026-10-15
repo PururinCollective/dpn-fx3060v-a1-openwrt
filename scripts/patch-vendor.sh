@@ -74,13 +74,31 @@ if [ -f "$RTKDIR/bin/dnsmasq" ] && ! grep -q "NijikaWrt wrapper" "$RTKDIR/bin/dn
 	log "moved bin/dnsmasq to lib/nijika/dnsmasq (DoH wrapper)"
 fi
 
-# Stock syslog: slogd would take /dev/log (the system /dev) away from
-# OpenWrt's logd. A placeholder (rtk/bin/slogd from rtk-vendor) replaces it;
-# the stock services then log to logd too. The real binary is kept.
+# Stock syslog: /rtk/dev is the system /dev. The stock slogd would take
+# /dev/log away from OpenWrt's logd, and without it the stock services'
+# debug chatter (VoIP_maserati: about a line a second at info level) would
+# flood logd. So the stock libc sends syslog() to /var/slg instead (same
+# length, one occurrence) and /usr/libexec/rtk/logrelay forwards what the
+# stock `slogd -l 5` kept (notice and up) to logd. slogd itself becomes a
+# placeholder (rtk/bin/slogd from rtk-vendor); the real binary is kept.
 if [ -f "$RTKDIR/bin/slogd" ] && ! grep -q "NijikaWrt placeholder" "$RTKDIR/bin/slogd" 2>/dev/null; then
 	mkdir -p "$RTKDIR/lib/nijika"
 	mv "$RTKDIR/bin/slogd" "$RTKDIR/lib/nijika/slogd"
-	log "moved bin/slogd to lib/nijika/slogd (stock services log to logd)"
+	log "moved bin/slogd to lib/nijika/slogd"
 fi
+libc=$(readlink -f "$RTKDIR/lib/libc.so.6")
+case "$libc" in "$(readlink -f "$RTKDIR")"/*) ;; *) die "stock libc.so.6 not found in $RTKDIR/lib" ;; esac
+python3 -I - "$libc" <<'PY' || die "stock libc: could not redirect syslog (see above)"
+import sys
+p = sys.argv[1]
+d = open(p, 'rb').read()
+old, new = b'/dev/log\x00', b'/var/slg\x00'
+if d.count(new) == 1 and d.count(old) == 0:
+    sys.exit(0)
+if d.count(old) != 1:
+    sys.exit('expected one /dev/log in %s, found %d' % (p, d.count(old)))
+open(p, 'wb').write(d.replace(old, new))
+PY
+log "stock libc: syslog() -> /var/slg (logrelay -> logd)"
 
 log "vendor tree patched"

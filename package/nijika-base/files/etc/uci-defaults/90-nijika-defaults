@@ -37,13 +37,6 @@ set nijika.firewall.spi_ipv6='off'
 commit nijika
 END
 
-# The stock services log to logd too (the stock slogd is replaced by a
-# placeholder): a bigger ring than OpenWrt's 128 KiB, unless one is set.
-[ -n "$(uci -q get system.@system[0].log_size)" ] || {
-	uci -q set system.@system[0].log_size='512'
-	uci -q commit system
-}
-
 # Time comes from the stock stack.
 /etc/init.d/sysntpd disable 2>/dev/null
 

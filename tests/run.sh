@@ -4,7 +4,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint parsers wrapper ucimirror spi apply helpers bootenv fwu banner
+# Groups: syntax json lint parsers wrapper ucimirror spi apply helpers stockshell bootenv fwu banner
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -283,6 +283,59 @@ t_helpers() {
 	else
 		skp "qemu load test" "no qemu-aarch64-static or stock tree"
 	fi
+	logrelay_tests
+}
+
+# logrelay (stock syslog -> logd): the filter, built for the host
+logrelay_tests() {
+	local libc="$TOP/build/stage/rtk/lib/libc-2.30.so"
+	if [ -f "$libc" ]; then
+		check "stock libc: syslog to /var/slg, no /dev/log left" sh -c "
+			[ \$(grep -c -a -o '/var/slg' '$libc') -eq 1 ] && ! grep -q -a '/dev/log' '$libc'"
+	else
+		skp "stock libc patch" "no staged rootfs"
+	fi
+	if ! command -v gcc >/dev/null || [ -z "$PY" ]; then
+		skp "logrelay filter" "no gcc or python3"
+		return
+	fi
+	gcc -O2 -Wall -Werror -o "$W/logrelay" "$TOP/package/rtk-vendor/src/logrelay.c" 2>"$W/gcc.err" ||
+		{ bad "logrelay compiles" "$(cat "$W/gcc.err")"; return; }
+	mkdir -p "$W/lr"
+	check "logrelay: notice and up pass (stock slogd -l 5), info/debug dropped" sh -c "
+		[ \"\$('$PY' -I '$TOP/tests/logrelay_test.py' '$W/logrelay' '$W/lr' | tr '\\n' ' ')\" = 'user.notice user.err local0.notice no header ' ]"
+}
+
+# ------------------------------------- scripts run by the stock busybox
+
+# fwu.sh (factory installer, run by the stock firmware) and the /rtk/bin
+# wrappers/placeholders run under the stock busybox 1.22 ash, which lacks
+# things the host shell and OpenWrt's busybox 1.37 have (no `command`
+# builtin: `command -v` fails there, silently).
+t_stockshell() {
+	echo "stockshell (scripts the stock busybox 1.22 ash runs, via qemu)"
+	local R="$TOP/build/stage/rtk" f errs=""
+	if ! command -v qemu-aarch64-static >/dev/null || [ ! -x "$R/bin/busybox" ]; then
+		skp "stock busybox" "no qemu-aarch64-static or stock tree (./build.sh assemble)"
+		return
+	fi
+	sbb() { qemu-aarch64-static -L "$R" "$R/bin/busybox" "$@"; }
+	for f in "$TOP/firmware/fwu.sh" "$TOP"/package/rtk-vendor/files/rtk/bin/* \
+		"$TOP/package/rtk-vendor/files/rtk/etc/nijika/rcS"; do
+		sbb sh -n "$f" 2>/dev/null || errs="$errs ${f#$TOP/}"
+	done
+	[ -z "$errs" ] && ok "every script parses under the stock ash" || bad "stock ash syntax" "$errs"
+	check "no 'command -v' (busybox 1.22 has no 'command' builtin)" sh -c "
+		! grep -nE '(^|[^A-Za-z_])command -[vV]' '$TOP/firmware/fwu.sh' $TOP/package/rtk-vendor/files/rtk/bin/*"
+	# fwu.sh phy_ids with a diag that answers like the A1 switch
+	{
+		echo 'diag() { case "$5/$9" in [0-3]/2) v=001C ;; [0-3]/3) v=CAC4 ;; *) v=FFFF ;; esac'
+		echo '	echo "Port $5 Page 0 Register $9: 0x$v"; }'
+		sed -n '/^phy_ids() {/,/^}/p' "$TOP/firmware/fwu.sh"
+		echo 'echo "[$(phy_ids)]"'
+	} > "$W/phy.sh"
+	check "fwu.sh reads the A1 PHY IDs under the stock ash" sh -c "
+		[ \"\$(qemu-aarch64-static -L '$R' '$R/bin/busybox' sh '$W/phy.sh')\" = '[001ccac4 001ccac4 001ccac4 001ccac4 ffffffff ffffffff ffffffff]' ]"
 }
 
 # ------------------------------------------------ preinit boot-env hook
@@ -360,10 +413,10 @@ t_banner() {
 
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint parsers wrapper ucimirror spi apply helpers bootenv fwu banner}"
+groups="${*:-syntax json lint parsers wrapper ucimirror spi apply helpers stockshell bootenv fwu banner}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|helpers|bootenv|fwu|banner) "t_$g" ;;
+		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|helpers|stockshell|bootenv|fwu|banner) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

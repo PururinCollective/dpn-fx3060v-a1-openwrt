@@ -245,6 +245,7 @@ nijika banner | version | rtk [cmd]
 |---|---|---|
 | `vendor.boa` | `hidden` | stock D-Link GUI (always running on :8080): `hidden` = router only, `lan` = LAN too |
 | `vendor.console` | `1` | stock boot output on ttyS0 (`0` sends it to `logread -e rtk`) |
+| `vendor.stock_log` | `5` | syslog of the stock services passed to `logread` up to this level (`5` notice = what the stock firmware keeps; `6`/`7` add the VoIP stack's chatter); next boot |
 | `vendor.inetd` | `0` | stock telnet (port 23) |
 | `vendor.lan_mgmt` | `1` | keep TCP 22/80 open on `br0` in the stock iptables |
 | `vendor.live_apply` | `1` | apply stock config changes to the running stack like the stock GUI ([docs/BOA.md](docs/BOA.md)); `0`: wait for a reboot |

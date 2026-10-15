@@ -30,8 +30,9 @@ if [ -d "$BUILD_DIR/files-rtk" ]; then
 	cp -a "$BUILD_DIR/files-rtk/." "$STAGE_DIR/rtk/"
 fi
 
-# Native helpers (rtk-apply), linked against the stock libraries just unpacked
-"$TOPDIR/scripts/build-helpers.sh" "$STAGE_DIR/rtk"
+# Native helpers (rtk-apply against the stock libraries just unpacked,
+# logrelay for the OpenWrt side)
+"$TOPDIR/scripts/build-helpers.sh" "$STAGE_DIR"
 
 # --- OpenWrt side fix-ups ----------------------------------------------------
 R="$STAGE_DIR"

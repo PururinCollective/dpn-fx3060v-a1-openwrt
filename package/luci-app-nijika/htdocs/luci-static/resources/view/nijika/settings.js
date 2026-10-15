@@ -27,6 +27,15 @@ return view.extend({
 			_('Show the stock boot messages on the serial console. When off they go to the system log (<code>logread -e rtk</code>). Applies on next boot.'));
 		o.default = '1';
 
+		o = s.option(form.ListValue, 'stock_log', _('Stock services in the system log'),
+			_('Syslog messages of the stock services shown in <code>logread</code> / Status &gt; System Log, up to this level. The stock firmware keeps notice and up; info and debug include about a line a second from the VoIP stack. Applies on next boot.'));
+		o.value('3', _('Errors'));
+		o.value('4', _('Warnings'));
+		o.value('5', _('Notices (stock default)'));
+		o.value('6', _('Info'));
+		o.value('7', _('Debug (everything)'));
+		o.default = '5';
+
 		o = s.option(form.Flag, 'inetd', _('Stock telnet (inetd)'),
 			_('Telnet on port 23 into the stock shell. SSH (dropbear) is always provided by OpenWrt.'));
 		o.default = '0';

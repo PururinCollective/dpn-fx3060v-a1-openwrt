@@ -39,12 +39,21 @@ start_service() {
 	# dropbear, ...) only continues once the Realtek drivers are up.
 	/usr/libexec/rtk/vendor-boot early
 
+	# Stock syslog (the stock libc logs to /var/slg) -> logd, up to
+	# nijika.vendor.stock_log (5 = notice, as the stock slogd kept)
+	local level
+	config_load nijika
+	config_get level vendor stock_log 5
+	procd_open_instance logrelay
+	procd_set_param command /usr/libexec/rtk/logrelay "$RTK/var/slg" /dev/log "$level"
+	procd_set_param respawn
+	procd_close_instance
+
 	procd_open_instance vendor
 	procd_set_param command /usr/libexec/rtk/vendor-boot late
 	procd_close_instance
 
 	local inetd
-	config_load nijika
 	config_get_bool inetd vendor inetd 0
 	if [ "$inetd" = 1 ]; then
 		procd_open_instance inetd

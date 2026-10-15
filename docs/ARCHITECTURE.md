@@ -120,13 +120,26 @@ Other build-time changes to `/rtk`:
   (`cwmpClient`), TR-369 (`obuspa`), DDNS and speedtest are kept: they only
   talk to endpoints configured in the MIB (ISP ACS/controller, your DDNS
   provider) or when used.
-* `bin/slogd` moved to `lib/nijika/slogd`, an inert placeholder in its place.
-  `/rtk/dev` is the system `/dev`, so the stock syslog daemon re-created
-  `/dev/log` once the late phase started it and from then on received
-  everything OpenWrt logged (`logger`, rpcd, ...); `logread` only showed
-  daemons that had connected before. Without it the stock services log to
-  OpenWrt's logd as well (`logread` shows both, the stock GUI's System Log
-  page stays empty); the default log ring is raised to 512 KiB.
+* Syslog. `/rtk/dev` is the system `/dev`, so the stock syslog daemon
+  (`slogd`) re-created `/dev/log` once the late phase started it and from
+  then on received everything OpenWrt logged (`logger`, rpcd, ...);
+  `logread` only showed daemons that had connected before (until r19).
+  Logging straight to logd instead (r20) let the stock services' debug
+  chatter flood its 128 KiB ring: `VoIP_maserati` logs about a line a
+  second at `local1.info` while its VoIP WAN is down. Now:
+  * the stock libc's `/dev/log` is patched to `/var/slg` (same length, one
+    occurrence), so stock `syslog()` goes to `/rtk/var/slg`;
+  * `/usr/libexec/rtk/logrelay` (procd instance of `rtk-vendor`, static
+    musl, `package/rtk-vendor/src/logrelay.c`) passes messages up to
+    `nijika.vendor.stock_log` (default 5 = notice, what `slogd -l 5` kept) on
+    to logd's `/dev/log`;
+  * `bin/slogd` is an inert placeholder (the real one is
+    `lib/nijika/slogd`), so `startup` can still start and kill it by name.
+
+  `logread` shows OpenWrt and the stock services' notices, warnings and
+  errors; the stock GUI's System Log page stays empty. The stock `dnsmasq`
+  has its own `/dev/log` and logs to logd directly (DHCP leases). Messages
+  of the early vendor phase, before procd starts the relay, are lost.
 * `bin/dnsmasq` moved to `lib/nijika/dnsmasq` behind the DNS over HTTPS
   wrapper (see below).
 

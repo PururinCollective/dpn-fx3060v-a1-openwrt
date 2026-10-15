@@ -41,8 +41,9 @@ ST_TOO_BIG=3
 
 # PHY ID (page 0, registers 2+3) of switch ports 0..6, as in device.conf:
 # "001ccac4 001ccac4 ... ffffffff". Empty when diag cannot tell.
+# Runs under the stock busybox 1.22 ash: it has no `command` builtin, `type` works.
 phy_ids() {
-	command -v diag >/dev/null 2>&1 || return 0
+	type diag >/dev/null 2>&1 || return 0
 	local p r out=""
 	for p in 0 1 2 3 4 5 6; do
 		r=$(for reg in 2 3; do diag rt_port get phy-reg port $p page 0 register $reg 2>/dev/null; done |

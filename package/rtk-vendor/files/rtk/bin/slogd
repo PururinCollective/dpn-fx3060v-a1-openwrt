@@ -4,10 +4,10 @@
 # The stock syslog daemon creates /dev/log. /rtk/dev is the system /dev, so
 # it would take the socket away from OpenWrt's logd: everything logged on
 # the OpenWrt side after the vendor boot (logger, dropbear, rpcd, ...) would
-# end up in slogd's private buffer instead of `logread`. Without it the
-# stock services log through /dev/log to OpenWrt's logd as well, so
-# `logread` shows both. The real binary is kept as /lib/nijika/slogd
-# (scripts/patch-vendor.sh).
+# end up in slogd's private buffer instead of `logread`. Instead the stock
+# libc logs to /var/slg, where /usr/libexec/rtk/logrelay (OpenWrt side)
+# passes notice and up on to logd (scripts/patch-vendor.sh). The real
+# binary is kept as /lib/nijika/slogd.
 #
 # libmib's startLog/stopLog start and kill it by name and pid file, so this
 # placeholder keeps that contract and does nothing else.

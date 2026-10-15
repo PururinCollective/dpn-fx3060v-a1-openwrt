@@ -1,16 +1,18 @@
 #!/bin/bash
-# Native helpers for the stock chroot: compiled for the stock userland
-# (aarch64, glibc 2.30) and linked against the stock libraries of the
-# unpacked vendor tree, then installed into it.
+# Native helpers, installed into the staged rootfs:
+#   rtk-apply  /rtk/bin: runs in the stock chroot, compiled for the stock
+#              userland (aarch64, glibc 2.30) against its libraries
+#   logrelay   /usr/libexec/rtk: runs on the OpenWrt side, static (musl)
 #
-#   scripts/build-helpers.sh <rtk-tree>     (called by assemble.sh)
+#   scripts/build-helpers.sh <stage-root>     (called by assemble.sh)
 #
 # Compiler: zig cc (ZIG in build.conf), which can target an old glibc; a
 # distribution cross gcc links against its own, newer glibc.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
-RTK="${1:?usage: $0 <rtk-tree>}"
+ROOT="${1:?usage: $0 <stage-root>}"
+RTK="$ROOT/rtk"
 SRC="$TOPDIR/package/rtk-vendor/src"
 OUT="$BUILD_DIR/helpers"
 mkdir -p "$OUT"
@@ -45,3 +47,15 @@ if [ ! -x "$bin" ] || [ "$src" -nt "$bin" ] || [ "$0" -nt "$bin" ]; then
 	mv "$bin.tmp" "$bin"
 fi
 install -m 0755 "$bin" "$RTK/bin/rtk-apply"
+
+# logrelay: stock syslog -> logd (see the source)
+src="$SRC/logrelay.c"
+bin="$OUT/logrelay"
+if [ ! -x "$bin" ] || [ "$src" -nt "$bin" ] || [ "$0" -nt "$bin" ]; then
+	log "compiling logrelay"
+	# shellcheck disable=SC2086
+	$ZIG cc -target aarch64-linux-musl -static -Os -s -Wall -Werror -o "$bin.tmp" "$src" \
+		|| die "logrelay: compile failed (ZIG='$ZIG')"
+	mv "$bin.tmp" "$bin"
+fi
+install -m 0755 "$bin" "$ROOT/usr/libexec/rtk/logrelay"
