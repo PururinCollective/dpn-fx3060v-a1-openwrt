@@ -1,0 +1,37 @@
+#!/bin/sh
+# Before the router reboots or halts: what the stock configd does before its
+# own reboot (sysReboot / doReleaseWanConneciton in the SDK's msgparser.c),
+# without its final reboot() (OpenWrt's shutdown does that):
+#
+#   - PPPoE: `spppctl force_down <unit>` per session: LCP Terminate-Request,
+#     then PADT, so the ISP's BRAS drops the session now instead of after
+#     its keepalive timeout (which can block the next login for minutes)
+#   - DHCP clients: SIGUSR2 = release of the lease
+#   - `mib commit cs now`: configd holds stock configuration writes in RAM
+#     ("delay mib commit"); write them to flash
+#
+# Called by `/etc/init.d/rtk-vendor shutdown` (K10 at reboot/halt) and by
+# sysupgrade's platform_pre_upgrade.
+
+. /usr/lib/nijika/common.sh
+
+vendor_up || exit 0
+logger -t rtk-vendor "shutdown: releasing the WAN sessions, committing the stock configuration"
+
+released=0
+for d in /sys/class/net/ppp[0-9]*; do
+	[ -e "$d" ] || continue
+	rtk /bin/spppctl force_down "${d##*/ppp}" >/dev/null 2>&1
+	released=$((released + 1))
+done
+for f in "$RTK"/var/run/udhcpc.pid.*; do
+	[ -f "$f" ] || continue
+	kill -USR2 "$(cat "$f")" 2>/dev/null
+	released=$((released + 1))
+done
+# Terminate-Ack / PADT and the DHCP release go out (stock: sleep(1))
+[ $released -gt 0 ] && sleep 2
+
+rtk /bin/mib commit cs now >/dev/null 2>&1
+sync
+exit 0

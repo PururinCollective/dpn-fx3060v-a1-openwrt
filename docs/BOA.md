@@ -3,9 +3,14 @@
 The stock web server (boa) changes the running stack without a reboot. Every
 `/boaform/<form>` handler does the same three things: parse the POST, write
 the configuration (`mib_set`, `mib_chain_update`), then call a libmib
-function that makes the running services follow it (and `Commit()`, which
-writes flash). NijikaWrt writes with the stock `flash set`, which already
-commits, and then makes the same libmib calls through `/rtk/bin/rtk-apply`.
+function that makes the running services follow it (and `Commit()`).
+NijikaWrt writes with the stock `flash set`, which commits the same way, and
+then makes the same libmib calls through `/rtk/bin/rtk-apply`.
+
+Committing hands the change to `configd`, which keeps it in RAM and writes
+flash later ("delay mib commit" on the console) or when the stock reboot
+runs `mib commit cs now`. NijikaWrt's reboot does that too
+(`/usr/libexec/rtk/vendor-shutdown`, see [Reboot](#reboot)).
 
 Sources: the stock V1.1.2 `boa` (Ghidra, sha256 `f46f8845…dbb1`) and the
 Realtek Luna SDK userland of the same generation (`user/boa/src/LINUX`:
@@ -54,7 +59,11 @@ queue, no initialisation needed.
 | `wan-down <n>` | `deleteConnection(CONFIGONE, &ATM_VC_TBL[n])` |
 | `wan-up <n>` | `restartWAN(CONFIGONE, &ATM_VC_TBL[n])`, `reSync_reStartVoIP()` |
 | `wan` | `deleteConnection(CONFIGALL, NULL)`, `restartWAN(CONFIGALL, NULL)`, `reSync_reStartVoIP()` |
+| `wan-delete <n> [dhcpc]` | the stock delete: `rtk_layer2bridging_update_wan_interface_mib_table(0, ifIndex, 0)`, [`delDhcpcOption(ifIndex)`], `rtk_tr181_update_wan_interface_entry_list(0, &e, NULL)`, `clear_delegated_default_wanconn(&e)`, `deleteConnection(CONFIGONE, &e)`, `resolveServiceDependency(n)`, `mib_chain_delete`, `restartWAN(CONFIGONE, NULL)`, `reSync_reStartVoIP()`, `Commit()` |
 | `wlan` | `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)` |
+| `wlan-block` | `setup_wlan_block()` |
+| `snooping` | `rtk_multicast_snooping()` |
+| `lan-port <n>` | `restart_ethernet(n + 1)` |
 | `voip` | `reSync_reStartVoIP()` |
 | `gpon-omci` | `rt_gpon_deactivate()`, `omcicli mib reset`, `rt_gpon_activate(0)` |
 | `gpon-ploam <pw>` | `rt_gpon_deactivate()`, `diag rt_gpon set registrationId-hex`, `rt_gpon_activate(0)` |
@@ -84,15 +93,19 @@ set`, `isp`, `ploam`, `loid`) use it.
 | Keys | Area | Before writing | After writing |
 |---|---|---|---|
 | `ATM_VC_TBL.<n>.*` | `wan:<n>` | `wan-down <n>` | `wan-up <n>` |
+| `SW_PORT_TBL.<n>.Enable` | `port:<n>` | | `lan-port <n>` |
+| `MP_MODE` (IGMP snooping, bit 2) | `snooping` | | `snooping` |
+| `WLAN_BLOCK_ETH2WIR` | `wlanblock` | | `wlan-block` |
 | `IPF_*`, `V6_IPF_*`, `MACF_*`, `DMZ_*`, `IPFILTER_SPI_ENABLE`, `V6_SESSION_FW_ENABLE`, filter tables | `firewall` | | `firewall` |
 | `LAN_IP_ADDR`, `LAN_SUBNET`, `LAN_*2`, `LAN_DHCP*`, `DHCP_MODE`, `DHCPS_*` | `lan` | | `lan` |
 | `WLAN_*`, `WLAN1_*`, `WSC_*`, `SSID` | `wlan` | | `wlan` |
 | `LOID`, `LOID_PASSWD` | `loid` | | `omcicli set loid`, then `gpon-omci` last |
 | `GPON_PLOAM_PASSWD` | `ploam` | | `gpon-ploam` |
+| `DEVICE_TYPE`, `OMCI_OLT_MODE` | `omci` | | `gpon-omci` (once, last) |
 | VoIP (`voipflashcmd set`, Quick Setup) | `voip` | | `voip` |
 | anything else (`GPON_SN`, OMCI identity, ...) | `reboot` | | read when the stock services start |
 
-Order after writing: WAN records, firewall, LAN, WiFi, LOID, PLOAM, VoIP.
+Order after writing: WAN records, firewall, LAN, WiFi, LOID, PLOAM, OMCI restart, VoIP.
 LuCI replies first and applies a second later, so a WiFi or WAN restart can
 not outlast the call. `nijika.vendor.live_apply=0` turns all of it off.
 
@@ -101,3 +114,36 @@ changing the LAN address drops the browser's connection: the same as with
 the stock GUI.
 
 `nijika apply wan [n]|firewall|lan|wlan|voip|gpon` runs a step by hand.
+
+## Reboot
+
+The stock reboot (`cmd_reboot` -> configd `sysReboot`) first releases the
+WAN connections (`doReleaseWanConneciton`: `spppctl force_down <unit>` for
+each PPPoE session, i.e. LCP Terminate-Request and PADT; `SIGUSR2` to each
+DHCP client), sleeps a second, runs `mib commit cs now`, syncs and reboots.
+Without the release the ISP's BRAS keeps the old PPPoE session until its
+keepalive times out, which can delay the next login.
+
+NijikaWrt reboots through procd, so `/etc/init.d/rtk-vendor` has a
+`shutdown()` (`K10rtk-vendor`) that runs `/usr/libexec/rtk/vendor-shutdown`:
+the same release and commit, without the final `reboot()`. sysupgrade skips
+the K scripts, so `platform_pre_upgrade` calls it after writing the image.
+
+## Deleting a WAN connection
+
+The stock PON WAN page deletes a connection with the sequence of
+`rtk-apply wan-delete` (`dhcpc` when the record is an IPoE DHCP client:
+`ChannelMode` 1, `ChannelAddrType` 1). `wan_delete` in
+`/usr/lib/nijika/apply.sh` (LuCI Network > PON WAN, `nijika wan delete`)
+adds one thing the stock page does not: the deleted connection's LAN ports
+and SSIDs (`itfGroup`) go to the connection with the default route when that
+one binds its ports explicitly, so no port is left without a connection.
+The records after it move down by one; `/etc/config/rtk` is rebuilt. The
+LuCI pages name connections `PON_<ifIndex & 0xff>` (stock:
+`Connection_<n>`), which does not change when another record goes.
+
+Port mapping (`itfGroup`) bits on the A1 (stock `virt2user` = 1..7,
+4 SSIDs per radio, 14 checkboxes on the stock page): 0-3 LAN1-4, 4 wlan0
+(5 GHz), 5-8 its guest SSIDs, 9 wlan1 (2.4 GHz), 10-13 its guest SSIDs. A
+port belongs to one connection (stock `check_itfGroup`).
+

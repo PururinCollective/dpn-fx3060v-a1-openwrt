@@ -102,7 +102,9 @@ chmod 0755 "$R/rtk/var" "$R/rtk/run" "$R/rtk/proc" "$R/rtk/sys" "$R/rtk/dev"
 # Enable our services (IB only enables packages it installed itself).
 for svc in rtk-vendor nijika-housekeep nijika-doh; do
 	start=$(sed -n 's/^START=//p' "$R/etc/init.d/$svc")
+	stop=$(sed -n 's/^STOP=//p' "$R/etc/init.d/$svc")
 	ln -sf "../init.d/$svc" "$R/etc/rc.d/S${start}$svc"
+	[ -z "$stop" ] || ln -sf "../init.d/$svc" "$R/etc/rc.d/K${stop}$svc"
 done
 
 # --- squashfs --------------------------------------------------------------

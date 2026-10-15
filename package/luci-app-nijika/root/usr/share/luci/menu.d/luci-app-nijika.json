@@ -10,6 +10,42 @@
 		}
 	},
 
+	"admin/network/ponwan": {
+		"title": "PON WAN",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "nijika/wan"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
+	"admin/network/lan": {
+		"title": "LAN",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "nijika/lan"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
+	"admin/nijika/gpon": {
+		"title": "GPON Settings",
+		"order": 35,
+		"action": {
+			"type": "view",
+			"path": "nijika/gpon"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
 	"admin/quicksetup": {
 		"title": "Quick Setup",
 		"order": 900,

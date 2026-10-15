@@ -6,14 +6,14 @@
 				"nijika": [ "status", "olt", "me", "provision", "diag", "mib_all", "mib_get", "chain",
 				            "quick_get", "ident_get", "boot_get", "fw_status" ]
 			},
-			"uci": [ "nijika" ]
+			"uci": [ "nijika", "rtk" ]
 		},
 		"write": {
 			"ubus": {
 				"nijika": [ "mib_set", "quick_set", "ident_set", "boot_set",
-				            "fw_check", "fw_flash", "reboot" ]
+				            "fw_check", "fw_flash", "reboot", "wan_delete" ]
 			},
-			"uci": [ "nijika" ],
+			"uci": [ "nijika", "rtk" ],
 			"cgi-io": [ "upload" ],
 			"file": {
 				"/tmp/nijika-fw.bin": [ "write" ]

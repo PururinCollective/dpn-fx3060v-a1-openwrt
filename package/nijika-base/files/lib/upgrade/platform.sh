@@ -34,16 +34,19 @@ platform_check_image() {
 
 platform_pre_upgrade() {
 	rm -f /tmp/nijika-upgrade.ok
-	fw_flash "$1" try || return 0
-	touch /tmp/nijika-upgrade.ok
-
-	if grep -q " /overlay ubifs " /proc/mounts; then
-		touch /overlay/.nijika_wipe
-		if [ -n "$UPGRADE_BACKUP" ] && [ -f "$UPGRADE_BACKUP" ]; then
-			cp -f "$UPGRADE_BACKUP" /overlay/.nijika_keep.tgz
+	if fw_flash "$1" try; then
+		touch /tmp/nijika-upgrade.ok
+		if grep -q " /overlay ubifs " /proc/mounts; then
+			touch /overlay/.nijika_wipe
+			if [ -n "$UPGRADE_BACKUP" ] && [ -f "$UPGRADE_BACKUP" ]; then
+				cp -f "$UPGRADE_BACKUP" /overlay/.nijika_keep.tgz
+			fi
+			sync
 		fi
-		sync
 	fi
+	# stage2 reboots either way, without the K scripts: release the WAN
+	# sessions and commit the stock configuration like a normal reboot
+	/usr/libexec/rtk/vendor-shutdown
 }
 
 platform_do_upgrade() {

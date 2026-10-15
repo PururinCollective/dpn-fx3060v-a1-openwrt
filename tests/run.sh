@@ -141,6 +141,18 @@ t_parsers() {
 	$a -f "$LIB/qmap.awk" "$FIX/omci-dump-qmap.txt" > "$W/qmap.json"
 	pyjson "qmap.awk: used queues, T-CONTs with Alloc-ID, flows" "$W/qmap.json" \
 		"len(d['pq']) == 5 and len(d['tcont']) == 5 and len(d['us']) == 5 and len(d['ds']) == 7 and {'gem': 284, 'pq': '0x8004', 'flow': 1} in d['us'] and {'tcid': 1, 'meid': '0x8004', 'alloc': 285, 'gems': 1} in d['tcont']"
+	# nijika wan: the listing awk of the CLI over the real A1 table
+	sed -n '/^nijika_wan() {/,/^}/p' "$TOP/package/nijika/files/usr/sbin/nijika" |
+		sed -n "/awk '\$/,/END { flush() }'\$/p" | sed "1d; \$s/'\$//" > "$W/wan.awk"
+	"$BB" awk -f "$W/wan.awk" "$FIX/flash-get-atm_vc_tbl.txt" > "$W/wan.out" 2>&1
+	check "nijika wan: PON_<VC index>, service, type, VLAN" sh -c "
+		grep -qE '^0 +PON_0 +Internet +PPPoE +500 +enabled' '$W/wan.out' &&
+		grep -qE '^1 +PON_1 +Other/IPTV +Bridged +600 ' '$W/wan.out' &&
+		grep -qE '^2 +PON_2 +VoIP +IPoE +400 ' '$W/wan.out' &&
+		grep -qE '^3 +PON_3 +TR-069 +IPoE +209 ' '$W/wan.out'"
+	# vprio is the stock priority list index: 1 = 802.1p 0
+	sed 's/^vprio *= 0$/vprio              = 1/' "$FIX/flash-get-atm_vc_tbl.txt" | "$BB" awk -f "$W/wan.awk" > "$W/wan1.out"
+	check "nijika wan: vprio 1 (stock list index) is priority 0" grep -qE '^0 +PON_0 +Internet +PPPoE +500/p0 ' "$W/wan1.out"
 }
 
 # --------------------------------------------- stock dnsmasq DoH wrapper
@@ -250,6 +262,8 @@ t_apply() {
 	areas() { printf '%s\n' "$@" | "$BB" sh -c ". '$D/env.sh'; apply_areas"; }
 	check "keys -> areas: WAN records first, then fixed order, no repeats" sh -c "[ \"$(areas WLAN_MBSSIB_TBL.0.ssid IPF_IN_ACTION ATM_VC_TBL.0.vid ATM_VC_TBL.0.MTU LAN_IP_ADDR SSID ATM_VC_TBL.2.vid)\" = 'wan:0 wan:2 firewall lan wlan' ]"
 	check "GPON and unknown keys: loid, ploam, reboot" sh -c "[ \"$(areas GPON_SN LOID_PASSWD GPON_PLOAM_PASSWD LOID)\" = 'loid ploam reboot' ]"
+	check "LAN page keys: port, LAN, snooping, LAN<->WiFi blocking" sh -c "[ \"$(areas SW_PORT_TBL.3.Enable MP_MODE WLAN_BLOCK_ETH2WIR LAN_IP_ADDR)\" = 'port:3 lan snooping wlanblock' ]"
+	check "device type / OLT mode: one OMCI restart, after the PLOAM" sh -c "[ \"$(areas OMCI_OLT_MODE GPON_PLOAM_PASSWD DEVICE_TYPE)\" = 'ploam omci' ]"
 	check "SPI keys are firewall (IPv4, IPv6, session, MAC, DMZ, rules)" sh -c "[ \"$(areas V6_IPF_OUT_ACTION V6_SESSION_FW_ENABLE MACF_IN_ACTION DMZ_IP IP_PORT_FILTER_TBL.1.dip)\" = 'firewall' ]"
 	run() { # live_apply code -> rtk calls and the return code, one line
 		: > "$D/calls"; : > "$D/log"; printf '%s' "$1" > "$D/live"
@@ -260,6 +274,7 @@ t_apply() {
 	check "WAN edit: wan-down before the write, wan-up after" sh -c "[ \"$(run 1 "apply_before wan:0 firewall; echo WRITE >> '$D/calls'; apply_after wan:0 firewall")\" = '/bin/rtk-apply wan-down 0;WRITE;/bin/rtk-apply wan-up 0;/bin/rtk-apply firewall;rc=0;' ]"
 	check "GPON as formgponConf: omcicli LOID, PLOAM, then OMCI restart" sh -c "[ \"$(run 1 'apply_after loid ploam')\" = '/bin/omcicli set loid TM12345;/bin/rtk-apply gpon-ploam s3cret;/bin/rtk-apply gpon-omci;rc=0;' ]"
 	check "the PLOAM password is never logged" sh -c "! grep -q s3cret '$D/log'"
+	check "omci: restartOMCIsettings only" sh -c "[ \"$(run 1 'apply_after omci')\" = '/bin/rtk-apply gpon-omci;rc=0;' ]"
 	check "reboot area: the live parts run, return 1" sh -c "[ \"$(run 1 'apply_after wlan reboot')\" = '/bin/rtk-apply wlan;rc=1;' ]"
 	check "live_apply=0: nothing runs, reboot needed" sh -c "[ \"$(run 0 'apply_before wan:0; apply_after wan:0 wlan')\" = 'rc=1;' ]"
 	check "live_apply=0, nothing written: no reboot" sh -c "[ \"$(run 0 'apply_after')\" = 'rc=0;' ]"
@@ -284,6 +299,16 @@ t_helpers() {
 		skp "qemu load test" "no qemu-aarch64-static or stock tree"
 	fi
 	logrelay_tests
+	local st="$TOP/build/stage"
+	if [ -d "$st/etc/rc.d" ]; then
+		check "reboot releases the WAN: K10rtk-vendor -> shutdown()" sh -c "
+			[ -L '$st/etc/rc.d/K10rtk-vendor' ] && grep -q '^shutdown()' '$st/etc/init.d/rtk-vendor' &&
+			[ -x '$st/usr/libexec/rtk/vendor-shutdown' ]"
+		check "LuCI: PON WAN, LAN, GPON Settings in the menu" sh -c "
+			grep -q 'nijika/wan' '$st/usr/share/luci/menu.d/luci-app-nijika.json' &&
+			grep -q 'nijika/lan' '$st/usr/share/luci/menu.d/luci-app-nijika.json' &&
+			grep -q 'nijika/gpon' '$st/usr/share/luci/menu.d/luci-app-nijika.json'"
+	fi
 }
 
 # logrelay (stock syslog -> logd): the filter, built for the host

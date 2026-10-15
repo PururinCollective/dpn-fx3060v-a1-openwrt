@@ -33,6 +33,17 @@ var ASSOC_TYPES = {
 	9: 'Ethernet flow TP', 10: 'VEIP', 11: 'MPLS PW TP', 12: 'EFM bonding group'
 };
 
+/* ATM_VC_TBL (stock WAN connections). applicationtype is a service bitmask
+ * (X_CT_SRV_*: TR069 1, INTERNET 2, OTHER 4, VOICE 8), ChannelMode the
+ * connection type (CHANNEL_MODE_*). The stock GUI names a connection
+ * Connection_<n> after its VC index (ifIndex & 0xff), which stays the same
+ * when another record is deleted; NijikaWrt calls it PON_<n>. */
+var WAN_SERVICES = [ [ 2, _('Internet') ], [ 8, _('VoIP') ], [ 4, _('Other/IPTV') ], [ 1, 'TR-069' ] ];
+var WAN_MODES = {
+	0: _('Bridged'), 1: 'IPoE', 2: 'PPPoE', 3: 'PPPoA', 4: _('1483 routed'), 5: '1577',
+	6: 'DS-Lite', 8: '6rd', 9: '6in4', 10: '6to4'
+};
+
 var STATE_TEXT = {
 	O1: _('Initial'), O2: _('Standby'), O3: _('Serial number'), O4: _('Ranging'),
 	O5: _('Operation'), O6: _('Intermittent LODS'), O7: _('Emergency stop')
@@ -207,6 +218,7 @@ return baseclass.extend({
 	callDiag: rpc.declare({ object: 'nijika', method: 'diag', params: [ 'cmd' ] }),
 	callMibAll: rpc.declare({ object: 'nijika', method: 'mib_all' }),
 	callMibSet: rpc.declare({ object: 'nijika', method: 'mib_set', params: [ 'values' ] }),
+	callMibGet: rpc.declare({ object: 'nijika', method: 'mib_get', params: [ 'keys' ], expect: { values: {} } }),
 	callChain: rpc.declare({ object: 'nijika', method: 'chain', params: [ 'table' ] }),
 	callQuickGet: rpc.declare({ object: 'nijika', method: 'quick_get' }),
 	callQuickSet: rpc.declare({ object: 'nijika', method: 'quick_set', params: [ 'pon', 'wan', 'wifi', 'voip' ] }),
@@ -245,17 +257,58 @@ return baseclass.extend({
 		return a ? '%s (%s)'.format(v, a) : (v == null ? '-' : v);
 	},
 
+	/* ATM_VC_TBL.vprio is the index of the stock GUI's priority list:
+	 * 0 = "-" (no 802.1p marking), n = priority n - 1 (stock SDKs, also the
+	 * old PON stick GUI) */
+	vprioValues: function(o) {
+		o.value('0', '-');
+		for (var p = 0; p <= 7; p++)
+			o.value(String(p + 1), String(p));
+	},
+
+	vprioText: function(raw) {
+		var n = parseInt(raw, 10);
+		return (isNaN(n) || n <= 0) ? '-' : String(n - 1);
+	},
+
+	wanServices: WAN_SERVICES,
+	wanModes: WAN_MODES,
+
+	/* "Internet + VoIP" */
+	wanService: function(rec) {
+		var t = +rec.applicationtype || 0;
+		return WAN_SERVICES.filter(function(s) { return t & s[0]; })
+			.map(function(s) { return s[1]; }).join(' + ') || _('no service');
+	},
+
+	wanMode: function(rec) {
+		return WAN_MODES[rec.ChannelMode] || _('mode %s').format(rec.ChannelMode);
+	},
+
+	/* "PON_0" (VC index; record index when ifIndex is unknown) */
+	wanName: function(rec, idx) {
+		var i = parseInt(rec.ifIndex, 10);
+		return 'PON_%d'.format(isNaN(i) ? idx : (i & 0xff));
+	},
+
+	/* "PON_0: Internet (PPPoE)" */
+	wanLabel: function(rec, idx) {
+		return '%s: %s (%s)'.format(this.wanName(rec, idx), this.wanService(rec), this.wanMode(rec));
+	},
+
 	/* Reply of mib_set / quick_set -> notification text. applied: areas the
 	 * running stack was told about (as the stock GUI's Apply does),
 	 * reboot_required: something else is only read at boot. */
 	applyText: function(res, what) {
 		var names = {
 			firewall: _('firewall'), lan: _('LAN'), wlan: _('WiFi'), loid: _('PON registration'),
-			ploam: _('PON registration'), voip: _('VoIP')
+			ploam: _('PON registration'), omci: _('PON registration'), voip: _('VoIP'),
+			snooping: _('IGMP snooping'), wlanblock: _('LAN/WiFi blocking')
 		};
 		var seen = {}, list = [];
 		(res && res.applied || []).forEach(function(a) {
-			var n = /^wan:(\d+)$/.test(a) ? _('WAN PON_%s').format(a.substr(4)) : (names[a] || a);
+			var n = /^wan:\d+$/.test(a) ? _('WAN') :
+				/^port:\d+$/.test(a) ? _('LAN port %d').format(+a.substr(5) + 1) : (names[a] || a);
 			if (!seen[n]) { seen[n] = true; list.push(n); }
 		});
 		var msg = what || _('Saved to the stock configuration.');
@@ -264,6 +317,46 @@ return baseclass.extend({
 		if (res && res.reboot_required)
 			msg += ' ' + _('Some of it takes effect after a reboot.');
 		return msg;
+	},
+
+	/* Save a form.JSONMap section of MIB keys like the stock GUI's Apply:
+	 * only changed keys, through mib_set (flash set + live apply). orig holds
+	 * the loaded values and is updated. Only keys of fields that are shown
+	 * count: LuCI drops the value of a field its dependencies hide, which
+	 * must not read as "cleared". A field writing another key names it in
+	 * option.key. */
+	mibSave: function(map, sid, orig, keys, what) {
+		var self = this, shown = {};
+		map.children.forEach(function(s) {
+			if (s.section != sid)
+				return;
+			s.children.forEach(function(o) {
+				if (o.isActive(sid))
+					shown[o.key || o.option] = true;
+			});
+		});
+		return map.save().then(function() {
+			var values = [];
+			keys.filter(function(k) { return shown[k]; }).forEach(function(k) {
+				var v = map.data.get('json', sid, k);
+				v = (v == null) ? '' : String(v);
+				if (v !== (orig[k] == null ? '' : String(orig[k])))
+					values.push([ k, v ]);
+			});
+			if (!values.length) {
+				ui.addNotification(null, E('p', _('Nothing changed.')), 'info');
+				return null;
+			}
+			return self.callMibSet(values).then(function(r) {
+				if (!r || r.error || (r.failed && r.failed.length))
+					throw new Error((r && r.error) || _('rejected: %s').format((r.failed || []).join(', ')));
+				values.forEach(function(kv) { orig[kv[0]] = kv[1]; });
+				ui.addNotification(null, E('p', self.applyText(r, what)), 'info');
+				return r;
+			});
+		}).catch(function(e) {
+			ui.addNotification(null, E('p', _('Saving failed: %s').format(e.message || e)), 'danger');
+		});
 	},
 
 	rebootPrompt: function(self, msg) {

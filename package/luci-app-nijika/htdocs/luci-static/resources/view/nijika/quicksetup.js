@@ -11,22 +11,6 @@
  * GPON serial number takes effect after a reboot.
  */
 
-/* ATM_VC_TBL.applicationtype is a service bitmask (stock GUI: TR069,
- * INTERNET, OTHER, VOICE and their combinations). */
-var WAN_SERVICES = [ [ 2, _('Internet') ], [ 8, _('Voice') ], [ 4, _('Other/IPTV') ], [ 1, 'TR-069' ] ];
-
-function wanService(rec) {
-	var t = +rec.applicationtype || 0;
-	return WAN_SERVICES.filter(function(s) { return t & s[0]; })
-		.map(function(s) { return s[1]; }).join(' + ') || _('no service');
-}
-
-/* "PON_0: Internet (PPPoE)"; VLAN and login are the fields below. */
-function wanLabel(rec, idx) {
-	var mode = { 0: _('Bridge'), 1: 'IPoE', 2: 'PPPoE' }[rec.ChannelMode] || ('mode ' + rec.ChannelMode);
-	return 'PON_%d: %s (%s)'.format(idx, wanService(rec), mode);
-}
-
 /* Form values of a WAN record, as shown before any edit. */
 function wanFields(rec) {
 	return {
@@ -100,7 +84,7 @@ return view.extend({
 			s = m.section(form.NamedSection, 'wan', 'wan', _('Internet (PPPoE)'),
 				_('Edits PON_0, the first WAN connection of the stock configuration: the Internet connection the ISP default creates. The other connections (IPTV, voice, TR-069 management, one per VLAN) are left as they are. Only fields you change are written.'));
 			o = s.option(form.DummyValue, '_wan', _('WAN connection'));
-			o.cfgvalue = function() { return wanLabel(wan0, 0); };
+			o.cfgvalue = function() { return nc.wanLabel(wan0, 0); };
 			if (wan0.ChannelMode != '2')
 				o.description = _('PON_0 is not PPPoE; the PPPoE login below has no effect on it.');
 
@@ -121,9 +105,8 @@ return view.extend({
 			o.password = true;
 			o = s.option(form.Value, 'vid', _('VLAN ID'), _('0 = untagged'));
 			o.datatype = 'range(0,4094)';
-			o = s.option(form.ListValue, 'prio', _('802.1p priority'));
-			for (var p = 0; p <= 7; p++)
-				o.value(String(p));
+			o = s.option(form.ListValue, 'prio', _('802.1p priority'), _('- = no marking'));
+			nc.vprioValues(o);
 			o = s.option(form.Value, 'mtu', _('MTU'));
 			o.datatype = 'range(576,1500)';
 			o.placeholder = '1492';

@@ -375,6 +375,25 @@ m_quick_set() {
 	json_dump
 }
 
+# --- PON WAN ---------------------------------------------------------------
+
+# {"index": n}: delete WAN connection n (ATM_VC_TBL record), see wan_delete
+m_wan_delete() {
+	need_vendor
+	local idx rc
+	json_load "$1"
+	json_get_var idx index
+	wan_delete "$idx"
+	rc=$?
+	json_init
+	case $rc in
+		0) json_add_boolean ok 1 ;;
+		2) json_add_string error "no WAN connection $idx" ;;
+		*) json_add_string error "the stock stack refused to delete WAN connection $idx" ;;
+	esac
+	json_dump
+}
+
 # --- identity ----------------------------------------------------------------
 
 IDENT_KEYS="PON_VENDOR_ID GPON_ONU_MODEL HW_CWMP_PRODUCTCLASS HW_CWMP_MANUFACTURER HW_HWVER OMCI_OLT_MODE OMCI_SW_VER1 OMCI_SW_VER2 OMCI_VENDOR_PRODUCT_CODE OMCI_TM_OPT OUI HW_SERIAL_NO OMCI_CUSTOM_BDP OMCI_CUSTOM_RDP OMCI_CUSTOM_ME"
@@ -535,7 +554,8 @@ case "$1" in
 	"fw_check": {},
 	"fw_flash": { "mode": "str", "replace_stock": false },
 	"fw_status": {},
-	"reboot": {}
+	"reboot": {},
+	"wan_delete": { "index": 0 }
 }
 EOF
 		;;
@@ -561,6 +581,7 @@ EOF
 			fw_flash) m_fw_flash "$input" ;;
 			fw_status) m_fw_status ;;
 			reboot) m_reboot ;;
+			wan_delete) m_wan_delete "$input" ;;
 			*) err "unknown method" ;;
 		esac
 		;;

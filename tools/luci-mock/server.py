@@ -22,7 +22,7 @@ import time
 TOP = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 WWW = os.environ.get('LUCI_WWW', os.path.join(TOP, 'build', 'stage', 'www'))
 PORT = int(os.environ.get('PORT', '8080'))
-VIEWS = ['status', 'quicksetup', 'provision', 'omci', 'identity', 'mib', 'firmware', 'settings']
+VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'gpon', 'provision', 'omci', 'identity', 'mib', 'firmware', 'settings']
 BOOT = time.time()
 
 
@@ -129,6 +129,11 @@ def nijika_call(method, args):
         return DATA['quick_get']()['wan'] if args.get('table') == 'ATM_VC_TBL' else {'table': args.get('table'), 'num': 0, 'records': []}
     if method == 'diag':
         return {'cmd': args.get('cmd'), 'output': 'ONU state: Operation State(O5)\n(sample output)'}
+    if method == 'mib_get':
+        mib = UCI['rtk']['mib']
+        return {'values': {k: mib.get(k, '') for k in args.get('keys', [])}}
+    if method == 'wan_delete':
+        return {'ok': True}
     if method in ('mib_set',):
         return {'ok': len(args.get('values', [])), 'failed': [], 'applied': ['wlan'], 'reboot_required': False}
     return {'ok': True, 'message': 'mock: %s %s' % (method, json.dumps(args))}
@@ -142,6 +147,41 @@ UCI = {'nijika': {
     'doh': {'.type': 'doh', '.name': 'doh', '.anonymous': False, 'enabled': '1',
             'resolver_url': 'https://b.hitoha.moe/dns-query', 'bootstrap_dns': '1.1.1.1,8.8.8.8', 'listen_port': '5053'},
     'firewall': {'.type': 'firewall', '.name': 'firewall', '.anonymous': False, 'spi_ipv4': 'off', 'spi_ipv6': 'off'}}}
+
+
+def rtk_uci():
+    """/etc/config/rtk as uci-mirror builds it: ATM_VC_TBL records from the
+    real A1 capture (tests/fixtures), sample WiFi records and scalars."""
+    values = {'mib': {'.type': 'mib', '.name': 'mib', '.anonymous': False,
+                      'LAN_IP_ADDR': '192.168.0.1', 'LAN_SUBNET': '255.255.255.0', 'LAN_DHCP': '0', 'DHCP_MODE': '2',
+                      'LAN_DHCP_POOL_START': '192.168.0.2', 'LAN_DHCP_POOL_END': '192.168.0.252',
+                      'LAN_DHCP_LEASE': '86400', 'LAN_DHCP_DOMAIN': 'dlinkrouter.local.',
+                      'LOID': '', 'LOID_PASSWD': '', 'GPON_PLOAM_PASSWD': '0123456789', 'GPON_SN': 'DLKI12345678',
+                      'DEVICE_TYPE': '1', 'OMCI_OLT_MODE': '0', 'LAN_ENABLE_IP2': '0', 'LAN_IP_ADDR2': '192.168.100.1', 'LAN_SUBNET2': '255.255.255.0', 'MP_MODE': '4',
+                      'WLAN_BLOCK_ETH2WIR': '0', 'LAN_DHCP_GATEWAY': '192.168.0.1',
+                      'SW_PORT_TBL.0.Enable': '1', 'SW_PORT_TBL.1.Enable': '1', 'SW_PORT_TBL.2.Enable': '1',
+                      'SW_PORT_TBL.3.Enable': '1'}}
+    fix = os.path.join(TOP, 'tests', 'fixtures', 'flash-get-atm_vc_tbl.txt')
+    sec = None
+    for line in open(fix):
+        line = line.rstrip('\r\n')
+        if line.startswith('ATM_VC_TBL.') and line.endswith(':'):
+            n = line[len('ATM_VC_TBL.'):-1]
+            sec = {'.type': 'ATM_VC_TBL', '.name': 'ATM_VC_TBL_' + n, '.anonymous': False}
+            values[sec['.name']] = sec
+        elif sec is not None and '=' in line:
+            k, v = line.split('=', 1)
+            sec[k.strip()] = v.strip()
+    for tbl, ssids in (('WLAN_MBSSIB_TBL', ['NijikaWrt 5GHz', 'Guest 5GHz', '', '', '']),
+                       ('WLAN1_MBSSIB_TBL', ['NijikaWrt 2.4GHz', '', '', '', ''])):
+        for i, ssid in enumerate(ssids):
+            name = '%s_%d' % (tbl, i)
+            values[name] = {'.type': tbl, '.name': name, '.anonymous': False, 'ssid': ssid,
+                            'wlanDisabled': '0' if ssid else '1'}
+    return values
+
+
+UCI['rtk'] = rtk_uci()
 
 
 def ubus(obj, method, args):

@@ -4,6 +4,7 @@
 # daemons (configd, startup, systemd, boa...) so they run unmodified there.
 
 START=11
+STOP=10
 USE_PROCD=1
 
 RTK=/rtk
@@ -67,6 +68,14 @@ stop_service() {
 	# The vendor daemons own the PON/WAN data path and the kernel drivers
 	# cannot be re-initialised at runtime: stopping is a reboot.
 	return 0
+}
+
+# Reboot/halt (K10, early): release the WAN sessions (PPPoE PADT, DHCP
+# release) and commit the stock configuration, as the stock configd does
+# before its own reboot. The vendor stack keeps running until procd's final
+# kill.
+shutdown() {
+	/usr/libexec/rtk/vendor-shutdown
 }
 
 service_triggers() {

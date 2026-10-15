@@ -7,7 +7,7 @@
 /*
  * Browser/editor for the stock Realtek configuration database (MIB):
  * scalar values (`flash all`) and chain tables (`flash get <TBL>`).
- * Writes use `flash set` and persist immediately; keys a stock web form
+ * Writes use `flash set` (configd commits them to flash); keys a stock web form
  * applies live (WAN, firewall, LAN, WiFi, GPON) are applied the same way,
  * the rest after a reboot.
  */
@@ -105,7 +105,7 @@ return view.extend({
 			nc.style(),
 			E('h2', {}, _('MIB Browser')),
 			E('div', { 'class': 'cbi-map-descr' }, [
-				_('The stock Realtek configuration database. Changes are written to flash immediately (same as `flash set`). WAN, firewall, LAN, WiFi and GPON keys are applied to the running stack like the stock GUI does; other keys take effect after a reboot.'),
+				_('The stock Realtek configuration database. Changes are saved like `flash set` does (the stock configd writes them to flash shortly after, and before a reboot). WAN, firewall, LAN, WiFi and GPON keys are applied to the running stack like the stock GUI does; other keys take effect after a reboot.'),
 				' ', E('strong', {}, _('Wrong values can make the device unreachable; use Quick Setup for the common settings.'))
 			]),
 			E('div', { 'class': 'cbi-section' }, [

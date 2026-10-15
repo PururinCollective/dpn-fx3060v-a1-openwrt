@@ -4,7 +4,7 @@
  * A stock /boaform/<form> handler writes the configuration (mib_set,
  * mib_chain_update), then calls a libmib function that makes the running
  * stack follow it. NijikaWrt writes the configuration with the stock
- * `flash set` (which also commits it to flash); this tool makes the same
+ * `flash set` (committed through configd, like boa's Commit()); this tool makes the same
  * libmib calls the handlers make afterwards, so a change applies without a
  * reboot. Calls and their order follow the stock V1.1.2 boa and the Realtek
  * SDK sources (see docs/BOA.md).
@@ -29,6 +29,17 @@ extern int restart_IPFilter_DMZ_MACFilter(void);
 extern int restart_lanip(void);
 extern int restart_dhcp(void);
 extern int config_WLAN(int action_type, int ssid_index);
+extern int mib_chain_delete(int id, unsigned int recordNum);
+extern void resolveServiceDependency(unsigned int idx);
+extern void clear_delegated_default_wanconn(void *pEntry);
+extern int delDhcpcOption(unsigned int ifindex);
+extern void rtk_layer2bridging_update_wan_interface_mib_table(int action, unsigned int old_ifIndex,
+							      unsigned int new_ifIndex);
+extern int rtk_tr181_update_wan_interface_entry_list(int action, void *pOld, void *pNew);
+extern void Commit(void);
+extern void rtk_multicast_snooping(void);
+extern int restart_ethernet(int instnum);
+extern int setup_wlan_block(void);
 /* librtk (stock), as called by boa's formgponConf / restartOMCIsettings */
 extern int rt_gpon_deactivate(void);
 extern int rt_gpon_activate(int initState);
@@ -50,7 +61,12 @@ static int usage(void)
 	      "  wan-down <n>  before ATM_VC_TBL record <n> changes: take its connection down\n"
 	      "  wan-up <n>    after the change: bring record <n> up again, resync VoIP\n"
 	      "  wan           every WAN connection down and up again, resync VoIP\n"
+	      "  wan-delete <n> [dhcpc]  delete ATM_VC_TBL record <n> (dhcpc: it is an\n"
+	      "                IPoE DHCP client), as the stock WAN page does\n"
 	      "  wlan          restart WiFi (every radio and SSID)\n"
+	      "  wlan-block    LAN <-> WiFi blocking (WLAN_BLOCK_ETH2WIR)\n"
+	      "  snooping      IGMP/MLD snooping (MP_MODE)\n"
+	      "  lan-port <n>  LAN port n (0..3) on/off (SW_PORT_TBL.<n>.Enable)\n"
 	      "  voip          reload the VoIP configuration and restart the VoIP stack\n"
 	      "  gpon-omci     re-register with the OLT, OMCI MIB reset (LOID, OLT mode)\n"
 	      "  gpon-ploam <password>  set the PLOAM password and re-register\n", stderr);
@@ -69,6 +85,8 @@ static int ploam_hex(const char *pw, char *out, size_t len)
 		sprintf(out + 2 * i, "%02x", i < n ? (unsigned char)pw[i] : 0);
 	return 1;
 }
+
+static int wan_id, wan_idx;	/* set by wan_record() */
 
 /* ATM_VC_TBL record <arg> into a malloc'd buffer */
 static void *wan_record(const char *arg)
@@ -94,6 +112,8 @@ static void *wan_record(const char *arg)
 	}
 	if (size <= 0 || size > 65536)
 		size = 65536;
+	wan_id = id;
+	wan_idx = (int)n;
 	rec = calloc(1, size);
 	if (rec && !mib_chain_get(id, (unsigned int)n, rec)) {
 		fprintf(stderr, "rtk-apply: reading WAN record %ld failed\n", n);
@@ -128,6 +148,28 @@ int main(int argc, char **argv)
 		restartWAN(CONFIGONE, rec);
 		free(rec);
 		reSync_reStartVoIP();
+	} else if (!strcmp(cmd, "wan-delete") && (argc == 3 || argc == 4)) {
+		/* formEth (delete), stock V1.1.2 boa 0x46e3f8 */
+		unsigned int ifindex;
+
+		if (!(rec = wan_record(argv[2])))
+			return 1;
+		memcpy(&ifindex, rec, sizeof(ifindex));	/* ifIndex: first member */
+		rtk_layer2bridging_update_wan_interface_mib_table(0, ifindex, 0);
+		if (argc == 4 && !strcmp(argv[3], "dhcpc"))
+			delDhcpcOption(ifindex);
+		rtk_tr181_update_wan_interface_entry_list(0, rec, NULL);
+		clear_delegated_default_wanconn(rec);
+		deleteConnection(CONFIGONE, rec);
+		resolveServiceDependency(wan_idx);
+		free(rec);
+		if (mib_chain_delete(wan_id, wan_idx) != 1) {
+			fprintf(stderr, "rtk-apply: deleting WAN record %d failed\n", wan_idx);
+			return 1;
+		}
+		restartWAN(CONFIGONE, NULL);
+		reSync_reStartVoIP();
+		Commit();
 	} else if (!strcmp(cmd, "wan")) {
 		/* formIPv6EnableDisable: all connections */
 		deleteConnection(CONFIGALL, NULL);
@@ -136,6 +178,22 @@ int main(int argc, char **argv)
 	} else if (!strcmp(cmd, "wlan")) {
 		/* formWlanSetup, formWlEncrypt; same as `wlan_apply restart` */
 		config_WLAN(ACT_RESTART, CONFIG_SSID_ALL);
+	} else if (!strcmp(cmd, "wlan-block")) {
+		/* formTcpipLanSetup: BlockEth2Wir */
+		setup_wlan_block();
+	} else if (!strcmp(cmd, "snooping")) {
+		/* formTcpipLanSetup: snoop (after mib_set(MIB_MPMODE)) */
+		rtk_multicast_snooping();
+	} else if (!strcmp(cmd, "lan-port") && argc == 3) {
+		/* formTcpipLanSetup: lan<i> -> restart_ethernet(i + 1) */
+		char *end;
+		long n = strtol(argv[2], &end, 10);
+
+		if (*argv[2] == '\0' || *end != '\0' || n < 0 || n > 7) {
+			fprintf(stderr, "rtk-apply: no LAN port %s\n", argv[2]);
+			return 1;
+		}
+		restart_ethernet((int)n + 1);
 	} else if (!strcmp(cmd, "voip")) {
 		/* web_restart_solar: voip_flash_server_update + solar restart */
 		reSync_reStartVoIP();

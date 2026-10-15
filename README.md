@@ -45,6 +45,14 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   can no longer cut the LAN off. NAT still keeps unsolicited IPv4 out; on IPv6
   every LAN device with a public address is reachable, its own firewall is what
   protects it (`firewall.spi_ipv6 on` restores the stock behaviour).
+* **Stock GUI pages in LuCI**: Network > PON WAN (the stock WAN
+  connections as `PON_<n>`: VLAN, NAT, PPPoE, IPv4/IPv6, port mapping;
+  delete), Network > LAN (address, ports, IGMP snooping, DHCP server) and
+  PON > GPON Settings (LOID, PLOAM, device type, OLT mode).
+* **Clean reboot**: like the stock firmware, a reboot (and sysupgrade) first
+  ends the PPPoE sessions (LCP Terminate + PADT) and releases DHCP leases, so
+  the ISP accepts the next login at once, and writes the stock
+  configuration still held in RAM to flash.
 * **Live apply, like the stock GUI**: a change to the WAN, firewall, LAN,
   WiFi, GPON registration or VoIP takes effect right away. `rtk-apply` makes
   the same libmib calls the stock web forms make after "Apply"
@@ -235,6 +243,7 @@ nijika boa [hidden|lan]               stock D-Link GUI on :8080: router-only or 
 nijika doh [on|off|url <URL>]         DNS over HTTPS status / switch / resolver
 nijika uci [sync|diff]                /etc/config/rtk against the stock flash
 nijika apply wan [n]|firewall|lan|wlan|voip|gpon   apply the stock config to the running stack
+nijika wan [list|delete <#>]          stock WAN connections (PON_<n>); delete one
 nijika reset [--all]                  factory reset, keeps serial/PLOAM/MAC
 nijika banner | version | rtk [cmd]
 ```

@@ -2,6 +2,8 @@
 # PPPoE router WAN instead of the SFP bridge).
 # Columns (TAB separated):
 # id	label	internet_vid	internet_prio	mtu	voip_vid	voip_prio	iptv_vid
+# *_prio: the stock MIB value ATM_VC_TBL.vprio, an index into the stock
+# GUI's priority list: 0 = "-" (no 802.1p marking), n = priority n - 1.
 unifi	TM Unifi (Malaysia)	500	1	1492	400	5	600
 maxis	TM HSBB - Maxis (Malaysia)	621	1	1492	822	5	0
 celcom	TM HSBB - Celcom (Malaysia)	623	1	1492	400	5	0

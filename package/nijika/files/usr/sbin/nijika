@@ -276,6 +276,49 @@ nijika_apply() {
 	esac
 }
 
+# ------------------------------------------------- WAN connections ----
+
+# The stock WAN connections (ATM_VC_TBL), named PON_<VC index> like the
+# LuCI PON WAN page (the stock GUI: Connection_<n>).
+nijika_wan() {
+	need_vendor
+	case "$1" in
+		""|list)
+			rtk /bin/flash get ATM_VC_TBL 2>/dev/null | awk '
+				function flush() {
+					if (rec == "") return
+					svc = ""
+					if (f["applicationtype"] % 4 >= 2) svc = svc "+Internet"
+					if (f["applicationtype"] % 16 >= 8) svc = svc "+VoIP"
+					if (f["applicationtype"] % 2 == 1) svc = svc "+TR-069"
+					if (f["applicationtype"] % 8 >= 4) svc = svc "+Other/IPTV"
+					mode = (f["ChannelMode"] == 0) ? "Bridged" : (f["ChannelMode"] == 1) ? "IPoE" : (f["ChannelMode"] == 2) ? "PPPoE" : "mode " f["ChannelMode"]
+					# vprio: stock list index, 0 = "-", n = 802.1p n - 1
+					vlan = (f["vlan"] == 1) ? f["vid"] ((f["vprio"] > 0) ? "/p" (f["vprio"] - 1) : "") : "untagged"
+					printf "%-3s PON_%-3d %-24s %-8s %-10s %s\n", rec, f["ifIndex"] % 256, substr(svc, 2), mode, vlan,
+						(f["ChannelStatus"] == 1) ? "enabled" : "disabled"
+					delete f
+				}
+				BEGIN { printf "%-3s %-7s %-24s %-8s %-10s %s\n", "#", "name", "service", "type", "vlan", "state" }
+				/^ATM_VC_TBL\.[0-9]+:/ { flush(); rec = $0; sub(/^ATM_VC_TBL\./, "", rec); sub(/:.*/, "", rec); next }
+				{ p = index($0, "="); if (p) { k = substr($0, 1, p - 1); gsub(/[ \t]/, "", k); v = substr($0, p + 1); gsub(/^[ \t]+|[ \t\r]+$/, "", v); f[k] = v } }
+				END { flush() }'
+			;;
+		delete)
+			[ -n "$2" ] || die "usage: nijika wan delete <#>   (# = first column of 'nijika wan')"
+			wan_delete "$2"
+			case $? in
+				0) echo "WAN connection $2 deleted (also gone from the stock firmware bank)." ;;
+				2) die "no WAN connection $2" ;;
+				*) die "the stock stack refused to delete WAN connection $2" ;;
+			esac
+			;;
+		*)
+			echo "usage: nijika wan [list|delete <#>]"
+			return 1 ;;
+	esac
+}
+
 # --------------------------------------------------- PON credentials ----
 
 nijika_ploam() {
@@ -325,7 +368,8 @@ nijika_isp() {
 	if [ -z "$id" ] || [ "$id" = help ]; then
 		echo "ISP presets (sets VLAN/priority/MTU of the Internet PPPoE WAN):"
 		grep -v '^#' "$NIJIKA_SHARE/isp-presets.tsv" |
-			awk -F'\t' '{ printf "  %-10s %-32s inet %s/p%s voip %s/p%s\n", $1, $2, $3, $4, $6, $7 }'
+			awk -F'\t' 'function p(v) { return (v > 0) ? v - 1 : "-" }
+				{ printf "  %-10s %-32s inet %s/p%s voip %s/p%s\n", $1, $2, $3, p($4), $6, p($7) }'
 		echo
 		echo "Example: nijika isp unifi [wan-index]"
 		return 0
@@ -339,7 +383,8 @@ nijika_isp() {
 	mib_set "ATM_VC_TBL.$idx.vid" "$vid"
 	mib_set "ATM_VC_TBL.$idx.vprio" "$prio"
 	mib_set "ATM_VC_TBL.$idx.MTU" "$mtu"
-	cli_apply "WAN $idx: VLAN $vid priority $prio MTU $mtu ($(echo "$line" | cut -f2))" "wan:$idx"
+	# prio: stock priority list index (0 = no marking, n = 802.1p n - 1)
+	cli_apply "WAN $idx: VLAN $vid priority $([ "$prio" -gt 0 ] && echo $((prio - 1)) || echo -) MTU $mtu ($(echo "$line" | cut -f2))" "wan:$idx"
 	echo "PPPoE credentials: Quick Setup or 'nijika mib set ATM_VC_TBL.$idx.pppUser ...'."
 }
 
@@ -607,6 +652,7 @@ PON / OMCI
   ont [preset|factory]          ONT identity emulation for OLT compatibility
   mode [mode|factory]           OMCI VLAN handling mode (OMCI_CUSTOM_*)
   isp [preset [wan-index]]      Apply ISP VLAN preset to the Internet WAN
+  wan [list|delete <#>]         Stock WAN connections (PON_<n>); delete one
 
 System
   boot [status|0|1|toggle|try N]  Firmware bank selection (A/B)
@@ -644,6 +690,7 @@ case "$CMD" in
 	ont) nijika_ont "$@" ;;
 	mode) nijika_mode "$@" ;;
 	isp|vlan) nijika_isp "$@" ;;
+	wan) nijika_wan "$@" ;;
 	boot) nijika_boot "$@" ;;
 	upgrade) nijika_upgrade "$@" ;;
 	mib) nijika_mib "$@" ;;
