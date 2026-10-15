@@ -6,16 +6,18 @@ RTL9607DQ "Taurus" router with a built-in ONT. It runs on the
 PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
 
 ```
-                 _______ __ __ __ __           ________        __
-                |    |  |__|__|__|  |--.---.-.|  |  |  |.----.|  |_
-                |       |  |  |  |    <|  _  ||  |  |  ||   _||   _|
-                |__|____|__|  |__|__|__|___._||________||__|  |____|
-                           |___|     O P E N  P O N  F O U N D A T I O N
+         _______ __ __ __ __           ________        __
+        |    |  |__|__|__|  |--.---.-.|  |  |  |.----.|  |_
+        |       |  |  |  |    <|  _  ||  |  |  ||   _||   _|
+        |__|____|__|  |__|__|__|___._||________||__|  |____|
+                   |___|     O P E N  P O N  F O U N D A T I O N
+                                            ft. DPN-FX3060V (A1)
 
  <---------------------------------------------------------- TX 1310 nm ---
-  NijikaWrt r647  |  OpenWrt 25.12.5 r33051-f5dae5ece4  |  Linux 5.10.70
-  PON O5 operational  |  RX -19.7 dBm  |  TX 3.2 dBm  |  up 1h 14m
+  NijikaWrt r29  |  OpenWrt 25.12.5 r33051-f5dae5ece4  |  Linux 5.10.70
+  PON O5.1 operational  |  RX -14.13 dBm  |  TX 2.61 dBm  |  up 4m
  --- RX 1490 nm ---------------------------------------------------------->
+
 ```
 
 > **Status: stage 1, experimental.** The image builds and the LuCI app is
