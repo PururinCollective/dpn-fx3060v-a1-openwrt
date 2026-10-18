@@ -1,0 +1,53 @@
+{#
+ Perfect theme login: blue page, logo, login card and the Perfect cat.
+ Licensed under the Apache License 2.0.
+-#}
+
+{% include('header', { blank_page: true }) %}
+
+{% const boardinfo = ubus.call('system', 'board'); %}
+
+<main class="perfect-login">
+	<section class="perfect-login-panel">
+		<img class="perfect-login-logo" src="{{ media }}/brand.svg" alt="Perfect" width="148" height="45">
+		<span class="perfect-pill">{{ striptags(boardinfo?.hostname ?? '?') }}</span>
+		<h1>{{ _('Authorization Required') }}</h1>
+		<p class="perfect-login-lead">{{ _('Please enter your username and password.') }}</p>
+
+		<form method="post" class="perfect-login-card" id="perfect-login">
+			{% if (fuser): %}
+			<div class="alert-message error">
+				{{ _('Invalid username and/or password! Please try again.') }}
+			</div>
+			{% endif %}
+
+			<label for="luci_username">{{ _('Username') }}</label>
+			<input name="luci_username" id="luci_username" type="text" autocomplete="username" value="{{ entityencode(duser, true) }}">
+
+			<label for="luci_password">{{ _('Password') }}</label>
+			<input name="luci_password" id="luci_password" type="password" autocomplete="current-password">
+
+			<button type="submit" class="btn cbi-button-action important">{{ _('Log in') }}</button>
+		</form>
+	</section>
+
+	<div class="perfect-login-art" aria-hidden="true">
+		<img src="{{ media }}/login-cat.webp" alt="" width="636" height="430">
+	</div>
+</main>
+
+<script>
+	(function() {
+		var form = document.getElementById('perfect-login'),
+		    btn = form.querySelector('button');
+
+		document.getElementById('luci_password').focus();
+		form.addEventListener('submit', function() {
+			btn.disabled = true;
+			btn.classList.add('spinning');
+			btn.textContent = {{ sprintf('%J', _('Logging in…')) }};
+		});
+	})();
+</script>
+
+{% include('footer', { blank_page: true }) %}

@@ -10,6 +10,9 @@ sample data (no real device secrets).
     python3 tools/luci-mock/server.py   # http://127.0.0.1:8080/
 
 Views: /cgi-bin/luci/admin/nijika/<status|quicksetup|omci|identity|mib|firmware|settings>
+Login page: /cgi-bin/luci/login. LUCI_THEME=perfect (default) or bootstrap
+picks the page chrome; package/*/htdocs is served over the built www, so
+theme and view edits show up without a rebuild.
 """
 
 import http.server
@@ -22,6 +25,9 @@ import time
 TOP = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 WWW = os.environ.get('LUCI_WWW', os.path.join(TOP, 'build', 'stage', 'www'))
 PORT = int(os.environ.get('PORT', '8080'))
+THEME = os.environ.get('LUCI_THEME', 'perfect')
+HTDOCS = sorted(os.path.join(TOP, 'package', p, 'htdocs') for p in os.listdir(os.path.join(TOP, 'package'))
+                if os.path.isdir(os.path.join(TOP, 'package', p, 'htdocs')))
 VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'voip', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
 BOOT = time.time()
 
@@ -263,33 +269,89 @@ def ubus(obj, method, args):
     return [0, {}]
 
 
+# Page chrome per theme, mirroring themes/<theme>/header.ut + footer.ut.
+CHROME = {
+    'bootstrap': {
+        'css': '<link rel="stylesheet" href="/luci-static/bootstrap/cascade.css">',
+        'dark': '<script>document.querySelector(":root").setAttribute("data-darkmode", '
+                'window.matchMedia("(prefers-color-scheme: dark)").matches);</script>',
+        'brand': '<a class="brand" href="/">NijikaWrt (mock)</a>',
+        'footer': '',
+    },
+    'perfect': {
+        'css': '<link rel="stylesheet" href="/luci-static/bootstrap/cascade.css">'
+               '<link rel="stylesheet" media="only screen and (max-device-width: 854px)" href="/luci-static/bootstrap/mobile.css">'
+               '<link rel="stylesheet" href="/luci-static/perfect/perfect.css">'
+               '<link rel="icon" href="/luci-static/perfect/logo_48.png" sizes="48x48">',
+        'dark': '<script>document.querySelector(":root").setAttribute("data-darkmode", "false");</script>',
+        'brand': '<a class="perfect-brand" href="/"><img src="/luci-static/perfect/brand.svg" alt="Perfect" width="111" height="34">'
+                 '<span class="perfect-host">NijikaWrt (mock)</span></a>',
+        'footer': '<footer><span>Powered by <a href="#">LuCI (mock)</a> / <a href="#">OpenWrt 25.12.5</a></span>'
+                  '<ul class="breadcrumb pull-right" id="modemenu"><li class="active"><a href="#">Administration</a></li></ul></footer>',
+    },
+}
+
 PAGE = '''<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>NijikaWrt | %(view)s</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="/luci-static/bootstrap/cascade.css">
+%(css)s
 <script src="/luci-static/resources/cbi.js"></script>
-<script>
-	var mq = window.matchMedia('(prefers-color-scheme: dark)');
-	document.querySelector(':root').setAttribute('data-darkmode', mq.matches);
-</script>
+%(dark)s
 </head><body class="lang_en" data-page="admin-nijika-%(view)s">
-<header><a class="brand" href="/">NijikaWrt (mock)</a><ul class="nav" id="topmenu">%(menu)s</ul><div id="indicators" class="pull-right"></div></header>
+<header>%(brand)s<ul class="nav" id="topmenu">%(menu)s</ul><div id="indicators" class="pull-right"></div></header>
 <div id="maincontent" class="container">
 <script src="/luci-static/resources/luci.js"></script>
 <script>
-L = new LuCI({"media":"/luci-static/bootstrap","resource":"/luci-static/resources","scriptname":"/cgi-bin/luci",
+L = new LuCI({"media":"/luci-static/%(theme)s","resource":"/luci-static/resources","scriptname":"/cgi-bin/luci",
  "pathinfo":"/admin/nijika/%(view)s","documentroot":"/www","requestpath":["admin","nijika","%(view)s"],
  "dispatchpath":["admin","nijika","%(view)s"],"pollinterval":5,"ubuspath":"/ubus/","sessionid":"mock","token":"mock",
  "nodespec":{"action":{"type":"view","path":"nijika/%(view)s"}},"apply_rollback":90,"apply_holdoff":4,"apply_timeout":5,"apply_display":1.5});
 </script>
 <div id="view"><div class="spinning">Loading view…</div>
 <script>L.require('ui').then(function(ui) { ui.instantiateView('nijika/%(view)s'); });</script></div>
-</div></body></html>'''
+</div>%(footer)s</body></html>'''
+
+# themes/perfect/sysauth.ut with sample values (?error shows the failed login)
+LOGIN = '''<!DOCTYPE html>
+<html lang="en" data-darkmode="false"><head><meta charset="utf-8"><title>NijikaWrt (mock)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+%(css)s
+</head><body class="lang_en perfect-blank" data-page="">
+<main class="perfect-login">
+	<section class="perfect-login-panel">
+		<img class="perfect-login-logo" src="/luci-static/perfect/brand.svg" alt="Perfect" width="148" height="45">
+		<span class="perfect-pill">NijikaWrt (mock)</span>
+		<h1>Authorization Required</h1>
+		<p class="perfect-login-lead">Please enter your username and password.</p>
+		<form method="get" class="perfect-login-card" id="perfect-login" action="/cgi-bin/luci/admin/nijika/status">
+			%(error)s
+			<label for="luci_username">Username</label>
+			<input name="luci_username" id="luci_username" type="text" autocomplete="username" value="root">
+			<label for="luci_password">Password</label>
+			<input name="luci_password" id="luci_password" type="password" autocomplete="current-password">
+			<button type="submit" class="btn cbi-button-action important">Log in</button>
+		</form>
+	</section>
+	<div class="perfect-login-art" aria-hidden="true">
+		<img src="/luci-static/perfect/login-cat.webp" alt="" width="636" height="430">
+	</div>
+</main>
+</body></html>'''
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=WWW, **kw)
+
+    def translate_path(self, path):
+        # package/*/htdocs first (live edits), then the built www
+        full = super().translate_path(path)
+        rel = os.path.relpath(full, self.directory)
+        if rel != '.' and not rel.startswith('..'):
+            for root in HTDOCS:
+                if os.path.isfile(os.path.join(root, rel)):
+                    return os.path.join(root, rel)
+        return full
 
     def end_headers(self):
         self.send_header('Cache-Control', 'no-store')
@@ -310,12 +372,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = self.path.split('?')[0]
         if path == '/':
             links = ''.join('<li><a href="/cgi-bin/luci/admin/nijika/%s">%s</a></li>' % (v, v) for v in VIEWS)
+            links += '<li><a href="/cgi-bin/luci/login">login</a></li>'
             return self.send_body('<h1>NijikaWrt LuCI mock</h1><ul>%s</ul>' % links, 'text/html')
         if path.startswith('/cgi-bin/luci/admin/nijika/'):
             view = path.rsplit('/', 1)[1]
             if view in VIEWS:
                 menu = ''.join('<li><a href="/cgi-bin/luci/admin/nijika/%s">%s</a></li>' % (v, v) for v in VIEWS)
-                return self.send_body(PAGE % {'view': view, 'menu': menu}, 'text/html')
+                chrome = CHROME.get(THEME, CHROME['bootstrap'])
+                return self.send_body(PAGE % dict(chrome, view=view, menu=menu, theme=THEME), 'text/html')
+        if path == '/cgi-bin/luci/login':
+            error = ('<div class="alert-message error">Invalid username and/or password! Please try again.</div>'
+                     if 'error' in self.path else '')
+            return self.send_body(LOGIN % {'css': CHROME['perfect']['css'], 'error': error}, 'text/html')
         if path.startswith('/cgi-bin/luci/admin/translations'):
             return self.send_body('', 'application/javascript')
         if path.startswith('/cgi-bin/luci/admin/menu'):

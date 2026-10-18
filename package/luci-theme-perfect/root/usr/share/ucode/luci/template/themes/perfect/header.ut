@@ -1,0 +1,81 @@
+{#
+ Perfect theme for NijikaWrt: perfect.my colours on top of Bootstrap.
+ Based on luci-theme-bootstrap (Copyright 2008 Steven Barth, 2012 David
+ Menting, 2008-2022 Jo-Philipp Wich). Licensed under the Apache License 2.0.
+-#}
+
+{%
+	import { getuid, getspnam } from 'luci.core';
+
+	const boardinfo = ubus.call('system', 'board');
+	const v = '@PERFECT_VERSION@';
+
+	http.prepare_content('text/html; charset=UTF-8');
+-%}
+
+<!DOCTYPE html>
+<html lang="{{ dispatcher.lang }}" data-darkmode="false">
+	<head>
+		<meta charset="utf-8">
+		<title>{{ striptags(`${boardinfo.hostname ?? '?'}${dispatched?.title ? ` | ${_(dispatched.title)}` : ''}`) }}</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="theme-color" content="#315aa8">
+		<meta name="color-scheme" content="light">
+		<meta name="darkreader-lock">
+		<link rel="stylesheet" href="/luci-static/bootstrap/cascade.css?v={{ v }}">
+		<link rel="stylesheet" media="only screen and (max-device-width: 854px)" href="/luci-static/bootstrap/mobile.css?v={{ v }}" />
+		<link rel="stylesheet" href="{{ media }}/perfect.css?v={{ v }}">
+		<link rel="icon" href="{{ media }}/logo_48.png" sizes="48x48">
+		<link rel="icon" href="{{ media }}/logo_96.png" sizes="96x96">
+		<link rel="apple-touch-icon" href="{{ media }}/apple-touch-icon.png">
+		{% if (node?.css): %}
+		<link rel="stylesheet" href="{{ resource }}/{{ node.css }}">
+		{% endif %}
+		{% if (css): %}
+		<style title="text/css">{{ css }}</style>
+		{% endif %}
+		<script src="{{ dispatcher.build_url('admin/translations', dispatcher.lang) }}"></script>
+		<script src="{{ resource }}/cbi.js?v={{ v }}"></script>
+	</head>
+
+	<body class="lang_{{ dispatcher.lang }} {{ entityencode(striptags(node?.title ?? ''), true) }}{{ blank_page ? ' perfect-blank' : '' }}" data-page="{{ entityencode(join('-', ctx.request_path), true) }}">
+		{% if (!blank_page): %}
+		<header>
+			<a class="perfect-brand" href="/" title="{{ entityencode(striptags(boardinfo.hostname ?? '?'), true) }}">
+				<img src="{{ media }}/brand.svg" alt="Perfect" width="111" height="34">
+				<span class="perfect-host">{{ striptags(boardinfo.hostname ?? '?') }}</span>
+			</a>
+			<ul class="nav" id="topmenu" style="display:none"></ul>
+			<div id="indicators" class="pull-right"></div>
+		</header>
+
+		<div id="maincontent" class="container">
+			{% if (getuid() == 0 && getspnam('root')?.pwdp === ''): %}
+				<div class="alert-message warning">
+					<h4>{{ _('No password set!') }}</h4>
+					<p>{{ _('There is no password set on this router. Please configure a root password to protect the web interface.') }}</p>
+					{% if (dispatcher.lookup("admin/system/admin")): %}
+					  <div class="right"><a class="btn" href="{{ dispatcher.build_url("admin/system/admin") }}">{{ _('Go to password configuration...') }}</a></div>
+					{% endif %}
+				</div>
+			{% endif %}
+
+			{% if (boardinfo.rootfs_type == "initramfs"): %}
+				<div class="alert-message warning">
+					<h4>{{ _('System running in recovery (initramfs) mode.') }}</h4>
+					<p>{{ _('No changes to settings will be stored and are lost after rebooting. This mode should only be used to install a firmware upgrade') }}</p>
+					{% if (dispatcher.lookup("admin/system/flash")): %}
+					  <div class="right"><a class="btn" href="{{ dispatcher.build_url("admin/system/flash") }}">{{ _('Go to firmware upgrade...') }}</a></div>
+					{% endif %}
+				</div>
+			{% endif %}
+
+			<noscript>
+				<div class="alert-message warning">
+					<h4>{{ _('JavaScript required!') }}</h4>
+					<p>{{ _('You must enable JavaScript in your browser or LuCI will not work properly.') }}</p>
+				</div>
+			</noscript>
+
+			<div id="tabmenu" style="display:none"></div>
+		{% endif %}

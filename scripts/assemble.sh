@@ -92,6 +92,11 @@ release="$NIJIKA_DISTRO $NIJIKA_REVISION${NIJIKA_CODENAME:+ ($NIJIKA_CODENAME)}"
 sed -i "s|^DISTRIB_DESCRIPTION=.*|DISTRIB_DESCRIPTION='$release / OpenWrt $DISTRIB_RELEASE $DISTRIB_REVISION'|" \
 	"$R/etc/openwrt_release"
 
+# Perfect theme (luci-theme-perfect, the default): stamp its stylesheet URLs
+# with this build so browsers drop a cached copy after an upgrade.
+sed -i "s|@PERFECT_VERSION@|$NIJIKA_REVISION-$(echo "$NIJIKA_BUILD_DATE" | tr -dc 0-9)|g" \
+	"$R"/usr/share/ucode/luci/template/themes/perfect/*.ut
+
 # Status > Overview: System, PON / ONT, WAN (luci-app-nijika), memory,
 # storage. OpenWrt's network, DHCP, DSL, WiFi and port cards stay empty or
 # wrong here: the stock stack owns WAN, DHCP, WiFi and the switch ports.

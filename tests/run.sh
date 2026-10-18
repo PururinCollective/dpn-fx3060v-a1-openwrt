@@ -4,7 +4,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint parsers wrapper ucimirror spi apply easymesh helpers stockshell bootenv fwu banner
+# Groups: syntax json lint parsers wrapper ucimirror spi apply easymesh helpers stockshell bootenv fwu banner theme
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -547,12 +547,55 @@ t_banner() {
 		[ $(printf "%s" "$1" | tr -cd @ | wc -c) -eq 35 ] && printf "%s" "$1" | grep -q "?25h"' _ "$out"
 }
 
+# ------------------------------------------------------------------- theme
+
+t_theme() {
+	echo "theme"
+	local P="$TOP/package/luci-theme-perfect" D="$W/theme"
+	mkdir -p "$D"
+	# uci-defaults against a key=value store: start state -> final mediaurlbase
+	defaults() {
+		printf '%s\n' "$@" > "$D/uci"
+		"$BB" sh -c "
+			uci() {
+				[ \"\$1\" = -q ] && shift
+				case \"\$1\" in
+					get) grep \"^\$2=\" '$D/uci' | cut -d= -f2- | grep . ;;
+					set) echo \"\$2\" >> '$D/uci' ;;
+					commit) ;;
+				esac
+			}
+			. '$P/root/etc/uci-defaults/30_luci-theme-perfect'" >/dev/null 2>&1
+		grep '^luci.main.mediaurlbase=' "$D/uci" | tail -n 1 | cut -d= -f2-
+	}
+	check "first boot: Perfect registered and made the default" sh -c '
+		[ "$1" = /luci-static/perfect ]' _ \
+		"$(defaults luci.main.mediaurlbase=/luci-static/bootstrap luci.themes.Bootstrap=/luci-static/bootstrap)"
+	check "theme picked later survives the next upgrade" sh -c '
+		[ "$1" = /luci-static/bootstrap ]' _ \
+		"$(defaults luci.main.mediaurlbase=/luci-static/bootstrap luci.themes.Perfect=/luci-static/perfect)"
+	check "files referenced by the templates and perfect.css exist" sh -c '
+		cd "$1/htdocs/luci-static/perfect" || exit 1
+		for f in $(sed -n "s|.*{{ media }}/\([^\"?]*\).*|\1|p" "$1"/root/usr/share/ucode/luci/template/themes/perfect/*.ut) \
+		         $(sed -n "s|.*url(\"\([^\"]*\)\").*|\1|p" perfect.css); do
+			[ -f "$f" ] || { echo "missing $f"; exit 1; }
+		done' _ "$P"
+	if [ -d "$TOP/build/stage/www/luci-static/bootstrap" ]; then
+		check "Bootstrap files the theme loads are in the built image" sh -c '
+			for f in luci-static/bootstrap/cascade.css luci-static/bootstrap/mobile.css luci-static/resources/menu-bootstrap.js; do
+				[ -f "$1/$f" ] || { echo "missing /www/$f"; exit 1; }
+			done' _ "$TOP/build/stage/www"
+	else
+		skp "Bootstrap files in the built image" "no build/stage"
+	fi
+}
+
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint parsers wrapper ucimirror spi apply easymesh helpers stockshell bootenv fwu banner}"
+groups="${*:-syntax json lint parsers wrapper ucimirror spi apply easymesh helpers stockshell bootenv fwu banner theme}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|easymesh|helpers|stockshell|bootenv|fwu|banner) "t_$g" ;;
+		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|easymesh|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

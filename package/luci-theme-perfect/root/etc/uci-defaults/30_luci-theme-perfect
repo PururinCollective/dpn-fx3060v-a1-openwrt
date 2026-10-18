@@ -1,0 +1,13 @@
+#!/bin/sh
+# Register the Perfect theme beside Bootstrap and make it the default.
+# Runs after 30_luci-theme-bootstrap (same prefix, sorted by name). The
+# switch only happens while luci.themes.Perfect is missing, so a theme
+# picked later in System > System > Language and Style survives upgrades.
+
+uci -q get luci.themes.Perfect >/dev/null && exit 0
+
+uci set luci.themes.Perfect=/luci-static/perfect
+uci set luci.main.mediaurlbase=/luci-static/perfect
+uci commit luci
+
+exit 0

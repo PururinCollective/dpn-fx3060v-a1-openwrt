@@ -71,6 +71,11 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   OLT ⇄ NijikaWrt with live 1490/1310 nm light, RX/TX power, WAN address),
   then the WAN connections (VLAN, type, protocol, address, gateway, state)
   like the stock Device Status page.
+* **Perfect theme** (the default LuCI theme): the look of
+  [Perfect](https://perfect.my/) - blue header and footer, lime buttons with
+  hard shadows, the Inter font, the Perfect logo, and the Perfect cat on the
+  login page. Bootstrap is still there: System > System > Language and Style.
+  A theme picked there is kept across upgrades.
 * **ISP management off**: the stock TR-069 client and SNMP agent do not run
   under NijikaWrt (Nijika > Settings turns them back on), so the ISP's ACS
   cannot reconfigure the stock stack behind OpenWrt's back. The TR-069 WAN
@@ -330,11 +335,13 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
   (`COLOR=truecolor STATE=O3 RX=-28.4 tools/banner-preview.sh`; no fibre:
   `STATE=O1.1 LOS=1 RX=-inf TX=-inf`, no reading yet: `NODATA=1`).
 * `tools/luci-mock/server.py`: run the LuCI app in a browser against
-  synthetic data (after `./build.sh rootfs assemble`).
+  synthetic data (after `./build.sh rootfs assemble`). Pages use the Perfect
+  theme (`LUCI_THEME=bootstrap` for Bootstrap), `/cgi-bin/luci/login` is the
+  login page, and `package/*/htdocs` is served live, so edits need no rebuild.
 * `tests/run.sh`: offline regression suite (about 20 s, no router): shell
   syntax, JSON, lint rules, the parsers against real captures, the stock
   dnsmasq wrapper, `/etc/config/rtk` quoting, the boot-env hook, every factory
-  installer scenario, the banner. Run it before every image.
+  installer scenario, the banner, the theme defaults. Run it before every image.
 * `tools/fwu-dryrun.sh`: runs the factory installer shipped in the image on a
   PC against stubbed stock tools through eleven upgrade situations (fresh
   install, reinstall, U-Boot env out of sync, corrupt upload, wrong device,
@@ -369,4 +376,6 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
 
 * Anime4000: NIJIKA firmware and the [RTL960x](https://github.com/Anime4000/RTL960x) project
 * OpenWrt and LuCI projects
+* Perfect (perfect.my): logo, colours and cat artwork used by the Perfect theme
+* The Inter Project Authors: the Inter font (SIL Open Font License 1.1)
 * Realtek / D-Link for the stock firmware this builds upon (not included)
