@@ -18,6 +18,11 @@
 #                       the client configuration of a peer whose key pair
 #                       was generated here
 #   wireguard genkey | genpsk | pubkey (private key on stdin)
+#   wireguard debug on|off
+#                       WireGuard's kernel log (handshakes received, sent,
+#                       rejected; packets from addresses outside a peer's
+#                       allowed IPs) in dmesg, through dynamic debug; off
+#                       again after a reboot
 #
 # Peers get the access of a LAN device: the router, the LAN, and the
 # internet through the WAN (masqueraded). Allowed IPs outside wg0's own
@@ -489,6 +494,20 @@ cmd_client() {
 	return 0
 }
 
+cmd_debug() { # on|off
+	local ctl=/sys/kernel/debug/dynamic_debug/control
+	[ -d /sys/module/wireguard ] || { echo "the WireGuard module is not loaded" >&2; exit 1; }
+	[ -w "$ctl" ] || mount -t debugfs debugfs /sys/kernel/debug 2>/dev/null
+	[ -w "$ctl" ] || { echo "no dynamic debug ($ctl)" >&2; exit 1; }
+	case "$1" in
+		on) echo 'module wireguard +p' > "$ctl"
+		    echo "WireGuard debug log on: dmesg | grep wireguard (keepalives included)" ;;
+		off) echo 'module wireguard -p' > "$ctl"
+		     echo "WireGuard debug log off" ;;
+		*) echo "usage: ${0##*/} debug on|off" >&2; exit 1 ;;
+	esac
+}
+
 mkdir -p "$STATE"
 chmod 0700 "$STATE"
 config_load nijika
@@ -500,11 +519,12 @@ case "$1" in
 	firewall) cmd_firewall ;;
 	status) cmd_status ;;
 	client) cmd_client "$2" ;;
+	debug) cmd_debug "$2" ;;
 	genkey) wg genkey ;;
 	genpsk) wg genpsk ;;
 	pubkey) wg pubkey ;;
 	*)
-		echo "usage: ${0##*/} up | retry | down | firewall | status | client <section> | genkey | genpsk | pubkey" >&2
+		echo "usage: ${0##*/} up | retry | down | firewall | status | client <section> | debug on|off | genkey | genpsk | pubkey" >&2
 		exit 1
 		;;
 esac

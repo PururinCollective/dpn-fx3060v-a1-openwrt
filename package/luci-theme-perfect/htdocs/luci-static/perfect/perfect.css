@@ -35,6 +35,8 @@
 	--p-muted: #5a6578;
 	--p-line: #dde3ef;
 	--p-shadow: 3px 3px 0 var(--p-dark);
+	/* the button at the end of an input: list "x" and "+", password eye */
+	--p-side-btn: 32px;
 
 	/* Bootstrap variables, retinted */
 	--background-color-h: 225;
@@ -473,6 +475,98 @@ input[type="radio"]:focus::before { box-shadow: 2px 2px 0 var(--p-blue); }
 .cbi-dropdown[open] > ul.dropdown > li[selected]:hover {
 	background: var(--p-blue);
 	color: #fff;
+}
+
+/* an input with a button glued to it (LuCI's .control-group: password
+ * reveal, list "+", ...): one control, the button shares the input's right
+ * border and has no shadow of its own */
+.control-group { gap: 0; }
+.control-group > input:not(:last-child),
+.control-group > select:not(:last-child) {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+.control-group > input + :not(input):not(select),
+.control-group > select + :not(input):not(select) {
+	margin-left: -2px;
+	border-radius: 0 5px 5px 0;
+	box-shadow: none;
+}
+.control-group > input + .cbi-button,
+.control-group > select + .cbi-button {
+	flex: 0 0 var(--p-side-btn);
+	width: var(--p-side-btn);
+	min-width: 0;
+	padding: 0;
+	text-align: center;
+}
+.control-group > input + .cbi-button,
+.control-group > input + .cbi-button:hover,
+.control-group > input + .cbi-button:focus,
+.control-group > input + .cbi-button:active,
+.control-group > select + .cbi-button:hover {
+	transform: none;
+	box-shadow: none;
+}
+.control-group > input + .cbi-button:hover,
+.control-group > select + .cbi-button:hover { background: var(--p-lime); }
+.control-group > input:focus { position: relative; z-index: 1; }
+
+/* lists (DynamicList): entries look like the inputs; the remove "x" is
+ * Bootstrap's ::after, whose width LuCI takes as the click area, styled
+ * like the remove buttons */
+.cbi-dynlist > .item {
+	background: #fff;
+	color: var(--p-ink);
+	border: 2px solid var(--p-dark);
+	border-radius: 5px;
+	box-shadow: none;
+	margin-bottom: 6px;
+	padding: 5px calc(var(--p-side-btn) + 6px) 5px 8px;
+}
+.cbi-dynlist > .item::after {
+	top: -2px;
+	right: -2px;
+	bottom: -2px;
+	width: var(--p-side-btn);
+	justify-content: center;
+	padding: 0;
+	background: var(--p-grey);
+	color: var(--error-color-low);
+	border: 2px solid var(--p-dark);
+	border-radius: 0 5px 5px 0;
+	box-shadow: none;
+	font-size: 1.15em;
+	cursor: pointer;
+	transition: background-color .15s, color .15s;
+}
+.cbi-dynlist > .item:hover::after {
+	background: var(--error-color-medium);
+	color: #fff;
+	box-shadow: none;
+}
+.cbi-dynlist > .item:focus { border-color: var(--p-blue); box-shadow: 3px 3px 0 var(--p-blue); }
+
+/* LuCI's reveal button after a password field (a "\2217" glyph) as an eye,
+ * crossed out while the password is shown */
+.control-group > input.cbi-input-password + .cbi-button {
+	position: relative;
+	color: transparent;
+}
+.control-group > input.cbi-input-password + .cbi-button::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	margin: auto;
+	width: 18px;
+	height: 18px;
+	background: var(--p-dark);
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12C5 6.5 8.5 4.5 12 4.5S19 6.5 22 12C19 17.5 15.5 19.5 12 19.5S5 17.5 2 12Z'/%3E%3Ccircle cx='12' cy='12' r='3.2'/%3E%3C/svg%3E") center / contain no-repeat;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12C5 6.5 8.5 4.5 12 4.5S19 6.5 22 12C19 17.5 15.5 19.5 12 19.5S5 17.5 2 12Z'/%3E%3Ccircle cx='12' cy='12' r='3.2'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.control-group > input.cbi-input-password[type="text"] + .cbi-button::before {
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12C5 6.5 8.5 4.5 12 4.5S19 6.5 22 12C19 17.5 15.5 19.5 12 19.5S5 17.5 2 12Z'/%3E%3Ccircle cx='12' cy='12' r='3.2'/%3E%3Cpath d='M4 20L20 4'/%3E%3C/svg%3E");
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12C5 6.5 8.5 4.5 12 4.5S19 6.5 22 12C19 17.5 15.5 19.5 12 19.5S5 17.5 2 12Z'/%3E%3Ccircle cx='12' cy='12' r='3.2'/%3E%3Cpath d='M4 20L20 4'/%3E%3C/svg%3E");
 }
 
 /* ------------------------------------------------------------- tabs */

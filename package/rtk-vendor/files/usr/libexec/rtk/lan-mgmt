@@ -9,6 +9,12 @@
 #    built-in HTTPS listener on 443 (not configurable in boa.conf):
 #      nijika.vendor.boa=hidden  only from the router itself (SSH tunnel)
 #      nijika.vendor.boa=lan     also from the LAN bridge
+#  - ping from the internet (nijika.firewall.wan_ping, default on): the
+#    stock remote access table (ACC_TBL, "icmp") drops echo requests from
+#    the WAN in its inacc chain; they are accepted before it, at most 10 a
+#    second, IPv4 and IPv6. Path MTU checks from outside (ping -M do -s ...)
+#    need them; ICMP errors of connections (fragmentation needed, packet
+#    too big) pass the stock RELATED rule either way.
 
 . /lib/functions.sh
 
@@ -16,6 +22,7 @@ config_load nijika
 config_get_bool enabled vendor lan_mgmt 1
 config_get lan vendor lan_ifname br0
 config_get boa vendor boa hidden
+config_get_bool wan_ping firewall wan_ping 1
 
 ipt()  { /usr/libexec/rtk/run /bin/iptables "$@" 2>/dev/null; }
 ip6t() { /usr/libexec/rtk/run /bin/ip6tables "$@" 2>/dev/null; }
@@ -31,6 +38,17 @@ ensure() {
 			while $t -C INPUT "$@"; do $t -D INPUT "$@" || break; done
 		fi
 	done
+}
+
+# ensure_fam <ipt|ip6t> <present|absent> <rule...>
+ensure_fam() {
+	local t="$1" want="$2"
+	shift 2
+	if [ "$want" = present ]; then
+		$t -C INPUT "$@" || $t -I INPUT 1 "$@"
+	else
+		while $t -C INPUT "$@"; do $t -D INPUT "$@" || break; done
+	fi
 }
 
 boa_port=$(sed -n 's/^Port[[:space:]]\+\([0-9]\+\).*/\1/p' /rtk/home/httpd/boa.conf 2>/dev/null)
@@ -56,4 +74,12 @@ for port in $boa_ports; do
 		ensure present ! -i lo -p tcp --dport "$port" -j DROP
 	fi
 done
+
+limit="-m limit --limit 10/s --limit-burst 20"
+want=absent
+[ "$wan_ping" = 1 ] && want=present
+# shellcheck disable=SC2086
+ensure_fam ipt "$want" ! -i "$lan" -p icmp --icmp-type echo-request $limit -j ACCEPT
+# shellcheck disable=SC2086
+ensure_fam ip6t "$want" ! -i "$lan" -p icmpv6 --icmpv6-type echo-request $limit -j ACCEPT
 exit 0

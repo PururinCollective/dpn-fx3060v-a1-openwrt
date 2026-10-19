@@ -57,6 +57,10 @@ config firewall 'firewall'
 	# stock configuration is shared with the stock firmware bank.
 	option spi_ipv4 'off'
 	option spi_ipv6 'off'
+	# Answer ping from the internet (IPv4 and IPv6, at most 10 a second):
+	# the stock remote access settings drop it. Path MTU checks from
+	# outside need it. The stock configuration is not changed.
+	option wan_ping '1'
 
 config banner 'banner'
 	# always | ssh | never (at 115200 baud the serial console takes a moment)

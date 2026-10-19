@@ -4,7 +4,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint parsers wrapper ucimirror spi apply easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme
+# Groups: syntax json lint parsers wrapper ucimirror spi lanmgmt apply easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -582,7 +582,7 @@ t_theme() {
 	check "files referenced by the templates and perfect.css exist" sh -c '
 		cd "$1/htdocs/luci-static/perfect" || exit 1
 		for f in $(sed -n "s|.*{{ media }}/\([^\"?]*\).*|\1|p" "$1"/root/usr/share/ucode/luci/template/themes/perfect/*.ut) \
-		         $(sed -n "s|.*url(\"\([^\"]*\)\").*|\1|p" perfect.css); do
+		         $(grep -o "url(\"[^\"]*\")" perfect.css | grep -v "url(\"data:" | sed "s|^url(\"||; s|\")\$||"); do
 			[ -f "$f" ] || { echo "missing $f"; exit 1; }
 		done' _ "$P"
 	if [ -d "$TOP/build/stage/www/luci-static/bootstrap" ]; then
@@ -1054,12 +1054,64 @@ t_kmod() {
 	fi
 }
 
+# --------------------------------------------------------------- lanmgmt
+
+# lan-mgmt: LAN access to SSH/LuCI, the stock GUI's ports, ping from the WAN
+t_lanmgmt() {
+	echo "lanmgmt (router access rules in the stock iptables, ping from the WAN)"
+	local D="$W/lanmgmt"
+	mkdir -p "$D"
+	# the stock iptables in the chroot: rules in a file, -C/-I/-D on it
+	cat > "$D/run" <<RUN
+#!/bin/sh
+t=\${1##*/}; shift
+op=\$1 chain=\$2; shift 2
+[ "\$op" = -I ] && [ "\$1" = 1 ] && shift
+line="\$t \$chain \$*"
+case "\$op" in
+	-C) grep -qxF -- "\$line" "$D/rules" 2>/dev/null ;;
+	-I) echo "\$line" >> "$D/rules" ;;
+	-D) grep -qxF -- "\$line" "$D/rules" || exit 1
+	    awk -v l="\$line" '!d && \$0 == l { d = 1; next } { print }' "$D/rules" > "$D/rules.t"; mv "$D/rules.t" "$D/rules" ;;
+esac
+RUN
+	chmod +x "$D/run"
+	cat > "$D/functions.sh" <<FN
+config_load() { . "$D/cfg"; }
+config_get() { eval "\$1=\\\${CFG_\${2}_\${3}-\\\$4}"; }
+config_get_bool() { local _v; config_get _v "\$2" "\$3" "\$4"; case "\$_v" in 1|on|true|yes|enabled) _v=1 ;; *) _v=0 ;; esac; eval "\$1=\\\$_v"; }
+FN
+	sed -e "s|^\. /lib/functions.sh|. $D/functions.sh|" -e "s|/usr/libexec/rtk/run|$D/run|g" \
+		-e "s|/rtk/home/httpd/boa.conf|$D/boa.conf|" \
+		"$TOP/package/rtk-vendor/files/usr/libexec/rtk/lan-mgmt" > "$D/lan-mgmt"
+	echo 'Port 8080' > "$D/boa.conf"
+	lm() { "$BB" sh "$D/lan-mgmt"; }
+
+	: > "$D/cfg"; : > "$D/rules"
+	lm
+	check "defaults: SSH/LuCI from the LAN, stock GUI ports closed to all but the router itself" sh -c "
+		r='$D/rules'; grep -qx 'iptables INPUT -i br0 -p tcp --dport 22 -j ACCEPT' \$r &&
+		grep -qx 'ip6tables INPUT -i br0 -p tcp --dport 80 -j ACCEPT' \$r &&
+		grep -qx 'iptables INPUT ! -i lo -p tcp --dport 8080 -j DROP' \$r && grep -qx 'iptables INPUT ! -i lo -p tcp --dport 443 -j DROP' \$r"
+	check "default: ping from the WAN answered (IPv4 and IPv6, rate-limited), not the LAN rule" sh -c "
+		r='$D/rules'; grep -qx 'iptables INPUT ! -i br0 -p icmp --icmp-type echo-request -m limit --limit 10/s --limit-burst 20 -j ACCEPT' \$r &&
+		grep -qx 'ip6tables INPUT ! -i br0 -p icmpv6 --icmpv6-type echo-request -m limit --limit 10/s --limit-burst 20 -j ACCEPT' \$r &&
+		! grep -q 'ip6tables INPUT .*-p icmp --icmp-type' \$r"
+	n=$(wc -l < "$D/rules")
+	lm
+	check "run again (housekeep every minute): nothing added twice" sh -c "[ \$(wc -l < '$D/rules') -eq $n ]"
+	echo "CFG_firewall_wan_ping=0" > "$D/cfg"
+	lm
+	check "wan_ping off: the ping rules removed, the rest kept" sh -c "
+		! grep -q echo-request '$D/rules' && grep -q 'dport 22 -j ACCEPT' '$D/rules'"
+}
+
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint parsers wrapper ucimirror spi apply easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme}"
+groups="${*:-syntax json lint parsers wrapper ucimirror spi lanmgmt apply easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|easymesh|ddns|wireguard|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
+		syntax|json|lint|parsers|wrapper|ucimirror|spi|lanmgmt|apply|easymesh|ddns|wireguard|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

@@ -371,6 +371,7 @@ nijika banner | version | rtk [cmd]
 | `uci.tables` | `ATM_VC_TBL WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL` | chain tables mirrored into `/etc/config/rtk` |
 | `firewall.spi_ipv4` | `off` | stock *IPv4 SPI Firewall*, pinned at boot: `off` (allow both ways), `on` (stock: drop new incoming), `keep` (whatever the stock GUI set) |
 | `firewall.spi_ipv6` | `off` | the same for IPv6 (`off`: LAN devices reachable over IPv6) |
+| `firewall.wan_ping` | `1` | answer ping from the internet (IPv4/IPv6, max 10/s): the stock remote access settings drop it; path MTU checks from outside need it |
 
 ## The stock configuration as UCI (`/etc/config/rtk`)
 

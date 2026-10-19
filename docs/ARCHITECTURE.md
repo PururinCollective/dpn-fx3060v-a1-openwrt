@@ -342,6 +342,11 @@ reload trigger on `nijika`):
   else the first DDNS host name, else the WAN's public IPv4 (`ddns wan`, no
   lookup), else a global IPv6 address of the router (behind CGNAT nothing
   reaches the router over IPv4).
+* `wireguard debug on|off`: WireGuard's own kernel log through dynamic
+  debug (`dmesg | grep wireguard`): handshakes sent, received and
+  rejected, packets from addresses outside a peer's allowed IPs. The
+  quickest way to tell "nothing arrives" (ISP, path) from "arrives but is
+  refused" (keys, preshared key, allowed IPs).
 * rpcd: `wg_status` (`wg show wg0 dump` per peer: handshake, transfer,
   endpoint), `wg_keys` (key pair + preshared key, or the public key of a
   private key), `wg_client` (configuration and its QR code as SVG; write
@@ -354,6 +359,10 @@ The stock `startup` builds the iptables/ebtables ruleset, NAT, PPPoE
 MIB. OpenWrt's `firewall4`, `dnsmasq`, `odhcpd` and `ppp` are not installed
 (the stock kernel has no nftables anyway). `lan-mgmt` inserts accept rules for
 TCP 22/80 on `br0` into the stock INPUT chain and re-checks them every minute.
+It also accepts ping (ICMP/ICMPv6 echo request, max 10/s) from anywhere but
+the LAN when `nijika.firewall.wan_ping` is on (default): the stock remote
+access table (`ACC_TBL`, `icmp` without the WAN bit) puts
+`-A inacc ! -i br0 -p icmp --icmp-type 8 -j DROP` in the stock chain.
 
 ### Stock SPI firewall
 

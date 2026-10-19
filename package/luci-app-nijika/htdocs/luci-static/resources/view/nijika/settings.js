@@ -92,6 +92,11 @@ return view.extend({
 		o.value('keep', _('Keep stock GUI value'));
 		o.default = 'off';
 
+		o = s.option(form.Flag, 'wan_ping', _('Answer ping from the internet'),
+			_('The stock remote access settings drop ping (ICMP echo) from the WAN. On: the router answers it, IPv4 and IPv6, at most 10 a second, so path MTU and reachability checks from outside work. The stock configuration is not changed. Applied right away.'));
+		o.default = '1';
+		o.rmempty = false;
+
 		s = m.section(form.NamedSection, 'banner', 'banner', _('Login banner'));
 		o = s.option(form.ListValue, 'animate', _('Animation'));
 		o.value('always', _('Always (takes a moment on the 115200 baud serial console)'));
