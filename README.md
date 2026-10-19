@@ -42,6 +42,16 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   `https://b.hitoha.moe/dns-query`. The stock DNS server keeps serving the LAN
   and sends every lookup to a local `https-dns-proxy`, except the ISP's own
   domains (voice/IMS, TR-069), so phone and remote management keep working.
+* **Dynamic DNS** (Services > DDNS) in place of the stock client: the stock
+  list (DynDNS, No-IP, ChangeIP, GnuDIP, Dynu, FreeDNS; DtDNS closed in 2018)
+  plus freedns.afraid.org by update URL and Cloudflare (e-mail + global API
+  key like ddclient, or an API token; several hosts per zone). IPv4 only,
+  over HTTPS. The WAN's own address (`ppp0`) is published when it is public;
+  behind carrier-grade NAT (100.64.0.0/10) or another private/reserved range
+  the address the internet sees comes from a lookup service
+  (`ip1.dynupdate.no-ip.com` first) and the page warns that it is shared and
+  recommends IPv6. The stock `updatedd` does not run (it would publish
+  100.64.x.x over plain HTTP).
 * **Stock SPI firewall off**: the stock GUI's *SPI Firewall* switches (IPv4 and
   IPv6, incoming and outgoing) are set to off at every boot, so a wrong toggle
   can no longer cut the LAN off. NAT still keeps unsolicited IPv4 out; on IPv6
@@ -66,6 +76,7 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
     (LAN DHCP client, no DHCP server), which only suits a spare unit.
   * Services > VoIP: SIP accounts of both phone ports (a tab each), primary
     and backup proxy.
+  * Services > DDNS: see above; status per entry, *Update now*.
   * PON > Authentication: LOID, PLOAM, device type, OLT mode.
 * **Status > Overview**: System, then PON / ONT (the fibre link drawn as
   OLT ⇄ NijikaWrt with live 1490/1310 nm light, RX/TX power, WAN address),
@@ -306,6 +317,11 @@ nijika banner | version | rtk [cmd]
 | `doh.resolver_url` | `https://b.hitoha.moe/dns-query` | RFC 8484 resolver |
 | `doh.bootstrap_dns` | `1.1.1.1,8.8.8.8` | plain DNS used only to look up the resolver's host name |
 | `doh.listen_port` | `5053` | local port of the proxy (127.0.0.1) |
+| `ddns.enabled` | `1` | dynamic DNS (Services > DDNS) for the enabled `ddns_host` entries |
+| `ddns.interface` | `auto` | WAN whose address is published: `auto` = the default route's (`ppp0`), or an interface name |
+| `ddns.ip_url` | `http://ip1.dynupdate.no-ip.com/`, `https://api.ipify.org/`, `https://ipv4.icanhazip.com/` | where the public address is asked when the WAN's is not public (CGNAT, private, reserved) |
+| `ddns.check_interval` | `600` | seconds between those lookups (the WAN itself is checked every minute) |
+| `ddns.force_interval` | `86400` | an unchanged address is sent again after this many seconds |
 | `uci.tables` | `ATM_VC_TBL WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL` | chain tables mirrored into `/etc/config/rtk` |
 | `firewall.spi_ipv4` | `off` | stock *IPv4 SPI Firewall*, pinned at boot: `off` (allow both ways), `on` (stock: drop new incoming), `keep` (whatever the stock GUI set) |
 | `firewall.spi_ipv6` | `off` | the same for IPv6 (`off`: LAN devices reachable over IPv6) |

@@ -121,6 +121,18 @@
 		}
 	},
 
+	"admin/services/ddns": {
+		"title": "DDNS",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "nijika/ddns"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
 	"admin/nijikawrt": {
 		"title": "Nijika",
 		"order": 80,

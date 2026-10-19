@@ -117,8 +117,10 @@ Other build-time changes to `/rtk`:
   (MQTT to `iot-*.aliyuncs.com`, cloud firmware/config push, remote
   property/service calls, AWSS WiFi provisioning, ALCS LAN control). An inert
   placeholder of the same name keeps `startup`/`libmib` happy. TR-369
-  (`obuspa`), DDNS and speedtest are kept: they only talk to endpoints
-  configured in the MIB (ISP controller, your DDNS provider) or when used.
+  (`obuspa`) and speedtest are kept: they only talk to endpoints
+  configured in the MIB (ISP controller) or when used.
+* `bin/updatedd` (stock DDNS client) moved to `lib/nijika/updatedd`; the
+  wrapper in its place exits: OpenWrt does dynamic DNS (see below).
 * `bin/cwmpClient` (TR-069 client) and `bin/snmpd` become wrappers that run
   the real binaries (moved to `lib/nijika/`) only when
   `nijika.vendor.tr069` / `nijika.vendor.snmp` are on, through switch files
@@ -263,6 +265,43 @@ starts dnsmasq. The package's own init script (built around OpenWrt's dnsmasq
 and nftables) is removed at assembly. The router's own lookups already go to
 the stock dnsmasq (`nameserver 127.0.0.1` in the stock resolv.conf), so they
 use DoH too.
+
+## Dynamic DNS
+
+The stock client (`updatedd`, started per `MIB_DDNS_TBL` entry by `systemd`'s
+`do_ddns_ctrl` on WAN events) sends the WAN interface's own address over
+plain HTTP; behind carrier-grade NAT that is a 100.64.x.x address nobody
+can reach. Under NijikaWrt it does not run (wrapper, see above) and
+`/usr/libexec/nijika/ddns` does the job, configured in `nijika.ddns` and
+`ddns_host` sections (LuCI: Services > DDNS):
+
+* `nijika-ddns` (START=96, procd) runs `ddns run` when DDNS is on and an
+  entry is enabled; a nijika change restarts it (`procd_set_param file`).
+  Every minute it reads the IPv4 address of the default route's interface
+  (`ddns.interface auto`, `ppp0` with PPPoE). A public address is published
+  as is; for 100.64.0.0/10 (CGNAT), RFC 1918 or another IANA special-purpose
+  range (DS-Lite's 192.0.0.2, TEST-NETs, ...) the public address comes from
+  the first `ddns.ip_url` that answers with one, again after
+  `check_interval` or when the WAN address changes, and the log and the
+  page warn (shared address, use IPv6).
+* An entry is sent when the address changed, after `force_interval`
+  (default a day, as the stock `DDNS_SYNC_INTERVAL`), or on *Update now*
+  (`ddns update -f`, SIGUSR1 to the service). Its state lives in
+  `/var/run/nijika-ddns/h.<id>`, `<id>` from its settings, so a changed entry
+  is sent again at once. Temporary errors (no connection, HTTP 5xx, `911`)
+  retry after 5 to 30 minutes; permanent ones (`badauth`, `nohost`,
+  Cloudflare authentication) wait for a settings change or *Update now*, as
+  the DynDNS protocol asks.
+* Providers: DynDNS v2 (`/nic/update`) for DynDNS, No-IP, Dynu, ChangeIP
+  and FreeDNS (afraid.org user name and password); GnuDIP (challenge, salted
+  MD5); freedns.afraid.org update URL or token (`update.php?<token>`,
+  `sync.afraid.org/u/<token>/`); Cloudflare API v4 (zone id cached, existing
+  A records only, PATCH of the content so proxy and TTL stay; e-mail + global
+  key as `X-Auth-Email`/`X-Auth-Key`, or a token as `Authorization: Bearer`).
+* curl (OpenWrt package, CA bundle from `ca-bundle`) gets URLs and
+  credentials as a config on stdin (`-K -`), so they never show in `ps`.
+* rpcd: `ddns_status` (`ddns status`: the address check, each entry's last
+  result, the stock entries for a hint on the page), `ddns_update`.
 
 ## Firewall and services
 

@@ -84,6 +84,39 @@ config doh 'doh'
 	option bootstrap_dns '1.1.1.1,8.8.8.8'
 	option listen_port '5053'
 
+config ddns 'ddns'
+	# Dynamic DNS (LuCI: Services > DDNS, /usr/libexec/nijika/ddns): the A
+	# records (IPv4 only) of the ddns_host entries follow the router's
+	# public address. Replaces the stock DDNS client (MIB_DDNS_TBL).
+	option enabled '1'
+	# The WAN whose address is published: auto = the one with the default
+	# route (ppp0 with PPPoE), or an interface name.
+	option interface 'auto'
+	# When that address is not public (carrier-grade NAT 100.64.0.0/10, a
+	# private or reserved range), the address the internet sees comes from
+	# the first of these that answers (plain text), and the status warns:
+	# it is shared, connections from the internet do not reach the router.
+	list ip_url 'http://ip1.dynupdate.no-ip.com/'
+	list ip_url 'https://api.ipify.org/'
+	list ip_url 'https://ipv4.icanhazip.com/'
+	# Seconds between those lookups; an unchanged address is sent again
+	# after force_interval (stock DDNS_SYNC_INTERVAL: 86400).
+	option check_interval '600'
+	option force_interval '86400'
+
+# One per provider account, e.g.:
+# config ddns_host
+#	option enabled '1'
+#	# dyndns noip changeip gnudip dynu freedns (afraid.org user name and
+#	# password), afraid (freedns.afraid.org update URL or token: url),
+#	# cloudflare (zone, email + api_key = global API key, or api_key alone
+#	# = API token)
+#	option provider 'cloudflare'
+#	option hostname 'example.org,www.example.org'
+#	option zone 'example.org'
+#	option email 'me@example.org'
+#	option api_key '...'
+
 config ui 'ui'
 	# Developer options: show expert pages in LuCI (PON > ONT Identity)
 	option developer '0'

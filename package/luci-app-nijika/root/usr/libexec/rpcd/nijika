@@ -700,6 +700,31 @@ m_wan_status() {
 	json_dump
 }
 
+# --- dynamic DNS (Services > DDNS) -----------------------------------------
+
+DDNS=/usr/libexec/nijika/ddns
+
+# the address check, each entry's last result, the stock entries
+m_ddns_status() {
+	"$DDNS" status 2>/dev/null || err "no DDNS status"
+}
+
+# update every entry now: the service does it when it runs, else one pass
+# in the background (the page polls ddns_status)
+m_ddns_update() {
+	local running=0
+	"$DDNS" status 2>/dev/null | grep -q '"running": true' && running=1
+	if [ $running = 1 ]; then
+		"$DDNS" update -f >/dev/null 2>&1
+	else
+		( "$DDNS" update -f >/dev/null 2>&1 & )
+	fi
+	json_init
+	json_add_boolean ok 1
+	json_add_boolean running "$running"
+	json_dump
+}
+
 # --- PON WAN ---------------------------------------------------------------
 
 # {"index": n}: delete WAN connection n (ATM_VC_TBL record), see wan_delete
@@ -889,7 +914,9 @@ case "$1" in
 	"easymesh_pair": {},
 	"portfw_get": {},
 	"portfw_set": { "enable": false, "rules": [] },
-	"wan_status": {}
+	"wan_status": {},
+	"ddns_status": {},
+	"ddns_update": {}
 }
 EOF
 		;;
@@ -925,6 +952,8 @@ EOF
 			portfw_get) m_portfw_get ;;
 			portfw_set) m_portfw_set "$input" ;;
 			wan_status) m_wan_status ;;
+			ddns_status) m_ddns_status ;;
+			ddns_update) m_ddns_update ;;
 			*) err "unknown method" ;;
 		esac
 		;;

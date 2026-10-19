@@ -1,0 +1,11 @@
+#!/bin/sh
+# NijikaWrt wrapper for the stock DDNS client (the real one is
+# /lib/nijika/updatedd): not started. Under NijikaWrt, OpenWrt's
+# /usr/libexec/nijika/ddns (LuCI: Services > DDNS) does dynamic DNS, over
+# HTTPS and with the public address when the WAN is behind carrier-grade
+# NAT, where the stock client would publish the WAN's own 100.64.x.x
+# address. The stock entries (MIB_DDNS_TBL, shared with the stock firmware
+# bank) are left as they are.
+
+logger -t updatedd "stock DDNS client not started: NijikaWrt does DDNS (Services > DDNS)" 2>/dev/null
+exit 0

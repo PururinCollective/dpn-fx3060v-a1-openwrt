@@ -95,6 +95,16 @@ if [ -f "$RTKDIR/bin/hostapd" ] && ! grep -q "NijikaWrt wrapper" "$RTKDIR/bin/ho
 	log "moved bin/hostapd to lib/nijika/hostapd (BSS colouring)"
 fi
 
+# Stock DDNS client: OpenWrt's /usr/libexec/nijika/ddns (Services > DDNS)
+# does dynamic DNS instead; the wrapper (rtk/bin/updatedd) keeps the stock
+# one, kept as lib/nijika/updatedd, from publishing the WAN's own address
+# (100.64.x.x behind CGNAT) over plain HTTP next to it.
+if [ -f "$RTKDIR/bin/updatedd" ] && ! grep -q "NijikaWrt wrapper" "$RTKDIR/bin/updatedd" 2>/dev/null; then
+	mkdir -p "$RTKDIR/lib/nijika"
+	mv "$RTKDIR/bin/updatedd" "$RTKDIR/lib/nijika/updatedd"
+	log "moved bin/updatedd to lib/nijika/updatedd (DDNS by OpenWrt)"
+fi
+
 # Stock syslog: /rtk/dev is the system /dev. The stock slogd would take
 # /dev/log away from OpenWrt's logd, and without it the stock services'
 # debug chatter (VoIP_maserati: about a line a second at info level) would

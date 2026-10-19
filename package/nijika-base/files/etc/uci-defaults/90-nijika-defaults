@@ -52,6 +52,18 @@ set nijika.firewall.spi_ipv6='off'
 commit nijika
 END
 
+uci -q get nijika.ddns >/dev/null || uci -q batch <<'END'
+set nijika.ddns=ddns
+set nijika.ddns.enabled='1'
+set nijika.ddns.interface='auto'
+add_list nijika.ddns.ip_url='http://ip1.dynupdate.no-ip.com/'
+add_list nijika.ddns.ip_url='https://api.ipify.org/'
+add_list nijika.ddns.ip_url='https://ipv4.icanhazip.com/'
+set nijika.ddns.check_interval='600'
+set nijika.ddns.force_interval='86400'
+commit nijika
+END
+
 uci -q get nijika.ui >/dev/null || uci -q batch <<'END'
 set nijika.ui=ui
 set nijika.ui.developer='0'

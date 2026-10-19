@@ -230,6 +230,8 @@ return baseclass.extend({
 	callPortfwGet: rpc.declare({ object: 'nijika', method: 'portfw_get' }),
 	callPortfwSet: rpc.declare({ object: 'nijika', method: 'portfw_set', params: [ 'enable', 'rules' ] }),
 	callWanStatus: rpc.declare({ object: 'nijika', method: 'wan_status', expect: { wans: [] } }),
+	callDdnsStatus: rpc.declare({ object: 'nijika', method: 'ddns_status' }),
+	callDdnsUpdate: rpc.declare({ object: 'nijika', method: 'ddns_update' }),
 	callChain: rpc.declare({ object: 'nijika', method: 'chain', params: [ 'table' ] }),
 	callQuickGet: rpc.declare({ object: 'nijika', method: 'quick_get' }),
 	callQuickSet: rpc.declare({ object: 'nijika', method: 'quick_set', params: [ 'pon', 'wan', 'wifi', 'voip' ] }),

@@ -4,7 +4,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint parsers wrapper ucimirror spi apply easymesh helpers stockshell bootenv fwu banner theme
+# Groups: syntax json lint parsers wrapper ucimirror spi apply easymesh ddns helpers stockshell bootenv fwu banner theme
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -590,12 +590,242 @@ t_theme() {
 	fi
 }
 
+# ------------------------------------------------------------------- ddns
+
+t_ddns() {
+	echo "ddns (address check, providers, secrets off the command line)"
+	[ -n "$PY" ] || { skp "ddns" "no python3 (fake jsonfilter)"; return; }
+	local D="$W/ddns" st hp
+	mkdir -p "$D/bin" "$D/state"
+	# fakes: curl answers from $D/resp (glob|code|body) and logs its
+	# arguments and the config it got on stdin; ip, logger, jsonfilter
+	cat > "$D/bin/curl" <<CURL
+#!/bin/sh
+cfg=
+case " \$* " in *" -K - "*) cfg=\$(cat) ;; esac
+url=\$(printf '%s\n' "\$cfg" | sed -n 's/^url = "\(.*\)"\$/\1/p' | tail -n 1)
+[ -n "\$url" ] || for a in "\$@"; do url=\$a; done
+{ printf 'ARGS %s\n' "\$*"; printf '%s\n' "\$cfg" | sed 's/^/CFG /'; printf 'URL %s\n' "\$url"; } >> "$D/curl.log"
+code=000 body=
+while IFS='|' read -r pat c b; do
+	case "\$url" in \$pat) code=\$c body=\$b; break ;; esac
+done < "$D/resp"
+w=0; case " \$* " in *" -w "*) w=1 ;; esac
+if [ "\$code" = 000 ]; then echo 'curl: (6) Could not resolve host: mock' >&2; [ \$w = 1 ] && printf '\n000'; exit 6; fi
+case " \$* " in *" -fsS "*) [ "\$code" -ge 400 ] && exit 22 ;; esac
+printf '%s' "\$body"
+[ \$w = 1 ] && printf '\n%s' "\$code"
+exit 0
+CURL
+	cat > "$D/bin/ip" <<IP
+#!/bin/sh
+case "\$*" in
+	"-4 route show default") cat "$D/route" 2>/dev/null ;;
+	"-4 -o addr show dev "*) cat "$D/addr.\$6" 2>/dev/null ;;
+esac
+IP
+	printf '#!/bin/sh\necho "$*" >> %s/log\n' "$D" > "$D/bin/logger"
+	cat > "$D/bin/jsonfilter" <<'JF'
+#!/usr/bin/env python3
+import json, re, sys
+a = sys.argv[1:]
+s = a[a.index('-s') + 1]
+e = a[a.index('-e') + 1]
+try:
+    v = json.loads(s)
+    for key, idx in re.findall(r'\.(\w+)|\[(\d+)\]', e[1:]):
+        v = v[int(idx)] if idx else v[key]
+except Exception:
+    sys.exit(1)
+print('true' if v is True else 'false' if v is False else v)
+JF
+	chmod +x "$D/bin/curl" "$D/bin/ip" "$D/bin/logger" "$D/bin/jsonfilter"
+	# config_* over a shell file of CFG_<section>_<option>=... lines
+	cat > "$D/functions.sh" <<FN
+config_load() { . "$D/cfg"; }
+config_get() { eval "\$1=\\\${CFG_\${2}_\${3}-\\\$4}"; }
+config_get_bool() { local _v; config_get _v "\$2" "\$3" "\$4"; case "\$_v" in 1|on|true|yes|enabled) _v=1 ;; *) _v=0 ;; esac; eval "\$1=\\\$_v"; }
+config_foreach() { local _s _l; eval "_l=\\\$CFG_SECTIONS_\$2"; for _s in \$_l; do "\$1" "\$_s"; done; }
+# busybox sh would run its own ip and logger applets
+ip() { "$D/bin/ip" "\$@"; }
+logger() { "$D/bin/logger" "\$@"; }
+FN
+	sed -e "s|^\. /lib/functions.sh|. $D/functions.sh|" -e "s|^STATE=.*|STATE=$D/state|" \
+		"$TOP/package/nijika/files/usr/libexec/nijika/ddns" > "$D/ddns"
+	ddns() { PATH="$D/bin:$PATH" "$BB" sh "$D/ddns" "$@"; }
+	fresh() { rm -f "$D"/state/* "$D/curl.log" "$D/log"; }
+	cfg() { printf '%s\n' "$@" > "$D/cfg"; }
+	resp() { printf '%s\n' "$@" > "$D/resp"; }
+
+	# address classes
+	sed -n -e '/^IP4_RE=/p' -e '/^ip4_num() {/,/^}/p' -e '/^ip4_kind() {/,/^}/p' "$D/ddns" > "$D/kind.sh"
+	st=$(for a in 100.64.0.1 100.127.255.254 100.128.0.1 10.1.2.3 172.31.0.1 172.32.0.1 192.168.1.1 \
+		192.0.2.5 192.0.0.2 198.18.0.1 198.51.100.23 203.0.113.9 224.0.0.1 255.255.255.255 0.1.2.3 \
+		127.0.0.1 169.254.1.1 8.8.8.8 1.2.3.4; do
+		"$BB" sh -c '. "$1"; ip4_kind "$2"' sh "$D/kind.sh" "$a"; done | tr '\n' ' ')
+	check "address classes: CGNAT, private, reserved (TEST-NETs, DS-Lite 192.0.0.2, multicast), public" \
+		[ "$st" = 'cgnat cgnat public private private public private reserved reserved reserved reserved reserved reserved reserved reserved reserved reserved public public ' ]
+
+	# public WAN: its own address, nothing asked
+	echo 'default via 5.6.7.1 dev ppp0 proto static' > "$D/route"
+	echo '5: ppp0    inet 5.6.7.8 peer 5.6.7.1/32 scope global ppp0' > "$D/addr.ppp0"
+	resp; cfg; fresh
+	st=$(ddns ip)
+	check "public WAN address (ppp0): published as is, no lookup" sh -c "
+		echo '$st' | grep -qx kind=public && echo '$st' | grep -qx ip=5.6.7.8 &&
+		echo '$st' | grep -qx source=wan && echo '$st' | grep -qx wan=ppp0 && [ ! -s '$D/curl.log' ]"
+
+	# CGNAT: the address the internet sees, the first public answer counts
+	echo '5: ppp0    inet 100.70.12.34 peer 100.64.0.1/32 scope global ppp0' > "$D/addr.ppp0"
+	resp 'http://ip1.dynupdate.no-ip.com/|200|10.0.0.9' 'https://api.ipify.org/|200|1.2.3.4'
+	fresh
+	st=$(ddns ip)
+	check "CGNAT (100.64.0.0/10): looked up, a private answer skipped, the next used" sh -c "
+		echo '$st' | grep -qx kind=cgnat && echo '$st' | grep -qx ip=1.2.3.4 &&
+		echo '$st' | grep -qx wan_ip=100.70.12.34 && echo '$st' | grep -qx source=https://api.ipify.org/"
+	check "CGNAT: warning in the log, recommends IPv6" sh -c "grep -q 'carrier-grade NAT' '$D/log' && grep -q IPv6 '$D/log'"
+	rm -f "$D/state/status"
+	echo 'default via 192.168.1.1 dev nas0_1' > "$D/route"
+	echo '7: nas0_1    inet 192.168.1.20/24 brd 192.168.1.255 scope global nas0_1' > "$D/addr.nas0_1"
+	st=$(ddns ip)
+	check "private WAN address (a router in front): looked up, warned" sh -c "
+		echo '$st' | grep -qx kind=private && echo '$st' | grep -qx ip=1.2.3.4 && grep -q 'not a public address' '$D/log'"
+	echo 'default via 100.64.0.1 dev ppp0 proto static' > "$D/route"
+	resp; rm -f "$D/state/status" "$D/state/lookup"
+	st=$(ddns ip)
+	check "no lookup service answers: nothing to publish, lookup_error" sh -c "
+		echo '$st' | grep -qx ip= && echo '$st' | grep -qx lookup_error=1"
+
+	# DynDNS v2 (No-IP): the credentials go in curl's config on stdin
+	resp 'https://api.ipify.org/|200|1.2.3.4' \
+		'https://dynupdate.no-ip.com/nic/update?hostname=home.example.net&myip=1.2.3.4|200|good 1.2.3.4'
+	cfg 'CFG_SECTIONS_ddns_host=h1' 'CFG_h1_provider=noip' 'CFG_h1_hostname=home.example.net' \
+		'CFG_h1_username=user1' "CFG_h1_password='s3\"cr\\et'"
+	fresh; ddns update
+	check "No-IP: updated (good), address kept" sh -c "cat '$D'/state/h.* | grep -qx result=good && cat '$D'/state/h.* | grep -qx ip=1.2.3.4"
+	check "No-IP: user name and password only in curl's stdin config, quoted" sh -c "
+		grep -qF 'CFG user = \"user1:s3\\\"cr\\\\et\"' '$D/curl.log' && ! grep '^ARGS' '$D/curl.log' | grep -q -e user1 -e s3"
+	ddns update
+	check "unchanged address: not sent again, the lookup reused (check_interval)" sh -c "
+		[ \$(grep -c '^URL https://dynupdate' '$D/curl.log') -eq 1 ] && [ \$(grep -c '^URL https://api.ipify' '$D/curl.log') -eq 1 ]"
+	ddns update -f
+	check "update -f: sent again, the address asked again" sh -c "
+		[ \$(grep -c '^URL https://dynupdate' '$D/curl.log') -eq 2 ] && [ \$(grep -c '^URL https://api.ipify' '$D/curl.log') -eq 2 ]"
+
+	# a permanent error stops the entry until its settings change
+	sed -i 's/|good 1.2.3.4$/|badauth/' "$D/resp"
+	echo "CFG_h1_password=other" >> "$D/cfg"
+	fresh; ddns update; ddns update
+	check "badauth: failed, not retried by itself" sh -c "
+		cat '$D'/state/h.* | grep -qx result=failed && [ \$(grep -c '^URL https://dynupdate' '$D/curl.log') -eq 1 ] && grep -q badauth '$D/log'"
+	ddns update -f
+	check "badauth: update -f tries again" sh -c "[ \$(grep -c '^URL https://dynupdate' '$D/curl.log') -eq 2 ]"
+
+	# a temporary error waits for its retry time
+	resp 'https://api.ipify.org/|200|1.2.3.4'
+	cfg 'CFG_SECTIONS_ddns_host=h1' 'CFG_h1_provider=dynu' 'CFG_h1_hostname=a.example.net' 'CFG_h1_username=u' 'CFG_h1_password=p'
+	fresh; ddns update; ddns update
+	check "no connection: error with a retry time, not repeated every minute" sh -c "
+		cat '$D'/state/h.* | grep -qx result=error && cat '$D'/state/h.* | grep -q '^next=[0-9]' &&
+		[ \$(grep -c '^URL https://api.dynu.com' '$D/curl.log') -eq 1 ]"
+
+	# freedns.afraid.org: the pasted update URL, the address added
+	resp 'https://api.ipify.org/|200|1.2.3.4' \
+		'https://freedns.afraid.org/dynamic/update.php?AbC123xyz=&address=1.2.3.4|200|ERROR: Address 1.2.3.4 has not changed.'
+	cfg 'CFG_SECTIONS_ddns_host=h1' 'CFG_h1_provider=afraid' "CFG_h1_url='https://freedns.afraid.org/dynamic/update.php?AbC123xyz=&foo=1'"
+	fresh; ddns update
+	check "freedns.afraid.org URL: its token, the address added; 'has not changed' = up to date" sh -c "
+		cat '$D'/state/h.* | grep -qx result=nochg && ! grep '^ARGS' '$D/curl.log' | grep -q AbC123"
+	cfg 'CFG_SECTIONS_ddns_host=h1' 'CFG_h1_provider=afraid' "CFG_h1_url='https://example.com/x?y'"
+	fresh; ddns update
+	check "freedns.afraid.org: another site's URL refused, not fetched" sh -c "
+		cat '$D'/state/h.* | grep -qx result=failed && ! grep -q '^URL https://example.com' '$D/curl.log'"
+
+	# Cloudflare, global API key: the zone id once, PATCH only what differs
+	resp 'https://api.ipify.org/|200|1.2.3.4' \
+		'*/client/v4/zones?name=example.org|200|{"success":true,"result":[{"id":"0123abcd"}]}' \
+		'*/zones/0123abcd/dns_records?type=A&name=www.example.org|200|{"success":true,"result":[{"id":"aa11","content":"1.2.3.4"}]}' \
+		'*/zones/0123abcd/dns_records?type=A&name=missing.example.org|200|{"success":true,"result":[]}' \
+		'*/zones/0123abcd/dns_records?type=A&name=example.org|200|{"success":true,"result":[{"id":"bb22","content":"192.0.2.1"}]}' \
+		'*/zones/0123abcd/dns_records/bb22|200|{"success":true,"result":{"id":"bb22"}}' \
+		'*/zones?name=bad.example|403|{"success":false,"errors":[{"code":10000,"message":"Authentication error"}]}'
+	cfg 'CFG_SECTIONS_ddns_host=h1' 'CFG_h1_provider=cloudflare' "CFG_h1_hostname='www, @'" \
+		'CFG_h1_zone=example.org' 'CFG_h1_email=me@example.org' 'CFG_h1_api_key=KEY123'
+	fresh; ddns update
+	check "Cloudflare: the changed record patched, the up-to-date one left" sh -c "
+		[ \$(grep -c '^URL .*/dns_records/bb22\$' '$D/curl.log') -eq 1 ] && ! grep -q '^URL .*/dns_records/aa11' '$D/curl.log' &&
+		grep '^ARGS' '$D/curl.log' | grep -q -- '-X PATCH' && grep -qF '{\"content\":\"1.2.3.4\"}' '$D/curl.log' &&
+		cat '$D'/state/h.* | grep -qx result=good && cat '$D'/state/h.* | grep -qx zone_id=0123abcd"
+	check "Cloudflare: e-mail and key as headers in curl's stdin config only" sh -c "
+		grep -qF 'CFG header = \"X-Auth-Email: me@example.org\"' '$D/curl.log' &&
+		grep -qF 'CFG header = \"X-Auth-Key: KEY123\"' '$D/curl.log' && ! grep '^ARGS' '$D/curl.log' | grep -q -e KEY123 -e me@"
+	ddns update -f
+	check "Cloudflare: the zone id reused" sh -c "[ \$(grep -c '^URL .*/zones?name=example.org' '$D/curl.log') -eq 1 ]"
+	cfg 'CFG_SECTIONS_ddns_host=h1' 'CFG_h1_provider=cloudflare' 'CFG_h1_hostname=missing.example.org' \
+		'CFG_h1_zone=example.org' 'CFG_h1_api_key=TOK456'
+	fresh; ddns update
+	check "Cloudflare API token: Bearer header; a missing A record reported, not created" sh -c "
+		grep -qF 'CFG header = \"Authorization: Bearer TOK456\"' '$D/curl.log' &&
+		cat '$D'/state/h.* | grep -qx result=failed && cat '$D'/state/h.* | grep -q 'no A record' &&
+		! grep '^ARGS' '$D/curl.log' | grep -q -e PATCH -e POST"
+	cfg 'CFG_SECTIONS_ddns_host=h1' 'CFG_h1_provider=cloudflare' 'CFG_h1_hostname=x' 'CFG_h1_zone=bad.example' 'CFG_h1_api_key=nope'
+	fresh; ddns update
+	check "Cloudflare: an authentication error is permanent, with the API's message" sh -c "
+		cat '$D'/state/h.* | grep -qx result=failed && cat '$D'/state/h.* | grep -q 'Authentication error'"
+
+	# GnuDIP: challenge, then the salted MD5 of the password
+	resp 'https://api.ipify.org/|200|1.2.3.4' \
+		'http://gnudip.example.net/gnudip/cgi-bin/gdipupdt.cgi?salt=*|200|<meta name="retc" content="0">' \
+		'http://gnudip.example.net/gnudip/cgi-bin/gdipupdt.cgi|200|<meta name="salt" content="abc"><meta name="time" content="99"><meta name="sign" content="f00">'
+	cfg 'CFG_SECTIONS_ddns_host=h1' 'CFG_h1_provider=gnudip' 'CFG_h1_hostname=me.dyn.example.net' \
+		'CFG_h1_username=me' 'CFG_h1_password=pw' 'CFG_h1_server=gnudip.example.net'
+	fresh; ddns update
+	hp=$(printf '%s.abc' "$(printf pw | md5sum | cut -d ' ' -f 1)" | md5sum | cut -d ' ' -f 1)
+	check "GnuDIP: salted password hash, user name and domain split" sh -c "
+		grep -q '^URL .*salt=abc&time=99&sign=f00&user=me&pass=$hp&domn=dyn.example.net&reqc=0&addr=1.2.3.4' '$D/curl.log' &&
+		cat '$D'/state/h.* | grep -qx result=good"
+
+	# disabled entries, invalid names
+	cfg 'CFG_SECTIONS_ddns_host="h1 h2"' 'CFG_h1_provider=noip' 'CFG_h1_hostname=a.example.net' 'CFG_h1_enabled=0' \
+		'CFG_h1_username=u' 'CFG_h1_password=p' 'CFG_h2_provider=noip' "CFG_h2_hostname='bad\$(id).example.net'" \
+		'CFG_h2_username=u' 'CFG_h2_password=p'
+	fresh; ddns update
+	check "a disabled entry skipped, an invalid host name never sent" sh -c "
+		! grep -q '^URL https://dynupdate' '$D/curl.log' && cat '$D'/state/h.* | grep -q 'invalid host name'"
+
+	# the stock client stays off
+	sed "s|^logger|'$D/bin/logger'|" "$TOP/package/rtk-vendor/files/rtk/bin/updatedd" > "$D/updatedd"
+	check "stock updatedd wrapper: exits without starting the stock client" sh -c "
+		'$BB' sh '$D/updatedd' -- noip u:p host && grep -q 'not started' '$D/log' &&
+		! grep -q '^[^#]*exec' '$TOP/package/rtk-vendor/files/rtk/bin/updatedd'"
+
+	# ddns status: JSON through the router's jshn (busybox, jshn under qemu)
+	local R="$TOP/build/stage"
+	if command -v qemu-aarch64-static >/dev/null && [ -f "$R/usr/share/libubox/jshn.sh" ] && [ -x "$R/usr/bin/jshn" ]; then
+		sed -e "s|/usr/share/libubox/jshn.sh|$R/usr/share/libubox/jshn.sh|" \
+			-e "s|/usr/lib/nijika/common.sh|$LIB/common.sh|" "$D/ddns" > "$D/ddns.status"
+		cfg 'CFG_SECTIONS_ddns_host="h1 h2"' 'CFG_h1_provider=noip' 'CFG_h1_hostname=a.example.net' \
+			'CFG_h2_provider=cloudflare' 'CFG_h2_hostname=x'
+		QEMU_LD_PREFIX="$R" PATH="$D/bin:$PATH:$R/usr/bin" qemu-aarch64-static -L "$R" "$R/bin/busybox" sh \
+			"$D/ddns.status" status > "$D/status.json" 2>/dev/null
+		pyjson "ddns status: JSON with the address check and every entry (router busybox + jshn)" "$D/status.json" \
+			"d['kind'] == 'cgnat' and d['ip'] == '1.2.3.4' and set(d['hosts']) == {'h1', 'h2'} and d['running'] is False and d['stock'] == []"
+	else
+		skp "ddns status JSON" "no qemu-aarch64-static or build/stage"
+	fi
+
+	pyjson "menu: Services > DDNS after VoIP" "$TOP/package/luci-app-nijika/root/usr/share/luci/menu.d/luci-app-nijika.json" \
+		"d['admin/services/ddns']['action']['path'] == 'nijika/ddns' and d['admin/services/ddns']['order'] > d['admin/services/voip']['order']"
+	pyjson "ACL: ddns_status to read, ddns_update to write" "$TOP/package/luci-app-nijika/root/usr/share/rpcd/acl.d/luci-app-nijika.json" \
+		"'ddns_status' in d['luci-app-nijika']['read']['ubus']['nijika'] and 'ddns_update' in d['luci-app-nijika']['write']['ubus']['nijika']"
+}
+
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint parsers wrapper ucimirror spi apply easymesh helpers stockshell bootenv fwu banner theme}"
+groups="${*:-syntax json lint parsers wrapper ucimirror spi apply easymesh ddns helpers stockshell bootenv fwu banner theme}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|easymesh|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
+		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|easymesh|ddns|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

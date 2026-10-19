@@ -109,13 +109,14 @@ rm -f "$R"/www/luci-static/resources/view/status/include/29_ports.js \
 # Executable bits for everything we ship (git may not keep them).
 chmod 0755 "$R"/usr/sbin/nijika "$R"/usr/libexec/rtk/* "$R"/usr/libexec/rtk/post-boot.d/* \
 	"$R"/usr/libexec/nijika/* "$R"/usr/libexec/rpcd/nijika "$R"/etc/init.d/rtk-vendor \
-	"$R"/etc/init.d/nijika-housekeep "$R"/etc/init.d/nijika-doh "$R"/etc/uci-defaults/90-nijika-defaults \
+	"$R"/etc/init.d/nijika-housekeep "$R"/etc/init.d/nijika-doh "$R"/etc/init.d/nijika-ddns \
+	"$R"/etc/uci-defaults/90-nijika-defaults \
 	"$R"/rtk/bin/ccom_linkkit "$R"/rtk/bin/dnsmasq "$R"/rtk/bin/slogd "$R"/rtk/bin/cwmpClient \
-	"$R"/rtk/bin/snmpd "$R"/rtk/bin/hostapd "$R"/rtk/etc/nijika/rcS "$R"/usr/libexec/rtk/easymesh-pin 2>/dev/null || true
+	"$R"/rtk/bin/snmpd "$R"/rtk/bin/hostapd "$R"/rtk/bin/updatedd "$R"/rtk/etc/nijika/rcS "$R"/usr/libexec/rtk/easymesh-pin 2>/dev/null || true
 chmod 0755 "$R/rtk/var" "$R/rtk/run" "$R/rtk/proc" "$R/rtk/sys" "$R/rtk/dev"
 
 # Enable our services (IB only enables packages it installed itself).
-for svc in rtk-vendor nijika-housekeep nijika-doh; do
+for svc in rtk-vendor nijika-housekeep nijika-doh nijika-ddns; do
 	start=$(sed -n 's/^START=//p' "$R/etc/init.d/$svc")
 	stop=$(sed -n 's/^STOP=//p' "$R/etc/init.d/$svc")
 	ln -sf "../init.d/$svc" "$R/etc/rc.d/S${start}$svc"

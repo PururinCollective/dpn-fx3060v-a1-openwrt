@@ -1,0 +1,572 @@
+#!/bin/sh
+# NijikaWrt dynamic DNS (Services > DDNS; nijika.ddns and the ddns_host
+# sections): keeps the hosts' A records on the router's public IPv4
+# address. IPv4 only.
+#
+#   ddns run          the service (/etc/init.d/nijika-ddns): checks every
+#                     minute, updates what changed; SIGUSR1: update all now
+#   ddns update [-f]  one pass now (-f: the hosts that look up to date and
+#                     the failed ones too); with the service running, ask it
+#   ddns ip           the address check, key=value lines
+#   ddns status       the last results as JSON (rpcd nijika ddns_status)
+#
+# The address: the IPv4 address of the WAN with the default route (ppp0 with
+# PPPoE) when it is public. When it is not (100.64.0.0/10: the ISP's
+# carrier-grade NAT; a private or other reserved range: another router or
+# the ISP's NAT in front, DS-Lite), the address the internet sees comes from
+# a "what is my IP" service (ip_url) and is published, with a warning: it is
+# shared, connections from the internet do not reach this router. IPv6 does.
+#
+# Providers: dyndns, noip, changeip, gnudip, dynu, freedns (afraid.org user
+# name and password): the stock firmware's list (DtDNS closed in 2018);
+# afraid (freedns.afraid.org update URL or token) and cloudflare (API v4:
+# e-mail + global API key, or an API token).
+# Secrets go to curl on stdin (-K -), never on its command line.
+#
+# State in /var/run/nijika-ddns: status (the address check), h.<id> (one
+# per host entry, <id> from its settings: a changed entry starts afresh).
+
+. /lib/functions.sh
+[ -f /etc/nijika_release ] && . /etc/nijika_release
+
+STATE=/var/run/nijika-ddns
+UA="NijikaWrt DPN-FX3060V-A1/${NIJIKA_REVISION:-r0} https://openpon.org/"
+CF_API=https://api.cloudflare.com/client/v4
+CACERT=/etc/ssl/certs/ca-certificates.crt
+POLL=60
+IP4_RE='(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])'
+
+log() { # message [priority]
+	logger -t nijika-ddns -p "daemon.${2:-notice}" "$1"
+}
+
+now() { date +%s; }
+
+num() { # value default: a non-negative integer
+	case "$1" in ''|*[!0-9]*) echo "$2" ;; *) echo "$1" ;; esac
+}
+
+# one line of printable ASCII, at most 200 characters (answers of the
+# providers; busybox tr may lack character classes)
+clean() {
+	printf '%s' "$1" | tr '\r\n\t' '   ' | tr -cd ' -~' | cut -c 1-200
+}
+
+# --- addresses ---------------------------------------------------------------
+
+is_ip4() {
+	echo "$1" | grep -qxE "($IP4_RE\.){3}$IP4_RE"
+}
+
+ip4_num() {
+	local IFS=.
+	# shellcheck disable=SC2086
+	set -- $1
+	echo $(( ($1 << 24) | ($2 << 16) | ($3 << 8) | $4 ))
+}
+
+# ip4_kind ADDRESS -> public | cgnat | private | reserved (IANA special
+# purpose ranges that are not globally reachable)
+ip4_kind() {
+	local n e net len kind
+	n=$(ip4_num "$1")
+	for e in 100.64.0.0/10/cgnat 10.0.0.0/8/private 172.16.0.0/12/private 192.168.0.0/16/private \
+		0.0.0.0/8/reserved 127.0.0.0/8/reserved 169.254.0.0/16/reserved 192.0.0.0/24/reserved \
+		192.0.2.0/24/reserved 192.88.99.0/24/reserved 198.18.0.0/15/reserved \
+		198.51.100.0/24/reserved 203.0.113.0/24/reserved 224.0.0.0/4/reserved 240.0.0.0/4/reserved; do
+		net=${e%%/*} kind=${e##*/} len=${e#*/}; len=${len%/*}
+		if [ $(( (n ^ $(ip4_num "$net")) >> (32 - len) )) -eq 0 ]; then
+			echo "$kind"
+			return
+		fi
+	done
+	echo public
+}
+
+wan_dev() {
+	local dev
+	config_get dev ddns interface auto
+	if [ -z "$dev" ] || [ "$dev" = auto ]; then
+		dev=$(ip -4 route show default 2>/dev/null |
+			awk '{ for (i = 1; i < NF; i++) if ($i == "dev") { print $(i + 1); exit } }')
+	fi
+	echo "$dev"
+}
+
+wan_addr() { # dev
+	ip -4 -o addr show dev "$1" 2>/dev/null |
+		awk '{ for (i = 1; i < NF; i++) if ($i == "inet") { a = $(i + 1); sub(/\/.*/, "", a); if (a !~ /^127\./) { print a; exit } } }'
+}
+
+# "<address> <url>": the address the internet sees, from the first ip_url
+# that answers with a public one
+lookup_ip() {
+	local urls url a
+	config_get urls ddns ip_url 'http://ip1.dynupdate.no-ip.com/ https://api.ipify.org/ https://ipv4.icanhazip.com/'
+	for url in $urls; do
+		a=$(curl -4 -fsS -m 10 -A "$UA" ${CACERT_OPT} -- "$url" 2>/dev/null | head -c 256 |
+			grep -oE "($IP4_RE\.){3}$IP4_RE" | head -n 1)
+		if [ -n "$a" ] && [ "$(ip4_kind "$a")" = public ]; then
+			echo "$a $url"
+			return 0
+		fi
+	done
+	return 1
+}
+
+st_get() { # file key
+	sed -n "s/^$2=//p" "$1" 2>/dev/null | head -n 1
+}
+
+# Sets WAN_DEV WAN_IP KIND (public cgnat private reserved noaddr nowan)
+# PUB_IP SOURCE (wan, or the lookup URL) LOOKUP_ERR; writes $STATE/status.
+# Lookups are reused while the WAN address stays and check_interval allows.
+detect() { # force
+	local t check last lw lt lp prev
+	t=$(now)
+	config_get check ddns check_interval 600
+	check=$(num "$check" 600)
+	WAN_DEV=$(wan_dev) WAN_IP= PUB_IP= SOURCE= LOOKUP_ERR=
+	if [ -z "$WAN_DEV" ]; then
+		KIND=nowan
+	else
+		WAN_IP=$(wan_addr "$WAN_DEV")
+		if [ -z "$WAN_IP" ]; then
+			KIND=noaddr
+		else
+			KIND=$(ip4_kind "$WAN_IP")
+		fi
+	fi
+	case "$KIND" in
+		public)
+			PUB_IP=$WAN_IP SOURCE=wan
+			;;
+		cgnat|private|reserved)
+			last=$STATE/lookup
+			lw=$(st_get "$last" wan) lt=$(st_get "$last" time) lp=$(st_get "$last" ip)
+			if [ "$1" != 1 ] && [ "$lw" = "$WAN_IP" ] && [ -n "$lp" ] && [ $(( t - $(num "$lt" 0) )) -lt "$check" ]; then
+				PUB_IP=$lp SOURCE=$(st_get "$last" url)
+			elif PUB_IP=$(lookup_ip); then
+				SOURCE=${PUB_IP#* } PUB_IP=${PUB_IP%% *}
+				printf 'wan=%s\ntime=%s\nip=%s\nurl=%s\n' "$WAN_IP" "$t" "$PUB_IP" "$SOURCE" > "$last"
+			else
+				PUB_IP= LOOKUP_ERR=1
+				rm -f "$last"
+			fi
+			;;
+	esac
+
+	prev=$(st_get "$STATE/status" kind)
+	if [ "$KIND" != "$prev" ]; then
+		case "$KIND" in
+			cgnat) log "WAN $WAN_DEV has $WAN_IP, a carrier-grade NAT (CGNAT) address: the public address ${PUB_IP:-?} is shared with other customers, connections from the internet do not reach this router; use IPv6 for that" warn ;;
+			private|reserved) log "WAN $WAN_DEV has $WAN_IP, not a public address (NAT in front of this router): publishing ${PUB_IP:-?}, connections from the internet may not reach this router; use IPv6 for that" warn ;;
+		esac
+	fi
+	[ -n "$LOOKUP_ERR" ] && [ "$(st_get "$STATE/status" lookup_error)" != 1 ] &&
+		log "could not get the public address from any ip_url" warn
+	printf 'time=%s\nwan=%s\nwan_ip=%s\nkind=%s\nip=%s\nsource=%s\nlookup_error=%s\n' \
+		"$t" "$WAN_DEV" "$WAN_IP" "$KIND" "$PUB_IP" "$SOURCE" "$LOOKUP_ERR" > "$STATE/status.new" &&
+		mv "$STATE/status.new" "$STATE/status"
+}
+
+# --- HTTP --------------------------------------------------------------------
+
+cfg_q() { # a value for a quoted curl config string
+	printf '%s' "$1" | sed 's/[\\"]/\\&/g'
+}
+
+# http URL [curl options...]: BODY, CODE (000: no answer), CURL_ERR. The URL
+# and CURL_CFG (credentials: user = "...", header = "...") go in on stdin.
+http() {
+	local url=$1 out
+	shift
+	out=$( { printf '%s\n' "$CURL_CFG"; printf 'url = "%s"\n' "$(cfg_q "$url")"; } |
+		curl -sS -m 20 -A "$UA" ${CACERT_OPT} -K - -w '\n%{http_code}' "$@" 2>"$STATE/curl.err")
+	CODE=$(printf '%s' "$out" | tail -n 1)
+	BODY=$(printf '%s' "$out" | sed '$d')
+	case "$CODE" in [1-5][0-9][0-9]) ;; *) CODE=000 ;; esac
+	CURL_ERR=$(head -n 1 "$STATE/curl.err" 2>/dev/null | sed 's/^curl: ([0-9]*) //')
+	CURL_ERR=$(clean "${CURL_ERR:-no answer}")
+}
+
+# --- results -----------------------------------------------------------------
+
+# note good|nochg|temp|perm TEXT [RETRY]: one host's result; R keeps the
+# worst (perm > temp > good > nochg), MSG the texts.
+note() {
+	local rank
+	case "$1" in nochg) rank=0 ;; good) rank=1 ;; temp) rank=2 ;; *) rank=3 ;; esac
+	if [ "$rank" -ge "${R_RANK:--1}" ]; then R=$1 R_RANK=$rank; fi
+	MSG="${MSG:+$MSG; }$(clean "$2")"
+	[ "$1" = temp ] && [ "$(num "$3" 300)" -gt "$(num "$RETRY" 0)" ] && RETRY=$(num "$3" 300)
+	return 0
+}
+
+hosts() {
+	echo "$HOSTS" | tr ',;' '  '
+}
+
+valid_host() {
+	case "$1" in
+		''|.*|*..*|*[!A-Za-z0-9.*@_-]*) return 1 ;;
+	esac
+}
+
+# --- providers ---------------------------------------------------------------
+
+# DynDNS v2 protocol (DynDNS, No-IP, Dynu, ChangeIP, FreeDNS): one request
+# per host. dyndns2 URL [extra query]
+dyndns2() {
+	local h a w
+	[ -n "$USER" ] && [ -n "$PASS" ] || { note perm "no user name or password"; return; }
+	CURL_CFG="user = \"$(cfg_q "$USER:$PASS")\""
+	for h in $(hosts); do
+		http "$1?hostname=$h&myip=$PUB_IP$2"
+		a=$(printf '%s\n' "$BODY" | head -n 1 | tr -d '\r')
+		w=${a%% *}
+		case "$w" in
+			good) note good "$h: updated" ;;
+			nochg) note nochg "$h: up to date" ;;
+			badauth|nohost|notfqdn|badagent|abuse|'!donator'|'!yours'|'!active'|numhost)
+				note perm "$h: $a" ;;
+			dnserr|911) note temp "$h: $a (provider trouble)" 1800 ;;
+			*)
+				if [ "$CODE" = 000 ]; then
+					note temp "$h: $CURL_ERR"
+				elif printf '%s' "$BODY" | grep -qiE 'has not changed|no ip change|nochg'; then
+					note nochg "$h: up to date"
+				elif printf '%s' "$BODY" | grep -qiE 'successful update|^updated'; then
+					note good "$h: updated"
+				elif [ "$CODE" = 401 ] || [ "$CODE" = 403 ]; then
+					note perm "$h: HTTP $CODE (user name or password)"
+				else
+					note temp "$h: HTTP $CODE ${a:-without an answer}" 1800
+				fi
+				;;
+		esac
+	done
+}
+
+# freedns.afraid.org with the update URL ("Direct URL" of the Dynamic DNS
+# page) or its token; sync.afraid.org/u/<token>/ (version 2) URLs too
+do_afraid() {
+	local tok u a
+	case "$URL" in
+		*sync.afraid.org/u/*)
+			tok=${URL#*sync.afraid.org/u/} tok=${tok%%[/?]*}
+			u="https://sync.afraid.org/u/$tok/?ip=$PUB_IP" ;;
+		*update.php\?*)
+			tok=${URL#*update.php\?} tok=${tok%%&*}
+			u="https://freedns.afraid.org/dynamic/update.php?$tok&address=$PUB_IP" ;;
+		*://*)
+			note perm "not a freedns.afraid.org update URL"; return ;;
+		*)
+			tok=$URL
+			u="https://freedns.afraid.org/dynamic/update.php?$tok&address=$PUB_IP" ;;
+	esac
+	case "$tok" in
+		''|*[!A-Za-z0-9+/=%_.-]*) note perm "no valid token in the update URL"; return ;;
+	esac
+	CURL_CFG=
+	http "$u"
+	a=$(clean "$BODY")
+	case "$a" in
+		*'has not changed'*|*'No IP change'*|*'skipping update'*) note nochg "${HOSTS:-freedns.afraid.org}: up to date" ;;
+		*Updated*) note good "${HOSTS:-freedns.afraid.org}: updated" ;;
+		*)
+			if [ "$CODE" = 000 ]; then
+				note temp "$CURL_ERR"
+			elif [ "$CODE" -ge 500 ] 2>/dev/null; then
+				note temp "HTTP $CODE" 1800
+			else
+				note perm "${a:-HTTP $CODE}"
+			fi
+			;;
+	esac
+}
+
+cf_fqdn() { # host -> full name in the zone ("@": the zone itself)
+	case "$1" in
+		@) echo "$ZONE" ;;
+		"$ZONE"|*."$ZONE") echo "$1" ;;
+		*) echo "$1.$ZONE" ;;
+	esac
+}
+
+cf_ok() { # [host]: 0 when the API call succeeded, else note why
+	local e p=${1:+$1: }
+	if [ "$CODE" = 000 ]; then
+		note temp "$p$CURL_ERR"
+		return 1
+	fi
+	[ "$(jsonfilter -s "$BODY" -e '@.success' 2>/dev/null)" = true ] && return 0
+	e=$(jsonfilter -s "$BODY" -e '@.errors[0].message' 2>/dev/null)
+	case "$CODE" in
+		400|401|403) note perm "$p${e:-HTTP $CODE} (e-mail and API key, or the token and its Zone DNS Edit permission)" ;;
+		429|5??) note temp "$p${e:-HTTP $CODE}" 900 ;;
+		*) note temp "$p${e:-HTTP $CODE}" 1800 ;;
+	esac
+	return 1
+}
+
+# Cloudflare: e-mail + global API key (as ddclient's login/password), or an
+# API token alone. Existing A records only, their proxy/TTL settings stay.
+do_cloudflare() {
+	local zid h fq rid cur
+	[ -n "$KEY" ] || { note perm "no API key or token"; return; }
+	[ -n "$ZONE" ] || { note perm "no zone"; return; }
+	if [ -n "$EMAIL" ]; then
+		CURL_CFG=$(printf 'header = "X-Auth-Email: %s"\nheader = "X-Auth-Key: %s"' "$(cfg_q "$EMAIL")" "$(cfg_q "$KEY")")
+	else
+		CURL_CFG=$(printf 'header = "Authorization: Bearer %s"' "$(cfg_q "$KEY")")
+	fi
+	zid=$(st_get "$SF" zone_id)
+	if [ -z "$zid" ]; then
+		http "$CF_API/zones?name=$ZONE"
+		cf_ok "$ZONE" || return
+		zid=$(jsonfilter -s "$BODY" -e '@.result[0].id' 2>/dev/null)
+		case "$zid" in
+			''|*[!0-9a-fA-F]*) note perm "zone $ZONE: not in this Cloudflare account"; return ;;
+		esac
+		ZONE_ID=$zid
+	fi
+	for h in $(hosts); do
+		fq=$(cf_fqdn "$h")
+		http "$CF_API/zones/$zid/dns_records?type=A&name=$fq"
+		cf_ok "$fq" || continue
+		rid=$(jsonfilter -s "$BODY" -e '@.result[0].id' 2>/dev/null)
+		cur=$(jsonfilter -s "$BODY" -e '@.result[0].content' 2>/dev/null)
+		case "$rid" in
+			''|*[!0-9a-fA-F]*) note perm "$fq: no A record (add it in the Cloudflare dashboard first)"; continue ;;
+		esac
+		if [ "$cur" = "$PUB_IP" ]; then
+			note nochg "$fq: up to date"
+			continue
+		fi
+		http "$CF_API/zones/$zid/dns_records/$rid" -X PATCH -H 'Content-Type: application/json' \
+			--data "{\"content\":\"$PUB_IP\"}"
+		cf_ok "$fq" && note good "$fq: updated"
+	done
+}
+
+meta() { # name: <meta name="NAME" content="..."> of a GnuDIP answer
+	printf '%s' "$BODY" | tr '\n' ' ' | sed -n "s/.*<meta name=\"$1\" content=\"\([^\"]*\)\".*/\1/p"
+}
+
+# GnuDIP HTTP protocol: challenge (salt, time, sign), then the salted MD5 of
+# the password; host = <user name>.<domain>
+do_gnudip() {
+	local url h salt tm sign hp dom
+	[ -n "$SERVER" ] || { note perm "no GnuDIP server"; return; }
+	[ -n "$USER" ] && [ -n "$PASS" ] || { note perm "no user name or password"; return; }
+	case "$SERVER" in
+		*://*) url=$SERVER ;;
+		*) url="http://$SERVER/gnudip/cgi-bin/gdipupdt.cgi" ;;
+	esac
+	CURL_CFG=
+	for h in $(hosts); do
+		http "$url"
+		[ "$CODE" = 000 ] && { note temp "$h: $CURL_ERR"; continue; }
+		salt=$(meta salt) tm=$(meta time) sign=$(meta sign)
+		if [ -z "$salt" ] || [ -z "$tm" ] || [ -z "$sign" ]; then
+			note temp "$h: no GnuDIP challenge from $SERVER" 1800
+			continue
+		fi
+		hp=$(printf '%s' "$PASS" | md5sum | cut -d ' ' -f 1)
+		hp=$(printf '%s.%s' "$hp" "$salt" | md5sum | cut -d ' ' -f 1)
+		dom=${h#"$USER".}
+		http "$url?salt=$salt&time=$tm&sign=$sign&user=$USER&pass=$hp&domn=$dom&reqc=0&addr=$PUB_IP"
+		case "$(meta retc)" in
+			0) note good "$h: updated" ;;
+			1) note perm "$h: invalid login" ;;
+			*) [ "$CODE" = 000 ] && note temp "$h: $CURL_ERR" || note temp "$h: unexpected answer" 1800 ;;
+		esac
+	done
+}
+
+# --- host entries ------------------------------------------------------------
+
+host_load() { # section: PROV HOSTS USER PASS SERVER ZONE EMAIL KEY URL ID SF
+	config_get PROV "$1" provider
+	config_get HOSTS "$1" hostname
+	config_get USER "$1" username
+	config_get PASS "$1" password
+	config_get SERVER "$1" server
+	config_get ZONE "$1" zone
+	config_get EMAIL "$1" email
+	config_get KEY "$1" api_key
+	config_get URL "$1" url
+	ID=$(printf '%s\n' "$PROV" "$HOSTS" "$USER" "$PASS" "$SERVER" "$ZONE" "$EMAIL" "$KEY" "$URL" | md5sum | cut -c 1-16)
+	SF=$STATE/h.$ID
+}
+
+host_update() { # section
+	local en t ip lt next res h bad=
+	config_get_bool en "$1" enabled 1
+	[ "$en" = 1 ] || return 0
+	host_load "$1"
+	t=$(now)
+	ip=$(st_get "$SF" ip) lt=$(st_get "$SF" time) next=$(st_get "$SF" next) res=$(st_get "$SF" result)
+	if [ "$FORCE" != 1 ]; then
+		[ "$res" = failed ] && return 0
+		[ -n "$next" ] && [ "$t" -lt "$(num "$next" 0)" ] && return 0
+		[ "$ip" = "$PUB_IP" ] && [ $(( t - $(num "$lt" 0) )) -lt "$FORCE_INT" ] && return 0
+	fi
+
+	R= R_RANK= MSG= RETRY= ZONE_ID=
+	[ "$PROV" = afraid ] || [ -n "$HOSTS" ] || note perm "no host name"
+	for h in $(hosts); do valid_host "$h" || bad="$bad $h"; done
+	[ -n "$bad" ] && note perm "invalid host name:$bad"
+	if [ -z "$R" ]; then
+		case "$PROV" in
+			dyndns) dyndns2 https://members.dyndns.org/nic/update ;;
+			noip) dyndns2 https://dynupdate.no-ip.com/nic/update ;;
+			dynu) dyndns2 https://api.dynu.com/nic/update ;;
+			changeip) dyndns2 https://nic.changeip.com/nic/update "&ip=$PUB_IP" ;;
+			freedns) dyndns2 https://freedns.afraid.org/nic/update ;;
+			gnudip) do_gnudip ;;
+			afraid) do_afraid ;;
+			cloudflare) do_cloudflare ;;
+			*) note perm "unknown provider '$PROV'" ;;
+		esac
+	fi
+	[ -n "$R" ] || note perm "no host name"
+
+	case "$R" in
+		good|nochg)
+			printf 'result=%s\nip=%s\ntime=%s\nmessage=%s\nzone_id=%s\n' "$R" "$PUB_IP" "$t" "$MSG" \
+				"${ZONE_ID:-$(st_get "$SF" zone_id)}" > "$SF.new"
+			[ "$R" = good ] && log "$PROV: $MSG ($PUB_IP)" || log "$PROV: $MSG ($PUB_IP)" info
+			;;
+		temp)
+			printf 'result=error\nip=%s\ntime=%s\nnext=%s\nmessage=%s\n' "$ip" "$lt" "$(( t + RETRY ))" "$MSG" > "$SF.new"
+			log "$PROV: $MSG; trying again in $(( RETRY / 60 )) min" warn
+			;;
+		*)
+			printf 'result=failed\nip=%s\ntime=%s\nmessage=%s\n' "$ip" "$lt" "$MSG" > "$SF.new"
+			log "$PROV: $MSG; not retried until its settings change (or Update now)" err
+			;;
+	esac
+	mv "$SF.new" "$SF"
+}
+
+# --- commands ----------------------------------------------------------------
+
+pass() { # force
+	FORCE=${1:-0}
+	config_load nijika
+	config_get FORCE_INT ddns force_interval 86400
+	FORCE_INT=$(num "$FORCE_INT" 86400)
+	detect "$FORCE"
+	[ -n "$PUB_IP" ] || return 0
+	config_foreach host_update ddns_host
+}
+
+daemon_pid() {
+	local pid
+	pid=$(cat "$STATE/pid" 2>/dev/null)
+	[ -n "$pid" ] && [ -d "/proc/$pid" ] && grep -q 'ddns' "/proc/$pid/cmdline" 2>/dev/null && echo "$pid"
+}
+
+cmd_run() {
+	local f
+	echo $$ > "$STATE/pid"
+	SLEEPER=
+	trap 'WAKE=1' USR1
+	trap '[ -n "$SLEEPER" ] && kill $SLEEPER 2>/dev/null; rm -f "$STATE/pid"; exit 0' TERM INT
+	WAKE=0
+	while :; do
+		f=$WAKE WAKE=0
+		pass "$f"
+		[ "$WAKE" = 1 ] && continue
+		sleep $POLL &
+		SLEEPER=$!
+		wait $SLEEPER
+		kill $SLEEPER 2>/dev/null
+		SLEEPER=
+	done
+}
+
+cmd_update() {
+	local pid f=0
+	[ "$1" = -f ] && f=1
+	pid=$(daemon_pid)
+	if [ -n "$pid" ]; then
+		kill -USR1 "$pid" && echo "asked the DDNS service (pid $pid) to update now"
+		return
+	fi
+	pass "$f"
+}
+
+cmd_ip() {
+	config_load nijika
+	detect 1
+	cat "$STATE/status"
+}
+
+host_status() { # section
+	local k
+	host_load "$1"
+	json_add_object "$1"
+	json_add_string id "$ID"
+	for k in result message ip time next; do
+		json_add_string "$k" "$(st_get "$SF" "$k")"
+	done
+	json_close_object
+}
+
+# the stock firmware's entries (MIB_DDNS_TBL, not used under NijikaWrt):
+# provider, host name, enabled
+stock_entries() {
+	. /usr/lib/nijika/common.sh
+	vendor_up || return 0
+	rtk /bin/flash get MIB_DDNS_TBL 2>/dev/null | awk '
+		function out() { if (f["Hostname"] != "") print f["Provider"] "|" f["Hostname"] "|" f["Enabled"] }
+		{ sub(/\r$/, "") }
+		/^MIB_DDNS_TBL\.[0-9]+:$/ { if (n++) out(); split("", f); next }
+		n && /=/ { p = index($0, "="); k = substr($0, 1, p - 1); v = substr($0, p + 1)
+			sub(/^[ \t]+/, "", k); sub(/[ \t]+$/, "", k); sub(/^ /, "", v); f[k] = v }
+		END { if (n) out() }'
+}
+
+cmd_status() {
+	local k p h e
+	. /usr/share/libubox/jshn.sh
+	config_load nijika
+	json_init
+	json_add_boolean running "$( [ -n "$(daemon_pid)" ] && echo 1 || echo 0)"
+	json_add_int now "$(now)"
+	for k in time wan wan_ip kind ip source lookup_error; do
+		json_add_string "$k" "$(st_get "$STATE/status" "$k")"
+	done
+	json_add_object hosts
+	config_foreach host_status ddns_host
+	json_close_object
+	json_add_array stock
+	stock_entries > "$STATE/stock.$$"
+	while IFS='|' read -r p h e; do
+		json_add_object
+		json_add_string provider "$p"
+		json_add_string hostname "$h"
+		json_add_boolean enabled "$( [ "$e" = 1 ] && echo 1 || echo 0)"
+		json_close_object
+	done < "$STATE/stock.$$"
+	rm -f "$STATE/stock.$$"
+	json_close_array
+	json_dump
+}
+
+mkdir -p "$STATE"
+[ -f "$CACERT" ] && CACERT_OPT="--cacert $CACERT"
+
+case "$1" in
+	run) cmd_run ;;
+	update) cmd_update "$2" ;;
+	ip) cmd_ip ;;
+	status) cmd_status ;;
+	*)
+		echo "usage: ${0##*/} run | update [-f] | ip | status" >&2
+		exit 1
+		;;
+esac

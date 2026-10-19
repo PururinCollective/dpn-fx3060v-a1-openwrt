@@ -28,7 +28,7 @@ PORT = int(os.environ.get('PORT', '8080'))
 THEME = os.environ.get('LUCI_THEME', 'perfect')
 HTDOCS = sorted(os.path.join(TOP, 'package', p, 'htdocs') for p in os.listdir(os.path.join(TOP, 'package'))
                 if os.path.isdir(os.path.join(TOP, 'package', p, 'htdocs')))
-VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'voip', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
+VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'voip', 'ddns', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
 BOOT = time.time()
 
 
@@ -164,6 +164,25 @@ def nijika_call(method, args):
             {'index': 2, 'name': 'PON_3', 'ifname': 'nas0_3', 'ifIndex': '130819', 'ChannelMode': '1', 'ChannelAddrType': '1',
              'applicationtype': '1', 'vid': '209', 'default_route': False, 'ip4': '', 'prefix4': '', 'gw4': '', 'ip6': '',
              'state': 'connecting'}]}
+    if method == 'ddns_status':
+        # MOCK_DDNS=public: the WAN has a public address; default: behind CGNAT
+        now = int(time.time())
+        pub = os.environ.get('MOCK_DDNS') == 'public'
+        st = {'running': True, 'now': now, 'time': str(now - 20), 'wan': 'ppp0',
+              'wan_ip': '203.0.113.7' if pub else '100.70.12.34', 'kind': 'public' if pub else 'cgnat',
+              'ip': '203.0.113.7' if pub else '198.51.100.23',
+              'source': 'wan' if pub else 'http://ip1.dynupdate.no-ip.com/', 'lookup_error': '',
+              'hosts': {}, 'stock': [{'provider': 'noip', 'hostname': 'myhome.ddns.net', 'enabled': True}]}
+        results = [('good', 'example.org: updated; www.example.org: updated', now - 300),
+                   ('failed', 'no valid token in the update URL', now - 60),
+                   ('error', 'nohost.example.net: Could not resolve host: api.dynu.com', now - 900)]
+        for i, name in enumerate(n for n, v in UCI['nijika'].items() if v.get('.type') == 'ddns_host'):
+            r = results[i % len(results)]
+            st['hosts'][name] = {'id': '%016x' % i, 'result': r[0], 'message': r[1], 'ip': st['ip'],
+                                 'time': str(r[2]), 'next': str(now + 240) if r[0] == 'error' else ''}
+        return st
+    if method == 'ddns_update':
+        return {'ok': True, 'running': True}
     if method == 'portfw_get':
         return {'enable': True, 'max': 32, 'chain': {'table': 'PORT_FW_TBL', 'num': 2, 'records': [
             {'IP': '192.168.0.10', 'PortStart': '443', 'PortEnd': '443', 'Protocol': '1', 'Comment': 'nas', 'OutInf': '65535',
@@ -194,7 +213,16 @@ UCI = {'nijika': {
             'resolver_url': 'https://b.hitoha.moe/dns-query', 'bootstrap_dns': '1.1.1.1,8.8.8.8', 'listen_port': '5053'},
     'firewall': {'.type': 'firewall', '.name': 'firewall', '.anonymous': False, 'spi_ipv4': 'off', 'spi_ipv6': 'off'},
     'ui': {'.type': 'ui', '.name': 'ui', '.anonymous': False, 'developer': '0'},
-    'wifi': {'.type': 'wifi', '.name': 'wifi', '.anonymous': False, 'bss_color_wlan0': '1', 'bss_color_wlan1': '1'}}}
+    'wifi': {'.type': 'wifi', '.name': 'wifi', '.anonymous': False, 'bss_color_wlan0': '1', 'bss_color_wlan1': '1'},
+    'ddns': {'.type': 'ddns', '.name': 'ddns', '.anonymous': False, 'enabled': '1', 'interface': 'auto',
+             'ip_url': ['http://ip1.dynupdate.no-ip.com/', 'https://api.ipify.org/', 'https://ipv4.icanhazip.com/'],
+             'check_interval': '600', 'force_interval': '86400'},
+    'cfg0a1b2c': {'.type': 'ddns_host', '.name': 'cfg0a1b2c', '.anonymous': True, 'enabled': '1', 'provider': 'cloudflare',
+                  'hostname': 'example.org,www.example.org', 'zone': 'example.org', 'email': '', 'api_key': 'mock-token'},
+    'cfg0b3d4e': {'.type': 'ddns_host', '.name': 'cfg0b3d4e', '.anonymous': True, 'enabled': '1', 'provider': 'afraid',
+                  'url': 'mock'},
+    'cfg0c5f60': {'.type': 'ddns_host', '.name': 'cfg0c5f60', '.anonymous': True, 'enabled': '1', 'provider': 'dynu',
+                  'hostname': 'nohost.example.net', 'username': 'mock', 'password': 'mock'}}}
 
 
 def rtk_uci():
