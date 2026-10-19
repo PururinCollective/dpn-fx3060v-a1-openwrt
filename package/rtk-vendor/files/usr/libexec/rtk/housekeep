@@ -2,9 +2,9 @@
 # nijika-housekeep: re-apply what the stock stack may undo.
 #  - every 10 s: the OpenWrt hostname (stock `startup` writes DEVICE_NAME
 #    over it, also right after the vendor boot is marked done)
-#  - every 60 s: LAN access to SSH/LuCI in the stock iptables (rebuilt on WAN
-#    changes) and the /var mirror for paths the stock drivers open from
-#    kernel threads
+#  - every 60 s: LAN access to SSH/LuCI and the WireGuard rules in the stock
+#    iptables (rebuilt on WAN changes) and the /var mirror for paths the
+#    stock drivers open from kernel threads
 #  - every 10 min: /etc/config/rtk against the stock flash (uci-mirror)
 # PON/ONT status is NOT polled here: it is read on demand (see pon.sh).
 
@@ -19,6 +19,7 @@ while :; do
 	/usr/libexec/rtk/hostname
 	if [ $((n % 6)) = 0 ]; then
 		/usr/libexec/rtk/lan-mgmt
+		/usr/libexec/nijika/wireguard firewall
 		/usr/libexec/rtk/var-mirror
 	fi
 	[ $n -gt 0 ] && [ $((n % 60)) = 0 ] && /usr/libexec/rtk/uci-mirror sync >/dev/null 2>&1

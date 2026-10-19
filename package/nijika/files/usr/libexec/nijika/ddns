@@ -8,6 +8,7 @@
 #   ddns update [-f]  one pass now (-f: the hosts that look up to date and
 #                     the failed ones too); with the service running, ask it
 #   ddns ip           the address check, key=value lines
+#   ddns wan          only the WAN's own address and its class, no lookup
 #   ddns status       the last results as JSON (rpcd nijika ddns_status)
 #
 # The address: the IPv4 address of the WAN with the default route (ppp0 with
@@ -114,6 +115,21 @@ lookup_ip() {
 	return 1
 }
 
+# WAN_DEV WAN_IP KIND (public cgnat private reserved noaddr nowan)
+wan_check() {
+	WAN_DEV=$(wan_dev) WAN_IP=
+	if [ -z "$WAN_DEV" ]; then
+		KIND=nowan
+	else
+		WAN_IP=$(wan_addr "$WAN_DEV")
+		if [ -z "$WAN_IP" ]; then
+			KIND=noaddr
+		else
+			KIND=$(ip4_kind "$WAN_IP")
+		fi
+	fi
+}
+
 st_get() { # file key
 	sed -n "s/^$2=//p" "$1" 2>/dev/null | head -n 1
 }
@@ -126,17 +142,8 @@ detect() { # force
 	t=$(now)
 	config_get check ddns check_interval 600
 	check=$(num "$check" 600)
-	WAN_DEV=$(wan_dev) WAN_IP= PUB_IP= SOURCE= LOOKUP_ERR=
-	if [ -z "$WAN_DEV" ]; then
-		KIND=nowan
-	else
-		WAN_IP=$(wan_addr "$WAN_DEV")
-		if [ -z "$WAN_IP" ]; then
-			KIND=noaddr
-		else
-			KIND=$(ip4_kind "$WAN_IP")
-		fi
-	fi
+	PUB_IP= SOURCE= LOOKUP_ERR=
+	wan_check
 	case "$KIND" in
 		public)
 			PUB_IP=$WAN_IP SOURCE=wan
@@ -499,6 +506,12 @@ cmd_update() {
 	pass "$f"
 }
 
+cmd_wan() {
+	config_load nijika
+	wan_check
+	printf 'wan=%s\nwan_ip=%s\nkind=%s\n' "$WAN_DEV" "$WAN_IP" "$KIND"
+}
+
 cmd_ip() {
 	config_load nijika
 	detect 1
@@ -564,9 +577,10 @@ case "$1" in
 	run) cmd_run ;;
 	update) cmd_update "$2" ;;
 	ip) cmd_ip ;;
+	wan) cmd_wan ;;
 	status) cmd_status ;;
 	*)
-		echo "usage: ${0##*/} run | update [-f] | ip | status" >&2
+		echo "usage: ${0##*/} run | update [-f] | ip | wan | status" >&2
 		exit 1
 		;;
 esac

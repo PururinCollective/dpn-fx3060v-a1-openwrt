@@ -52,6 +52,15 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   (`ip1.dynupdate.no-ip.com` first) and the page warns that it is shared and
   recommends IPv6. The stock `updatedd` does not run (it would publish
   100.64.x.x over plain HTTP).
+* **WireGuard** (Services > WireGuard): interface `wg0` for phones, laptops
+  and site-to-site links, though the stock kernel has none: NijikaWrt builds
+  the module and its crypto libraries (NEON ChaCha20/Poly1305) for the stock
+  5.10.70 kernel ([Kernel modules](#kernel-modules-for-the-stock-kernel)).
+  Peers get the access of a LAN device (router, LAN, internet through the
+  WAN); the port and the tunnel are opened in the stock firewall. A new peer
+  gets a key pair, preshared key and the next free address, and its client
+  configuration as a QR code; the endpoint is the DDNS name, else the WAN
+  address, else (CGNAT) an IPv6 address of the router.
 * **Stock SPI firewall off**: the stock GUI's *SPI Firewall* switches (IPv4 and
   IPv6, incoming and outgoing) are set to off at every boot, so a wrong toggle
   can no longer cut the LAN off. NAT still keeps unsolicited IPv4 out; on IPv6
@@ -77,6 +86,7 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   * Services > VoIP: SIP accounts of both phone ports (a tab each), primary
     and backup proxy.
   * Services > DDNS: see above; status per entry, *Update now*.
+  * Services > WireGuard: see above; handshakes and traffic per peer.
   * PON > Authentication: LOID, PLOAM, device type, OLT mode.
 * **Status > Overview**: System, then PON / ONT (the fibre link drawn as
   OLT ⇄ NijikaWrt with live 1490/1310 nm light, RX/TX power, WAN address),
@@ -205,9 +215,38 @@ cp /path/to/DPN-FX3060V_V1.1.2_20231108_1050_XSTP.bin stock/
 | `NijikaWrt-r<N>-25.12.5-dlink_dpn-fx3060v-a1-factory.bin` | stock D-Link tar: `fwu.sh dtb kimage rootfs fwu_ver hw_ver md5.txt` | the **stock D-Link web GUI** (first install) |
 | `NijikaWrt-r<N>-25.12.5-dlink_dpn-fx3060v-a1-sysupgrade.bin` | OpenWrt NAND sysupgrade tar: `sysupgrade-dlink_dpn-fx3060v-a1/{CONTROL,kernel,root,dtb}` + fwtool metadata | **NijikaWrt**: `sysupgrade`, LuCI, `nijika upgrade` |
 
-Steps can be run on their own: `./build.sh fetch stock rootfs assemble
+Steps can be run on their own: `./build.sh fetch stock kmod rootfs assemble
 firmware`, plus `clean` and `distclean`. Versions, branding and the package
 selection live in [`build.conf`](build.conf).
+
+### Kernel modules for the stock kernel
+
+The stock 5.10.70 kernel has no WireGuard. `./build.sh kmod`
+([scripts/build-kmod.sh](scripts/build-kmod.sh)) builds it as modules,
+with the crypto libraries it selects, so that the stock kernel loads them:
+
+* **Source**: the kernel tree of the Realtek Luna SDK, which D-Link's kernel
+  is built from. Point `KERNEL_SDK` at its `rtl819x` directory (default
+  `/media/realtek/root/SDK/rtl819x`, e.g. the SDK VM's disk mounted with
+  `guestmount -a <disk> -i --ro /media/realtek`). It is needed once: the
+  prepared tree is kept as `dl/linux-5.10.70-rtk.tar.zst`. Without it the
+  step is skipped and the image has no WireGuard.
+* **Config**: the stock kernel's own (`IKCONFIG` from the stock `kimage`)
+  plus `KMOD_CONFIG` as modules; the step stops if anything built into the
+  kernel would change.
+* **Compiler**: gcc 10.2 like the stock kernel's (Realtek ASDK64 10.2.0):
+  Bootlin's `aarch64--glibc--bleeding-edge-2020.08-1` toolchain,
+  downloaded once (127 MB, sha256 in `build.conf`). Extra host tools: `perl
+  bc rsync`.
+* **Checks**: `modpost` resolves every symbol against the stock kernel's
+  exports ([scripts/ksymtab.py](scripts/ksymtab.py) reads them from its
+  `__ksymtab`), and the vermagic must equal the stock modules'.
+
+The tree, config and compiler reproduce the stock kernel's ABI: stock
+modules built from the same sources (`nf_conntrack_ftp/tftp/pptp`,
+`nf_nat_ftp`, Realtek's `ebt_mark2`/`xt_mark2`/`xt_connmark2`) come out
+instruction for instruction identical to D-Link's, `cfg80211` except for
+D-Link's own WiFi changes.
 
 D-Link's firmware is not redistributable and is never committed. The build
 reuses its `kimage`, `dtb` and `rootfs`.
@@ -322,6 +361,13 @@ nijika banner | version | rtk [cmd]
 | `ddns.ip_url` | `http://ip1.dynupdate.no-ip.com/`, `https://api.ipify.org/`, `https://ipv4.icanhazip.com/` | where the public address is asked when the WAN's is not public (CGNAT, private, reserved) |
 | `ddns.check_interval` | `600` | seconds between those lookups (the WAN itself is checked every minute) |
 | `ddns.force_interval` | `86400` | an unchanged address is sent again after this many seconds |
+| `wireguard.enabled` | `0` | WireGuard interface `wg0` (Services > WireGuard); peers in `wireguard_peer` sections |
+| `wireguard.listen_port` | `51820` | UDP port, opened in the stock firewall (IPv4 and IPv6) |
+| `wireguard.address` | `10.7.0.1/24` | the router's tunnel address(es) and subnet |
+| `wireguard.private_key` | generated | at the first start when not set |
+| `wireguard.mtu` | WAN MTU - 80 | 1412 with PPPoE |
+| `wireguard.endpoint` | automatic | address in client configurations: the first DDNS host name, else the WAN's public IPv4, else an IPv6 address of the router |
+| `wireguard.dns` | LAN address | DNS server in client configurations |
 | `uci.tables` | `ATM_VC_TBL WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL` | chain tables mirrored into `/etc/config/rtk` |
 | `firewall.spi_ipv4` | `off` | stock *IPv4 SPI Firewall*, pinned at boot: `off` (allow both ways), `on` (stock: drop new incoming), `keep` (whatever the stock GUI set) |
 | `firewall.spi_ipv6` | `off` | the same for IPv6 (`off`: LAN devices reachable over IPv6) |
@@ -376,9 +422,10 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
 
 ## Known limitations (stage 1)
 
-* The kernel is the stock 5.10.70 build: no nftables (`fw4`), TUN/WireGuard,
-  mac80211 or kmods from OpenWrt. Firewall, NAT, PPPoE, DHCP and WiFi are done
-  by the stock stack, and LuCI's *Network* pages are intentionally not installed.
+* The kernel is the stock 5.10.70 build: no nftables (`fw4`), TUN, mac80211
+  or kmods from OpenWrt (WireGuard is built for it, see above). Firewall, NAT,
+  PPPoE, DHCP and WiFi are done by the stock stack, and LuCI's *Network*
+  pages are intentionally not installed.
 * Values written via Quick Setup/MIB are applied by the stock stack after a
   reboot.
 * No link aggregation: the stock kernel has no bonding and this SoC's switch

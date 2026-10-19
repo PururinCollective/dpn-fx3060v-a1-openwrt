@@ -1,7 +1,7 @@
 #!/bin/bash
 # NijikaWrt build for the D-Link DPN-FX3060V (A1)
 #
-#   ./build.sh            # everything: fetch stock rootfs assemble firmware
+#   ./build.sh            # everything: fetch stock kmod rootfs assemble firmware
 #   ./build.sh <step>...  # single steps
 #   ./build.sh clean      # remove build/ and bin/ (keeps downloads)
 #
@@ -14,14 +14,15 @@ cd "$(dirname "$0")"
 steps="${*:-all}"
 for step in $steps; do
 	case "$step" in
-		all) "$0" fetch stock rootfs assemble firmware ;;
+		all) "$0" fetch stock kmod rootfs assemble firmware ;;
 		fetch) scripts/fetch-imagebuilder.sh ;;
 		stock) scripts/extract-stock.sh ;;
+		kmod) scripts/build-kmod.sh ;;
 		rootfs) scripts/build-rootfs.sh ;;
 		assemble) scripts/assemble.sh ;;
 		firmware) scripts/mkfw.sh ;;
 		clean) rm -rf "$BUILD_DIR" "$BIN_DIR" ;;
 		distclean) rm -rf "$BUILD_DIR" "$BIN_DIR" "$DL_DIR" ;;
-		*) die "unknown step '$step' (all fetch stock rootfs assemble firmware clean distclean)" ;;
+		*) die "unknown step '$step' (all fetch stock kmod rootfs assemble firmware clean distclean)" ;;
 	esac
 done

@@ -232,6 +232,9 @@ return baseclass.extend({
 	callWanStatus: rpc.declare({ object: 'nijika', method: 'wan_status', expect: { wans: [] } }),
 	callDdnsStatus: rpc.declare({ object: 'nijika', method: 'ddns_status' }),
 	callDdnsUpdate: rpc.declare({ object: 'nijika', method: 'ddns_update' }),
+	callWgStatus: rpc.declare({ object: 'nijika', method: 'wg_status' }),
+	callWgKeys: rpc.declare({ object: 'nijika', method: 'wg_keys', params: [ 'private_key' ] }),
+	callWgClient: rpc.declare({ object: 'nijika', method: 'wg_client', params: [ 'section' ] }),
 	callChain: rpc.declare({ object: 'nijika', method: 'chain', params: [ 'table' ] }),
 	callQuickGet: rpc.declare({ object: 'nijika', method: 'quick_get' }),
 	callQuickSet: rpc.declare({ object: 'nijika', method: 'quick_set', params: [ 'pon', 'wan', 'wifi', 'voip' ] }),
@@ -408,6 +411,21 @@ return baseclass.extend({
 				self.reloadView(view);
 			}, 1500);
 		}, { once: true });
+	},
+
+	/* Keep a status box under a form.Map's title and description: LuCI
+	 * redraws the map's contents after a modal save or a reset, which
+	 * drops nodes added to it, so put it back after every redraw. */
+	mapStatusBox: function(m, box) {
+		var renderContents = m.renderContents;
+		m.renderContents = function() {
+			return renderContents.apply(this, arguments).then(function(node) {
+				var descr = node.querySelector('.cbi-map-descr');
+				node.insertBefore(box, descr ? descr.nextSibling : node.firstChild);
+				return node;
+			});
+		};
+		return box;
 	},
 
 	rebootPrompt: function(self, msg) {

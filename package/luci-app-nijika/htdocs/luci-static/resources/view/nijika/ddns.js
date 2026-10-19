@@ -289,13 +289,9 @@ return view.extend({
 		o.datatype = 'range(3600,2592000)';
 		o.placeholder = '86400';
 
+		this.box = nc.mapStatusBox(m, E('div', {}, addressBox(self.st, self)));
+
 		return m.render().then(function(node) {
-			var descr = node.querySelector('.cbi-map-descr');
-			self.box = E('div', {}, addressBox(self.st, self));
-			if (descr)
-				descr.parentNode.insertBefore(self.box, descr.nextSibling);
-			else
-				node.insertBefore(self.box, node.firstChild);
 			poll.add(L.bind(self.refresh, self), 5);
 			return node;
 		});

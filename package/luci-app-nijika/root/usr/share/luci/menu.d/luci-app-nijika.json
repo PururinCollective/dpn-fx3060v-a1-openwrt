@@ -133,6 +133,18 @@
 		}
 	},
 
+	"admin/services/wireguard": {
+		"title": "WireGuard",
+		"order": 30,
+		"action": {
+			"type": "view",
+			"path": "nijika/wireguard"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
 	"admin/nijikawrt": {
 		"title": "Nijika",
 		"order": 80,

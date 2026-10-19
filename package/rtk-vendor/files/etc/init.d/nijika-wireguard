@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+# WireGuard (LuCI: Services > WireGuard): /usr/libexec/nijika/wireguard
+# creates wg0 from nijika.wireguard and the wireguard_peer sections, with
+# the module built for the stock kernel. A settings change updates it in
+# place (peers are synced, running sessions stay).
+
+START=97
+STOP=10
+USE_PROCD=1
+PROG=/usr/libexec/nijika/wireguard
+
+start_service() {
+	local en
+	config_load nijika
+	config_get_bool en wireguard enabled 0
+	if [ "$en" = 1 ]; then
+		"$PROG" up
+	else
+		"$PROG" down
+	fi
+}
+
+stop_service() {
+	"$PROG" down
+}
+
+reload_service() {
+	start_service
+}
+
+service_triggers() {
+	procd_add_reload_trigger nijika
+}

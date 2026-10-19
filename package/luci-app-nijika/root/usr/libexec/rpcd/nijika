@@ -725,6 +725,57 @@ m_ddns_update() {
 	json_dump
 }
 
+# --- WireGuard (Services > WireGuard) --------------------------------------
+
+WG=/usr/libexec/nijika/wireguard
+
+m_wg_status() {
+	"$WG" status 2>/dev/null || err "no WireGuard status"
+}
+
+is_wgkey() { # base64 of 32 bytes
+	echo "$1" | grep -qE '^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw480]=$'
+}
+
+# {"private_key": k} -> its public key; {} -> a new key pair and a
+# preshared key
+m_wg_keys() {
+	local key
+	json_load "$1"
+	json_get_var key private_key
+	json_init
+	if [ -n "$key" ]; then
+		is_wgkey "$key" || err "not a WireGuard key"
+		json_add_string public_key "$(echo "$key" | wg pubkey)"
+	else
+		key=$(wg genkey)
+		json_add_string private_key "$key"
+		json_add_string public_key "$(echo "$key" | wg pubkey)"
+		json_add_string preshared_key "$(wg genpsk)"
+	fi
+	json_dump
+}
+
+# {"section": s} -> the peer's client configuration and its QR code (SVG)
+m_wg_client() {
+	local sec conf
+	json_load "$1"
+	json_get_var sec section
+	case "$sec" in ''|*[!A-Za-z0-9_]*) err "invalid section" ;; esac
+	mkdir -p "$NIJIKA_RUNDIR"
+	conf=$("$WG" client "$sec" 2>"$NIJIKA_RUNDIR/wgc.$$") || {
+		local e
+		e=$(cat "$NIJIKA_RUNDIR/wgc.$$"); rm -f "$NIJIKA_RUNDIR/wgc.$$"
+		err "$e"
+	}
+	rm -f "$NIJIKA_RUNDIR/wgc.$$"
+	json_init
+	json_add_string config "$conf"
+	command -v qrencode >/dev/null &&
+		json_add_string qr "$(printf '%s\n' "$conf" | qrencode -t SVG -l L -m 2 -o - 2>/dev/null)"
+	json_dump
+}
+
 # --- PON WAN ---------------------------------------------------------------
 
 # {"index": n}: delete WAN connection n (ATM_VC_TBL record), see wan_delete
@@ -916,7 +967,10 @@ case "$1" in
 	"portfw_set": { "enable": false, "rules": [] },
 	"wan_status": {},
 	"ddns_status": {},
-	"ddns_update": {}
+	"ddns_update": {},
+	"wg_status": {},
+	"wg_keys": { "private_key": "str" },
+	"wg_client": { "section": "str" }
 }
 EOF
 		;;
@@ -954,6 +1008,9 @@ EOF
 			wan_status) m_wan_status ;;
 			ddns_status) m_ddns_status ;;
 			ddns_update) m_ddns_update ;;
+			wg_status) m_wg_status ;;
+			wg_keys) m_wg_keys "$input" ;;
+			wg_client) m_wg_client "$input" ;;
 			*) err "unknown method" ;;
 		esac
 		;;

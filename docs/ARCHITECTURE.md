@@ -303,6 +303,50 @@ can reach. Under NijikaWrt it does not run (wrapper, see above) and
 * rpcd: `ddns_status` (`ddns status`: the address check, each entry's last
   result, the stock entries for a hint on the page), `ddns_update`.
 
+## WireGuard
+
+The stock kernel has no WireGuard; `scripts/build-kmod.sh` builds it for
+the stock kernel (README: *Kernel modules for the stock kernel*) into
+`/usr/lib/nijika/kmod/5.10.70/` with `modules.load` (dependencies first:
+libchacha, chacha-neon, poly1305-neon, libchacha20poly1305,
+libcurve25519(-generic), libblake2s(-generic), wireguard). `wg` comes from
+OpenWrt's `wireguard-tools` (its 6.12 `kmod-wireguard` dependency is
+dropped at assembly with the other kmods), QR codes from `qrencode`.
+
+`/usr/libexec/nijika/wireguard` (`nijika-wireguard`, START=97, procd
+reload trigger on `nijika`):
+
+* `up`: `insmod` the modules not loaded yet, `ip link add wg0 type
+  wireguard`, `wg syncconf` from a generated `[Interface]`/`[Peer]` file
+  (running sessions survive a settings change), MTU (WAN MTU - 80),
+  addresses, routes. Allowed IPs outside wg0's subnets (a site's LAN) are
+  routed to wg0, never `0.0.0.0/0`/`::/0`: the stock stack owns the default
+  route. `ip rule ... to <net> lookup main pref 900` keeps those
+  destinations out of the stock policy routing tables.
+* Crash guard: `/etc/nijika/wireguard.loading` is written and synced before
+  the modules are loaded and removed after. If loading ever took the kernel
+  down, the next start finds it and refuses to load them again (the page
+  shows why) until `/usr/libexec/nijika/wireguard retry`: no crash at every
+  boot.
+* Firewall, in the stock iptables (chroot): `INPUT` accepts the UDP port
+  and everything from wg0, `FORWARD` accepts wg0 both ways (IPv4 and
+  IPv6), `nat POSTROUTING` masquerades the tunnel's IPv4 subnet out of the
+  WAN. The stock `startup` rebuilds its ruleset on WAN changes, so
+  `nijika-housekeep` runs `wireguard firewall` every minute (like
+  `lan-mgmt`). The rules applied are kept in `/var/run/nijika-wg/fw`, so
+  a changed port or subnet replaces the old rules.
+* `client <peer>`: the peer's configuration when its private key stays on
+  the router (keys made by the page): its single-address allowed IPs as
+  `Address`, the router's LAN address as DNS, `client_allowed_ips`
+  (default `0.0.0.0/0`), keepalive 25, and the endpoint: `wireguard.endpoint`,
+  else the first DDNS host name, else the WAN's public IPv4 (`ddns wan`, no
+  lookup), else a global IPv6 address of the router (behind CGNAT nothing
+  reaches the router over IPv4).
+* rpcd: `wg_status` (`wg show wg0 dump` per peer: handshake, transfer,
+  endpoint), `wg_keys` (key pair + preshared key, or the public key of a
+  private key), `wg_client` (configuration and its QR code as SVG; write
+  ACL, it holds a private key).
+
 ## Firewall and services
 
 The stock `startup` builds the iptables/ebtables ruleset, NAT, PPPoE

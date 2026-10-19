@@ -5,7 +5,7 @@
 			"ubus": {
 				"nijika": [ "status", "olt", "me", "provision", "diag", "mib_all", "mib_get", "chain",
 				            "quick_get", "ident_get", "boot_get", "fw_status", "voip_get", "easymesh_get",
-				            "portfw_get", "wan_status", "ddns_status" ]
+				            "portfw_get", "wan_status", "ddns_status", "wg_status" ]
 			},
 			"uci": [ "nijika", "rtk" ]
 		},
@@ -13,7 +13,7 @@
 			"ubus": {
 				"nijika": [ "mib_set", "quick_set", "ident_set", "boot_set",
 				            "fw_check", "fw_flash", "reboot", "wan_delete", "voip_set",
-				            "wps", "easymesh_set", "easymesh_pair", "portfw_set", "ddns_update" ]
+				            "wps", "easymesh_set", "easymesh_pair", "portfw_set", "ddns_update", "wg_keys", "wg_client" ]
 			},
 			"uci": [ "nijika", "rtk" ],
 			"cgi-io": [ "upload" ],

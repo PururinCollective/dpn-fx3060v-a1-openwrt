@@ -28,7 +28,7 @@ PORT = int(os.environ.get('PORT', '8080'))
 THEME = os.environ.get('LUCI_THEME', 'perfect')
 HTDOCS = sorted(os.path.join(TOP, 'package', p, 'htdocs') for p in os.listdir(os.path.join(TOP, 'package'))
                 if os.path.isdir(os.path.join(TOP, 'package', p, 'htdocs')))
-VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'voip', 'ddns', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
+VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'voip', 'ddns', 'wireguard', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
 BOOT = time.time()
 
 
@@ -181,6 +181,26 @@ def nijika_call(method, args):
             st['hosts'][name] = {'id': '%016x' % i, 'result': r[0], 'message': r[1], 'ip': st['ip'],
                                  'time': str(r[2]), 'next': str(now + 240) if r[0] == 'error' else ''}
         return st
+    if method == 'wg_status':
+        now = int(time.time())
+        pk = [v.get('public_key') for v in UCI['nijika'].values() if v.get('.type') == 'wireguard_peer']
+        return {'enabled': True, 'up': True, 'module': True, 'module_available': True, 'kernel': '5.10.70', 'error': '',
+                'public_key': 'MOCKrouterPublicKeyAAAAAAAAAAAAAAAAAAAAAAA=', 'listen_port': 51820,
+                'endpoint': os.environ.get('MOCK_WG_ENDPOINT', 'example.org'), 'endpoint_source': 'ddns',
+                'wan_kind': 'public' if os.environ.get('MOCK_DDNS') == 'public' else 'cgnat', 'now': now,
+                'peers': {pk[0]: {'endpoint': '203.0.113.50:41000', 'latest_handshake': now - 42, 'rx': 52428800, 'tx': 7340032}} if pk else {}}
+    if method == 'wg_keys':
+        if args.get('private_key'):
+            return {'public_key': 'MOCKpub' + 'B' * 36 + '='}
+        return {'private_key': 'MOCKpriv' + 'C' * 35 + '=', 'public_key': 'MOCKpub' + 'D' * 36 + '=',
+                'preshared_key': 'MOCKpsk' + 'E' * 36 + '='}
+    if method == 'wg_client':
+        conf = ('[Interface]\nPrivateKey = MOCKprivCCCC=\nAddress = 10.7.0.2/32\nDNS = 192.168.0.1\n\n'
+                '[Peer]\nPublicKey = MOCKrouterPublicKeyAAAAAAAAAAAAAAAAAAAAAAA=\nAllowedIPs = 0.0.0.0/0\n'
+                'Endpoint = example.org:51820\nPersistentKeepalive = 25')
+        qr = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21"><rect width="21" height="21" fill="#fff"/>'
+              '<rect x="1" y="1" width="7" height="7"/><rect x="13" y="1" width="7" height="7"/><rect x="1" y="13" width="7" height="7"/></svg>')
+        return {'config': conf, 'qr': qr}
     if method == 'ddns_update':
         return {'ok': True, 'running': True}
     if method == 'portfw_get':
@@ -217,6 +237,14 @@ UCI = {'nijika': {
     'ddns': {'.type': 'ddns', '.name': 'ddns', '.anonymous': False, 'enabled': '1', 'interface': 'auto',
              'ip_url': ['http://ip1.dynupdate.no-ip.com/', 'https://api.ipify.org/', 'https://ipv4.icanhazip.com/'],
              'check_interval': '600', 'force_interval': '86400'},
+    'wireguard': {'.type': 'wireguard', '.name': 'wireguard', '.anonymous': False, 'enabled': '1', 'listen_port': '51820',
+                  'address': ['10.7.0.1/24'], 'private_key': 'MOCKrouterPrivateKeyAAAAAAAAAAAAAAAAAAAAAA='},
+    'cfg1a2b3c': {'.type': 'wireguard_peer', '.name': 'cfg1a2b3c', '.anonymous': True, 'enabled': '1', 'description': 'phone',
+                  'public_key': 'MOCKphonePublicKeyAAAAAAAAAAAAAAAAAAAAAAAA=', 'private_key': 'MOCKphonePrivateKeyAAAAAAAAAAAAAAAAAAAAAAA=',
+                  'allowed_ips': ['10.7.0.2/32'], 'client_allowed_ips': ['0.0.0.0/0']},
+    'cfg1d4e5f': {'.type': 'wireguard_peer', '.name': 'cfg1d4e5f', '.anonymous': True, 'enabled': '1', 'description': 'office',
+                  'public_key': 'MOCKofficePublicKeyAAAAAAAAAAAAAAAAAAAAAAA=', 'allowed_ips': ['10.7.0.3/32', '192.168.50.0/24'],
+                  'endpoint_host': 'office.example.net', 'endpoint_port': '51820', 'persistent_keepalive': '25'},
     'cfg0a1b2c': {'.type': 'ddns_host', '.name': 'cfg0a1b2c', '.anonymous': True, 'enabled': '1', 'provider': 'cloudflare',
                   'hostname': 'example.org,www.example.org', 'zone': 'example.org', 'email': '', 'api_key': 'mock-token'},
     'cfg0b3d4e': {'.type': 'ddns_host', '.name': 'cfg0b3d4e', '.anonymous': True, 'enabled': '1', 'provider': 'afraid',

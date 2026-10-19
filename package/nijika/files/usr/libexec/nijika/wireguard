@@ -1,0 +1,510 @@
+#!/bin/sh
+# NijikaWrt WireGuard (Services > WireGuard; nijika.wireguard and the
+# wireguard_peer sections): one interface, wg0, for remote access (phones,
+# laptops) and site-to-site links. The stock 5.10.70 kernel has no
+# WireGuard; NijikaWrt builds the module and its crypto libraries for it
+# (scripts/build-kmod.sh) into /usr/lib/nijika/kmod/<kernel>.
+#
+#   wireguard up        load the modules, create or update wg0 (peers are
+#                       synced, running sessions stay), firewall
+#   wireguard retry     load the modules again after a load that did not
+#                       finish (see LOADING), then up
+#   wireguard down      remove wg0 and its firewall rules
+#   wireguard firewall  re-add the rules to the stock iptables (rebuilt by
+#                       the stock `startup` on WAN changes; nijika-housekeep
+#                       runs this every minute)
+#   wireguard status    JSON for rpcd (interface, peers, handshakes)
+#   wireguard client <section>
+#                       the client configuration of a peer whose key pair
+#                       was generated here
+#   wireguard genkey | genpsk | pubkey (private key on stdin)
+#
+# Peers get the access of a LAN device: the router, the LAN, and the
+# internet through the WAN (masqueraded). Allowed IPs outside wg0's own
+# subnets are routed to wg0 (site-to-site), except default routes (0.0.0.0/0,
+# ::/0): the stock stack owns the router's default route.
+
+. /lib/functions.sh
+
+IF=wg0
+STATE=/var/run/nijika-wg
+KMOD=/usr/lib/nijika/kmod
+RTK_RUN=/usr/libexec/rtk/run
+RULE_PREF=900
+# Written (and synced to flash) before the modules are loaded, removed once
+# they are: if loading crashed the kernel, the next start finds it and does
+# not load them again (no crash at every boot) until `wireguard retry`.
+LOADING=/etc/nijika/wireguard.loading
+
+log() { logger -t nijika-wg -p "daemon.${2:-notice}" "$1"; }
+
+die() {
+	log "$1" err
+	echo "$1" > "$STATE/error"
+	echo "wireguard: $1" >&2
+	exit 1
+}
+
+num() { case "$1" in ''|*[!0-9]*) echo "$2" ;; *) echo "$1" ;; esac; }
+
+# --- modules -------------------------------------------------------------------
+
+modules_load() {
+	local kv dir m f
+	[ -d /sys/module/wireguard ] && return 0
+	kv=$(uname -r)
+	dir=$KMOD/$kv
+	[ -f "$dir/modules.load" ] || die "no WireGuard module for kernel $kv (built for: $(ls "$KMOD" 2>/dev/null | tr '\n' ' '))"
+	[ -f "$LOADING" ] && die "loading the WireGuard modules did not finish last time (crash or power loss); not loading them again: run 'wireguard retry' (/usr/libexec/nijika/wireguard) to try once more"
+	mkdir -p "${LOADING%/*}"
+	date > "$LOADING"
+	sync
+	while read -r m; do
+		[ -n "$m" ] || continue
+		[ -d "/sys/module/$(echo "$m" | tr - _)" ] && continue
+		f=$dir/$m.ko
+		insmod "$f" 2>"$STATE/insmod.err" || { rm -f "$LOADING"; die "loading $m failed: $(head -n 1 "$STATE/insmod.err")"; }
+	done < "$dir/modules.load"
+	rm -f "$LOADING"
+	sync
+	log "loaded the WireGuard modules"
+}
+
+# --- configuration -------------------------------------------------------------
+
+conf_line() { # key value: a wg(8) config line, the value on one line
+	[ -n "$2" ] && printf '%s = %s\n' "$1" "$(echo "$2" | tr -d '\r\n')"
+}
+
+join() { # words -> "a, b"
+	echo "$*" | sed 's/  */, /g'
+}
+
+peer_conf() { # section
+	local en pub psk aips host port ka
+	config_get_bool en "$1" enabled 1
+	[ "$en" = 1 ] || return 0
+	config_get pub "$1" public_key
+	[ -n "$pub" ] || return 0
+	config_get psk "$1" preshared_key
+	config_get aips "$1" allowed_ips
+	config_get host "$1" endpoint_host
+	config_get port "$1" endpoint_port 51820
+	config_get ka "$1" persistent_keepalive
+	echo
+	echo "[Peer]"
+	conf_line PublicKey "$pub"
+	conf_line PresharedKey "$psk"
+	conf_line AllowedIPs "$(join $aips)"
+	if [ -n "$host" ]; then
+		case "$host" in
+			*:*) conf_line Endpoint "[$host]:$port" ;;
+			*) conf_line Endpoint "$host:$port" ;;
+		esac
+	fi
+	[ "$(num "$ka" 0)" -gt 0 ] && conf_line PersistentKeepalive "$ka"
+	return 0
+}
+
+write_conf() { # -> $STATE/wg0.conf
+	local key port
+	config_get key wireguard private_key
+	config_get port wireguard listen_port 51820
+	umask 077
+	{
+		echo "[Interface]"
+		conf_line PrivateKey "$key"
+		conf_line ListenPort "$port"
+		config_foreach peer_conf wireguard_peer
+	} > "$STATE/$IF.conf.new"
+	mv "$STATE/$IF.conf.new" "$STATE/$IF.conf"
+	umask 022
+}
+
+# the WAN with the default route, its MTU
+wan_dev() {
+	ip -4 route show default 2>/dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "dev") { print $(i + 1); exit } }'
+}
+
+auto_mtu() { # WAN MTU - 80 (WireGuard over IPv6), 1280..1420
+	local m
+	m=$(cat "/sys/class/net/$(wan_dev)/mtu" 2>/dev/null)
+	m=$(( $(num "$m" 1500) - 80 ))
+	[ $m -gt 1420 ] && m=1420
+	[ $m -lt 1280 ] && m=1280
+	echo $m
+}
+
+# network of an address: 10.7.0.1/24 -> 10.7.0.0/24 (IPv4); IPv6 is left
+# to `ip route` (the kernel adds the prefix route of an address itself)
+ip4_net() {
+	local a=${1%/*} l=${1#*/} IFS=. n
+	[ "$l" = "$1" ] && l=32
+	# shellcheck disable=SC2086
+	set -- $a
+	n=$(( (($1 << 24) | ($2 << 16) | ($3 << 8) | $4) & ((0xffffffff << (32 - l)) & 0xffffffff) ))
+	echo "$(( n >> 24 & 255 )).$(( n >> 16 & 255 )).$(( n >> 8 & 255 )).$(( n & 255 ))/$l"
+}
+
+is_ip4() { case "$1" in *:*) return 1 ;; *.*.*.*) return 0 ;; *) return 1 ;; esac; }
+
+# allowed IPs routed to wg0: of every enabled peer with route_allowed_ips
+# (default on), not default routes; host routes inside wg0's subnets are
+# covered by the subnet route already
+peer_routes() { # section
+	local en rt aips a
+	config_get_bool en "$1" enabled 1
+	config_get_bool rt "$1" route_allowed_ips 1
+	[ "$en" = 1 ] && [ "$rt" = 1 ] || return 0
+	config_get aips "$1" allowed_ips
+	for a in $aips; do
+		case "$a" in
+			0.0.0.0/0|::/0|0.0.0.0|::) continue ;;
+			*/32|*/128) in_subnets "$a" && continue ;;
+		esac
+		echo "$a"
+	done
+}
+
+in_subnets() { # host address inside one of wg0's IPv4 subnets?
+	local a s
+	is_ip4 "${1%/*}" || return 1
+	for s in $ADDRS; do
+		is_ip4 "${s%/*}" || continue
+		[ "$(ip4_net "${1%/*}/${s#*/}")" = "$(ip4_net "$s")" ] && return 0
+	done
+	return 1
+}
+
+sync_list() { # "have" "want" add-cmd del-cmd: run the commands for the differences
+	local x
+	for x in $1; do
+		case " $2 " in *" $x "*) ;; *) $4 "$x" ;; esac
+	done
+	for x in $2; do
+		case " $1 " in *" $x "*) ;; *) $3 "$x" ;; esac
+	done
+}
+
+fam() { case "$1" in *:*) echo -6 ;; *) echo -4 ;; esac; }
+addr_add() { ip "$(fam "$1")" addr add "$1" dev $IF; }
+addr_del() { ip "$(fam "$1")" addr del "$1" dev $IF; }
+route_add() {
+	ip "$(fam "$1")" route replace "$1" dev $IF
+	ip "$(fam "$1")" rule add to "$1" lookup main pref $RULE_PREF 2>/dev/null
+}
+route_del() {
+	ip "$(fam "$1")" route del "$1" dev $IF 2>/dev/null
+	while ip "$(fam "$1")" rule del to "$1" lookup main pref $RULE_PREF 2>/dev/null; do :; done
+}
+subnet_rule_add() { ip "$(fam "$1")" rule add to "$1" lookup main pref $RULE_PREF 2>/dev/null; }
+subnet_rule_del() { while ip "$(fam "$1")" rule del to "$1" lookup main pref $RULE_PREF 2>/dev/null; do :; done; }
+
+subnets() { # wg0's networks: IPv4 computed, IPv6 as configured
+	local a
+	for a in $ADDRS; do
+		if is_ip4 "${a%/*}"; then ip4_net "$a"; else echo "$a"; fi
+	done
+}
+
+# --- firewall (stock iptables) -------------------------------------------------
+
+ipt() { "$RTK_RUN" /bin/iptables "$@" 2>/dev/null; }
+ip6t() { "$RTK_RUN" /bin/ip6tables "$@" 2>/dev/null; }
+
+# the rules wanted, one per line: <ipt|ip6t> <table> <chain> <match...>
+fw_rules() {
+	local port wan s
+	config_get port wireguard listen_port 51820
+	wan=$(wan_dev)
+	for t in ipt ip6t; do
+		echo "$t filter INPUT -p udp --dport $port -j ACCEPT"
+		echo "$t filter INPUT -i $IF -j ACCEPT"
+		echo "$t filter FORWARD -i $IF -j ACCEPT"
+		echo "$t filter FORWARD -o $IF -j ACCEPT"
+	done
+	if [ -n "$wan" ]; then
+		for s in $(nat_sources); do
+			echo "ipt nat POSTROUTING -s $s -o $wan -j MASQUERADE"
+		done
+	fi
+}
+
+# IPv4 sources masqueraded out of the WAN: wg0's subnets and the peers'
+# allowed IPs (with a /32 tunnel address the peers are outside its subnet)
+peer_ip4() { # section
+	local en pub aips a
+	config_get_bool en "$1" enabled 1
+	config_get pub "$1" public_key
+	[ "$en" = 1 ] && [ -n "$pub" ] || return 0
+	config_get aips "$1" allowed_ips
+	for a in $aips; do
+		case "$a" in 0.0.0.0/0|0.0.0.0|*:*) continue ;; esac
+		is_ip4 "${a%/*}" || continue
+		case "$a" in */*) ip4_net "$a" ;; *) echo "$a/32" ;; esac
+	done
+}
+
+nat_sources() {
+	local s
+	{
+		for s in $(subnets); do is_ip4 "${s%/*}" && echo "$s"; done
+		config_foreach peer_ip4 wireguard_peer
+	} | awk '!seen[$0]++' | while read -r s; do
+		# skip addresses one of wg0's subnets covers already (and the
+		# router's own /32: its traffic leaves with the WAN address)
+		[ "${s#*/}" != 32 ] || ! in_subnets "$s" && echo "$s"
+	done
+}
+
+fw_del() { # rule line
+	local t=$1 table=$2 chain=$3
+	shift 3
+	while $t -t "$table" -C "$chain" "$@"; do $t -t "$table" -D "$chain" "$@" || break; done
+}
+
+fw_add() {
+	local t=$1 table=$2 chain=$3
+	shift 3
+	$t -t "$table" -C "$chain" "$@" || $t -t "$table" -I "$chain" 1 "$@"
+}
+
+fw_apply() { # [down]
+	local line
+	[ -d /rtk/proc/self ] || return 0	# stock stack not up yet: housekeep applies later
+	if [ -f "$STATE/fw" ]; then
+		while read -r line; do
+			# shellcheck disable=SC2086
+			[ "$1" != down ] && fw_rules | grep -qxF "$line" || fw_del $line
+		done < "$STATE/fw"
+	fi
+	rm -f "$STATE/fw"
+	[ "$1" = down ] && return 0
+	fw_rules > "$STATE/fw.new"
+	while read -r line; do
+		# shellcheck disable=SC2086
+		fw_add $line
+	done < "$STATE/fw.new"
+	mv "$STATE/fw.new" "$STATE/fw"
+}
+
+# --- commands ------------------------------------------------------------------
+
+cmd_up() {
+	local key mtu have want
+	config_get key wireguard private_key
+	if [ -z "$key" ]; then
+		key=$(wg genkey) || die "wg genkey failed"
+		uci -q set nijika.wireguard.private_key="$key" && uci -q commit nijika
+		config_set wireguard private_key "$key"
+		log "generated the interface's private key"
+	fi
+	config_get ADDRS wireguard address
+	[ -n "$ADDRS" ] || die "no tunnel address (nijika.wireguard.address)"
+	config_get mtu wireguard mtu
+	[ -n "$mtu" ] || mtu=$(auto_mtu)
+
+	rm -f "$STATE/error"
+	modules_load
+	if ! [ -d "/sys/class/net/$IF" ]; then
+		ip link add dev $IF type wireguard 2>"$STATE/ip.err" || die "creating $IF failed: $(head -n 1 "$STATE/ip.err")"
+		log "created $IF"
+	fi
+	write_conf
+	wg syncconf $IF "$STATE/$IF.conf" 2>"$STATE/wg.err" || die "wg: $(head -n 1 "$STATE/wg.err")"
+	ip link set dev $IF mtu "$mtu" up
+
+	have=$(ip -o addr show dev $IF 2>/dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "inet" || $i == "inet6") print $(i + 1) }' | grep -v '^fe80:')
+	sync_list "$have" "$ADDRS" addr_add addr_del
+
+	want=$(config_foreach peer_routes wireguard_peer | sort -u)
+	have=$(cat "$STATE/routes" 2>/dev/null)
+	sync_list "$have" "$want" route_add route_del
+	echo "$want" > "$STATE/routes"
+	have=$(cat "$STATE/subnet_rules" 2>/dev/null)
+	want=$(subnets)
+	sync_list "$have" "$want" subnet_rule_add subnet_rule_del
+	echo "$want" > "$STATE/subnet_rules"
+
+	fw_apply
+}
+
+cmd_down() {
+	local r
+	for r in $(cat "$STATE/routes" 2>/dev/null); do route_del "$r"; done
+	for r in $(cat "$STATE/subnet_rules" 2>/dev/null); do subnet_rule_del "$r"; done
+	rm -f "$STATE/routes" "$STATE/subnet_rules"
+	fw_apply down
+	if [ -d "/sys/class/net/$IF" ]; then
+		ip link del dev $IF
+		log "removed $IF"
+	fi
+	rm -f "$STATE/$IF.conf"
+}
+
+cmd_firewall() {
+	local en
+	config_get_bool en wireguard enabled 0
+	[ "$en" = 1 ] && [ -d "/sys/class/net/$IF" ] || return 0
+	config_get ADDRS wireguard address
+	fw_apply
+}
+
+# --- status ----------------------------------------------------------------------
+
+# the address clients connect to: nijika.wireguard.endpoint, else the first
+# DDNS host name, else the WAN's public IPv4 address, else (behind CGNAT)
+# a global IPv6 address of the router
+ddns_name() { # section: first host name of an enabled DDNS entry
+	local en prov hosts zone h
+	[ -z "$DDNS_NAME" ] || return 0
+	config_get_bool en "$1" enabled 1
+	[ "$en" = 1 ] || return 0
+	config_get prov "$1" provider
+	config_get hosts "$1" hostname
+	config_get zone "$1" zone
+	h=$(echo "$hosts" | tr ',;' '  ' | awk '{ print $1 }')
+	[ -n "$h" ] || return 0
+	if [ "$prov" = cloudflare ] && [ -n "$zone" ]; then
+		case "$h" in
+			@) h=$zone ;;
+			"$zone"|*."$zone") ;;
+			*) h=$h.$zone ;;
+		esac
+	fi
+	case "$h" in *'*'*) return 0 ;; esac
+	DDNS_NAME=$h
+}
+
+# the WAN's own IPv4 address and its class (public, cgnat, private,
+# reserved, noaddr, nowan), without asking the internet: KIND WAN_IP
+wan_kind() {
+	local out
+	out=$(/usr/libexec/nijika/ddns wan 2>/dev/null)
+	KIND=$(echo "$out" | sed -n 's/^kind=//p')
+	WAN_IP=$(echo "$out" | sed -n 's/^wan_ip=//p')
+}
+
+# sets ENDPOINT, ENDPOINT_SRC (setting ddns wan ipv6 none), KIND
+endpoint() {
+	local e
+	wan_kind
+	config_get e wireguard endpoint
+	if [ -n "$e" ]; then ENDPOINT=$e ENDPOINT_SRC=setting; return; fi
+	DDNS_NAME=
+	config_foreach ddns_name ddns_host
+	if [ -n "$DDNS_NAME" ]; then ENDPOINT=$DDNS_NAME ENDPOINT_SRC=ddns; return; fi
+	if [ "$KIND" = public ] && [ -n "$WAN_IP" ]; then ENDPOINT=$WAN_IP ENDPOINT_SRC=wan; return; fi
+	# behind (CG)NAT: a global IPv6 address of the router
+	e=$(ip -6 -o addr show scope global 2>/dev/null |
+		awk '$0 !~ / (deprecated|tentative)/ { for (i = 1; i < NF; i++) if ($i == "inet6") { sub(/\/.*/, "", $(i + 1)); print $(i + 1); exit } }')
+	if [ -n "$e" ]; then ENDPOINT=$e ENDPOINT_SRC=ipv6; return; fi
+	ENDPOINT= ENDPOINT_SRC=none
+}
+
+cmd_status() {
+	local key pub port p psk ep aips hs rx tx ka en
+	. /usr/share/libubox/jshn.sh
+	json_init
+	config_get_bool en wireguard enabled 0
+	json_add_boolean enabled "$en"
+	json_add_boolean up "$( [ -d "/sys/class/net/$IF" ] && echo 1 || echo 0)"
+	json_add_boolean module "$( [ -d /sys/module/wireguard ] && echo 1 || echo 0)"
+	json_add_boolean module_available "$( [ -f "$KMOD/$(uname -r)/modules.load" ] && echo 1 || echo 0)"
+	json_add_string kernel "$(uname -r)"
+	json_add_string error "$(cat "$STATE/error" 2>/dev/null)"
+	config_get key wireguard private_key
+	[ -n "$key" ] && pub=$(echo "$key" | wg pubkey 2>/dev/null)
+	json_add_string public_key "$pub"
+	config_get port wireguard listen_port 51820
+	json_add_int listen_port "$port"
+	endpoint
+	json_add_string endpoint "$ENDPOINT"
+	json_add_string endpoint_source "$ENDPOINT_SRC"
+	json_add_string wan_kind "$KIND"
+	json_add_int now "$(date +%s)"
+	json_add_object peers
+	if [ -d "/sys/class/net/$IF" ]; then
+		wg show $IF dump 2>/dev/null | sed 1d > "$STATE/dump.$$"
+		while IFS="$(printf '\t')" read -r p psk ep aips hs rx tx ka; do
+			[ -n "$p" ] || continue
+			json_add_object "$p"
+			json_add_string endpoint "$( [ "$ep" = "(none)" ] || echo "$ep")"
+			json_add_int latest_handshake "$(num "$hs" 0)"
+			json_add_int rx "$(num "$rx" 0)"
+			json_add_int tx "$(num "$tx" 0)"
+			json_close_object
+		done < "$STATE/dump.$$"
+		rm -f "$STATE/dump.$$"
+	fi
+	json_close_object
+	json_dump
+}
+
+# client configuration of peer <section> (needs its private key)
+cmd_client() {
+	local sec=$1 key psk aips addr dns caips pub port ka a
+	case "$sec" in ''|*[!A-Za-z0-9_]*) echo "no such peer: $sec" >&2; exit 1 ;; esac
+	[ "$(uci -q get "nijika.$sec")" = wireguard_peer ] || { echo "no such peer: $sec" >&2; exit 1; }
+	config_get key "$sec" private_key
+	[ -n "$key" ] || { echo "the peer's private key is not stored here (generate the key pair on the router to get a configuration)" >&2; exit 1; }
+	config_get psk "$sec" preshared_key
+	config_get aips "$sec" allowed_ips
+	config_get caips "$sec" client_allowed_ips
+	config_get dns wireguard dns
+	config_get port wireguard listen_port 51820
+	config_get ka "$sec" client_keepalive 25
+	config_get ADDRS wireguard address
+	pub=$(uci -q get nijika.wireguard.private_key | wg pubkey 2>/dev/null)
+	endpoint
+	# the peer's own tunnel addresses: its single-address allowed IPs
+	addr=
+	for a in $aips; do
+		case "$a" in
+			*/32|*/128) addr="$addr $a" ;;
+			*/*) ;;
+			*:*) addr="$addr $a/128" ;;
+			*) addr="$addr $a/32" ;;
+		esac
+	done
+	# DNS: the router's LAN address (the stock DNS server, DoH)
+	[ -n "$dns" ] || dns=$(ip -4 -o addr show dev br0 2>/dev/null |
+		awk '{ for (i = 1; i < NF; i++) if ($i == "inet") { sub(/\/.*/, "", $(i + 1)); print $(i + 1); exit } }')
+	[ -n "$caips" ] || caips="0.0.0.0/0"
+	echo "[Interface]"
+	conf_line PrivateKey "$key"
+	conf_line Address "$(join $addr)"
+	conf_line DNS "$dns"
+	echo
+	echo "[Peer]"
+	conf_line PublicKey "$pub"
+	conf_line PresharedKey "$psk"
+	conf_line AllowedIPs "$(join $caips)"
+	case "$ENDPOINT" in
+		'') ;;
+		*:*) conf_line Endpoint "[$ENDPOINT]:$port" ;;
+		*) conf_line Endpoint "$ENDPOINT:$port" ;;
+	esac
+	[ "$(num "$ka" 0)" -gt 0 ] && conf_line PersistentKeepalive "$ka"
+	return 0
+}
+
+mkdir -p "$STATE"
+chmod 0700 "$STATE"
+config_load nijika
+
+case "$1" in
+	up) cmd_up ;;
+	retry) rm -f "$LOADING"; cmd_up ;;
+	down) cmd_down ;;
+	firewall) cmd_firewall ;;
+	status) cmd_status ;;
+	client) cmd_client "$2" ;;
+	genkey) wg genkey ;;
+	genpsk) wg genpsk ;;
+	pubkey) wg pubkey ;;
+	*)
+		echo "usage: ${0##*/} up | retry | down | firewall | status | client <section> | genkey | genpsk | pubkey" >&2
+		exit 1
+		;;
+esac

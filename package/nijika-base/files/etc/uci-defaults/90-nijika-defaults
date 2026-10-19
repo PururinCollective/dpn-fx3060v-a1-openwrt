@@ -64,6 +64,14 @@ set nijika.ddns.force_interval='86400'
 commit nijika
 END
 
+uci -q get nijika.wireguard >/dev/null || uci -q batch <<'END'
+set nijika.wireguard=wireguard
+set nijika.wireguard.enabled='0'
+set nijika.wireguard.listen_port='51820'
+add_list nijika.wireguard.address='10.7.0.1/24'
+commit nijika
+END
+
 uci -q get nijika.ui >/dev/null || uci -q batch <<'END'
 set nijika.ui=ui
 set nijika.ui.developer='0'

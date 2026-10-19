@@ -117,6 +117,39 @@ config ddns 'ddns'
 #	option email 'me@example.org'
 #	option api_key '...'
 
+config wireguard 'wireguard'
+	# WireGuard (LuCI: Services > WireGuard, /usr/libexec/nijika/wireguard):
+	# interface wg0 for remote access (phones, laptops) and site-to-site
+	# links. Peers get the access of a LAN device: the router, the LAN and
+	# the internet (masqueraded). The module is built for the stock kernel.
+	option enabled '0'
+	option listen_port '51820'
+	list address '10.7.0.1/24'
+	# private_key: generated at the first start when not set.
+	# mtu: not set = the WAN's MTU - 80 (1412 with PPPoE).
+	# endpoint: the address in client configurations; not set = the first
+	#   DDNS host name, else the WAN's public IPv4 address, else (behind
+	#   CGNAT) a global IPv6 address of the router.
+	# dns: the DNS server in client configurations; not set = the router's
+	#   LAN address.
+
+# One per device or site, e.g.:
+# config wireguard_peer
+#	option enabled '1'
+#	option description 'phone'
+#	option public_key '...'
+#	# only when the key pair was generated here (client configuration, QR)
+#	option private_key '...'
+#	option preshared_key '...'
+#	list allowed_ips '10.7.0.2/32'
+#	# site-to-site: the other side's address and port, its LAN routed here
+#	option endpoint_host ''
+#	option endpoint_port '51820'
+#	option persistent_keepalive '0'
+#	option route_allowed_ips '1'
+#	# client configuration: what goes through the tunnel
+#	list client_allowed_ips '0.0.0.0/0'
+
 config ui 'ui'
 	# Developer options: show expert pages in LuCI (PON > ONT Identity)
 	option developer '0'

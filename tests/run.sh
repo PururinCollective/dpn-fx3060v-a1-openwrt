@@ -4,7 +4,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint parsers wrapper ucimirror spi apply easymesh ddns helpers stockshell bootenv fwu banner theme
+# Groups: syntax json lint parsers wrapper ucimirror spi apply easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -417,6 +417,11 @@ assert {'admin/nijikawrt/settings', 'admin/nijikawrt/firmware', 'admin/nijikawrt
 			grep -q '\"easymesh_set\"' '$st/usr/share/rpcd/acl.d/luci-app-nijika.json' &&
 			grep -q '\"wps\"' '$st/usr/share/rpcd/acl.d/luci-app-nijika.json' &&
 			grep -q 'easymesh_pair) m_easymesh_pair' '$st/usr/libexec/rpcd/nijika'"
+		if [ -d "$st/usr/lib/nijika/kmod/5.10.70" ]; then
+			check "stage: the WireGuard modules in /lib/modules/5.10.70 (ubox insmod needs the folder), no /etc/modules.d" sh -c "
+				[ -L '$st/lib/modules/5.10.70' ] && [ -f '$st/lib/modules/5.10.70/wireguard.ko' ] &&
+				[ \"\$(readlink '$st/lib/modules/5.10.70')\" = ../../usr/lib/nijika/kmod/5.10.70 ] && [ ! -e '$st/etc/modules.d' ]"
+		fi
 	fi
 }
 
@@ -820,12 +825,241 @@ FN
 		"'ddns_status' in d['luci-app-nijika']['read']['ubus']['nijika'] and 'ddns_update' in d['luci-app-nijika']['write']['ubus']['nijika']"
 }
 
+# -------------------------------------------------------------- wireguard
+
+t_wireguard() {
+	echo "wireguard (wg0 config, routes, stock firewall rules, client configuration)"
+	local D="$W/wg" out
+	mkdir -p "$D/bin" "$D/state" "$D/kmod/5.10.70" "$D/sys/module" "$D/sys/class/net" "$D/rtk/proc/self"
+	printf '%s\n' libchacha chacha-neon poly1305-neon libchacha20poly1305 libcurve25519-generic \
+		libcurve25519 libblake2s-generic libblake2s wireguard > "$D/kmod/5.10.70/modules.load"
+	mkdir -p "$D/sys/module/libchacha"	# already loaded: skipped
+	# stock iptables in the chroot: rules kept in a file, -C/-I/-D on it
+	cat > "$D/bin/rtkrun" <<RUN
+#!/bin/sh
+t=\${1##*/}; shift
+[ "\$1" = -t ] && { tbl=\$2; shift 2; } || tbl=filter
+op=\$1 chain=\$2; shift 2
+[ "\$op" = -I ] && [ "\$1" = 1 ] && shift
+line="\$t \$tbl \$chain \$*"
+echo "\$op \$line" >> "$D/fw.log"
+case "\$op" in
+	-C) grep -qxF "\$line" "$D/rules" 2>/dev/null ;;
+	-I) echo "\$line" >> "$D/rules" ;;
+	-D) grep -qxF "\$line" "$D/rules" || exit 1
+	    awk -v l="\$line" '!d && \$0 == l { d = 1; next } { print }' "$D/rules" > "$D/rules.t"; mv "$D/rules.t" "$D/rules" ;;
+esac
+RUN
+	cat > "$D/bin/wg" <<WG
+#!/bin/sh
+case "\$1" in
+	genkey) echo 'oK8WRRhd5gjB7CtYzS6Nd2l1/9bOkDiGXbFAfmeBnmM=' ;;
+	genpsk) echo 'pSkpSkpSkpSkpSkpSkpSkpSkpSkpSkpSkpSkpSkpSkk=' ;;
+	pubkey) read -r k; echo "PUB\${k%=}" ;;
+	syncconf) cp "\$3" "$D/wg.synced" ;;
+	show) printf 'priv\tpub\t51820\toff\n' ;;
+esac
+WG
+	cat > "$D/bin/ddns" <<'DD'
+#!/bin/sh
+[ "$1" = wan ] && cat "${0%/ddns}/wan"
+DD
+	chmod +x "$D/bin/rtkrun" "$D/bin/wg" "$D/bin/ddns"
+	cat > "$D/functions.sh" <<FN
+config_load() { . "$D/cfg"; }
+config_get() { eval "\$1=\\\${CFG_\${2}_\${3}-\\\$4}"; }
+config_set() { eval "CFG_\$1_\$2=\\\$3"; }
+config_get_bool() { local _v; config_get _v "\$2" "\$3" "\$4"; case "\$_v" in 1|on|true|yes|enabled) _v=1 ;; *) _v=0 ;; esac; eval "\$1=\\\$_v"; }
+config_foreach() { local _s _l; eval "_l=\\\$CFG_SECTIONS_\$2"; for _s in \$_l; do "\$1" "\$_s"; done; }
+# busybox sh would run its own applets
+logger() { echo "\$*" >> "$D/log"; }
+insmod() { echo "insmod \$*" >> "$D/calls"; mkdir -p "$D/sys/module/\$(basename "\$1" .ko | tr - _)"; }
+uname() { echo 5.10.70; }
+uci() {
+	case "\$*" in
+		*"get nijika.wireguard.private_key") echo "\$CFG_wireguard_private_key" ;;
+		*"get nijika."*) s=\${*##*nijika.}; eval "echo \\\${CFG_\${s}_type}" ;;
+		*) echo "uci \$*" >> "$D/calls" ;;
+	esac
+}
+ip() {
+	echo "ip \$*" >> "$D/calls"
+	case "\$*" in
+		*" rule del "*) return 1 ;;
+		"-4 route show default") cat "$D/route" ;;
+		"link add dev wg0 type wireguard") mkdir -p "$D/sys/class/net/wg0" ;;
+		"link del dev wg0") rm -rf "$D/sys/class/net/wg0" ;;
+		"-o addr show dev wg0") cat "$D/wgaddr" 2>/dev/null ;;
+		"-4 -o addr show dev br0") echo '3: br0    inet 192.168.0.1/24 brd 192.168.0.255 scope global br0' ;;
+		"-6 -o addr show scope global") cat "$D/addr6" 2>/dev/null ;;
+	esac
+	return 0
+}
+FN
+	sed -e "s|^\. /lib/functions.sh|. $D/functions.sh|" -e "s|^STATE=.*|STATE=$D/state|" \
+		-e "s|^KMOD=.*|KMOD=$D/kmod|" -e "s|^RTK_RUN=.*|RTK_RUN=$D/bin/rtkrun|" \
+		-e "s|/sys/|$D/sys/|g" -e "s|/rtk/proc/self|$D/rtk/proc/self|" \
+		-e "s|/usr/libexec/nijika/ddns|$D/bin/ddns|" -e "s|^LOADING=.*|LOADING=$D/etc/wireguard.loading|" \
+		"$TOP/package/nijika/files/usr/libexec/nijika/wireguard" > "$D/wireguard"
+	wg0() { PATH="$D/bin:$PATH" "$BB" sh "$D/wireguard" "$@"; }
+	cfg() { printf '%s\n' "$@" > "$D/cfg"; }
+
+	echo 'default via 100.64.0.1 dev ppp0 proto static' > "$D/route"
+	mkdir -p "$D/sys/class/net/ppp0"; echo 1492 > "$D/sys/class/net/ppp0/mtu"
+	printf 'wan=ppp0\nwan_ip=203.0.113.7\nkind=public\n' > "$D/bin/wan"
+	cfg 'CFG_wireguard_enabled=1' 'CFG_wireguard_listen_port=51820' 'CFG_wireguard_address=10.7.0.1/24' \
+		'CFG_SECTIONS_wireguard_peer="p1 p2 p3 p4"' \
+		'CFG_p1_type=wireguard_peer' 'CFG_p1_public_key=PUBphone' 'CFG_p1_private_key=PRIVphone' 'CFG_p1_preshared_key=PSK1' \
+		'CFG_p1_allowed_ips="10.7.0.2/32 fd07::2/128"' 'CFG_p1_client_allowed_ips="0.0.0.0/0"' \
+		'CFG_p2_type=wireguard_peer' 'CFG_p2_public_key=PUBoffice' 'CFG_p2_allowed_ips="10.7.0.3/32 192.168.50.0/24 0.0.0.0/0"' \
+		'CFG_p2_endpoint_host=2001:db8::5' 'CFG_p2_endpoint_port=51821' 'CFG_p2_persistent_keepalive=25' \
+		'CFG_p3_type=wireguard_peer' 'CFG_p3_public_key=PUBoff' 'CFG_p3_enabled=0' 'CFG_p3_allowed_ips=10.7.0.9/32' \
+		'CFG_p4_type=wireguard_peer' 'CFG_p4_allowed_ips=10.7.0.10/32' \
+		'CFG_SECTIONS_ddns_host=d1' 'CFG_d1_provider=cloudflare' "CFG_d1_hostname='@, www'" 'CFG_d1_zone=example.org'
+	rm -f "$D/calls" "$D/rules" "$D/fw.log"
+	wg0 up
+	check "up: a private key is made and stored when none is set" grep -q "uci -q set nijika.wireguard.private_key=" "$D/calls"
+	check "up: the load marker is gone once the modules are in" test ! -e "$D/etc/wireguard.loading"
+	check "up: modules loaded in modules.load order, the loaded one skipped" sh -c "
+		[ \"\$(grep '^insmod' '$D/calls' | sed 's|.*/||' | tr '\n' ' ')\" = 'chacha-neon.ko poly1305-neon.ko libchacha20poly1305.ko libcurve25519-generic.ko libcurve25519.ko libblake2s-generic.ko libblake2s.ko wireguard.ko ' ]"
+	check "up: wg0 created, MTU from the WAN (PPPoE 1492 - 80), its address set" sh -c "
+		grep -qx 'ip link add dev wg0 type wireguard' '$D/calls' && grep -qx 'ip link set dev wg0 mtu 1412 up' '$D/calls' &&
+		grep -qx 'ip -4 addr add 10.7.0.1/24 dev wg0' '$D/calls'"
+	check "wg config: enabled peers with a key; allowed IPs, IPv6 endpoint in brackets, keepalive" sh -c "
+		c='$D/wg.synced'; grep -qx 'ListenPort = 51820' \$c && grep -qx 'PublicKey = PUBphone' \$c &&
+		grep -qx 'PresharedKey = PSK1' \$c && grep -qx 'AllowedIPs = 10.7.0.2/32, fd07::2/128' \$c &&
+		grep -qx 'Endpoint = \[2001:db8::5\]:51821' \$c && grep -qx 'PersistentKeepalive = 25' \$c &&
+		! grep -q PUBoff\$ \$c && [ \$(grep -c '^\[Peer\]' \$c) -eq 2 ] && ! grep -q PRIVphone \$c"
+	check "routes: a site's LAN routed to wg0 (rule to the main table), not /32s in the subnet, never a default route" sh -c "
+		grep -qx 'ip -4 route replace 192.168.50.0/24 dev wg0' '$D/calls' &&
+		grep -qx 'ip -4 rule add to 192.168.50.0/24 lookup main pref 900' '$D/calls' &&
+		grep -qx 'ip -4 rule add to 10.7.0.0/24 lookup main pref 900' '$D/calls' &&
+		! grep -q 'route replace 10.7.0.3/32' '$D/calls' && ! grep -q 'route replace 0.0.0.0/0' '$D/calls' &&
+		grep -qx 'ip -6 route replace fd07::2/128 dev wg0' '$D/calls'"
+	check "firewall: UDP port, wg0 in and through (IPv4 and IPv6), NAT of the tunnel subnet out of the WAN" sh -c "
+		r='$D/rules'; for t in iptables ip6tables; do
+			grep -qx \"\$t filter INPUT -p udp --dport 51820 -j ACCEPT\" \$r && grep -qx \"\$t filter INPUT -i wg0 -j ACCEPT\" \$r &&
+			grep -qx \"\$t filter FORWARD -i wg0 -j ACCEPT\" \$r && grep -qx \"\$t filter FORWARD -o wg0 -j ACCEPT\" \$r || exit 1
+		done; grep -qx 'iptables nat POSTROUTING -s 10.7.0.0/24 -o ppp0 -j MASQUERADE' \$r && ! grep -q 'ip6tables nat' \$r"
+	check "firewall: no extra NAT rule for peers inside the tunnel subnet" sh -c "[ \$(grep -c 'nat POSTROUTING' '$D/rules') -eq 2 ]"
+	echo 'CFG_wireguard_private_key=oK8WRRhd5gjB7CtYzS6Nd2l1/9bOkDiGXbFAfmeBnmM=' >> "$D/cfg"
+	echo 'CFG_wireguard_listen_port=51999' >> "$D/cfg"
+	printf '%s\n' '7: wg0    inet 10.7.0.1/24 scope global wg0' > "$D/wgaddr"
+	rm -f "$D/calls"
+	wg0 up
+	check "up again, new port: the old port's rule removed, the rest kept once" sh -c "
+		r='$D/rules'; ! grep -q 'dport 51820' \$r && grep -qx 'iptables filter INPUT -p udp --dport 51999 -j ACCEPT' \$r &&
+		[ \$(grep -c 'iptables filter FORWARD -i wg0 -j ACCEPT' \$r) -eq 1 ] && ! grep -q 'addr add' '$D/calls' &&
+		! grep -q 'link add' '$D/calls' && ! grep -q '^insmod' '$D/calls' && ! grep -q 'uci -q set' '$D/calls'"
+	sort "$D/rules" > "$D/rules.sorted"; : > "$D/rules"
+	wg0 firewall
+	check "firewall (housekeep): rules the stock startup dropped come back" sh -c "sort '$D/rules' | cmp -s - '$D/rules.sorted'"
+
+	# client configuration
+	out=$(wg0 client p1)
+	check "client config: own key, /32 and /128 address, DNS = LAN address, router key, DDNS endpoint, keepalive" sh -c "
+		echo '$out' | grep -qx 'PrivateKey = PRIVphone' && echo '$out' | grep -qx 'Address = 10.7.0.2/32, fd07::2/128' &&
+		echo '$out' | grep -qx 'DNS = 192.168.0.1' && echo '$out' | grep -qx 'PublicKey = PUBoK8WRRhd5gjB7CtYzS6Nd2l1/9bOkDiGXbFAfmeBnmM' &&
+		echo '$out' | grep -qx 'AllowedIPs = 0.0.0.0/0' && echo '$out' | grep -qx 'Endpoint = example.org:51999' &&
+		echo '$out' | grep -qx 'PresharedKey = PSK1' && echo '$out' | grep -qx 'PersistentKeepalive = 25'"
+	check "client config: refused without the peer's private key, and for a bad section name" sh -c "
+		! PATH='$D/bin:$PATH' '$BB' sh '$D/wireguard' client p2 >/dev/null 2>&1 &&
+		! PATH='$D/bin:$PATH' '$BB' sh '$D/wireguard' client 'p1;id' >/dev/null 2>&1"
+	# a /32 tunnel address (peers outside it): their addresses are NATed too
+	sed 's|^CFG_wireguard_address=.*|CFG_wireguard_address=192.168.89.24/32|; s|10\.7\.0\.|192.168.89.|g' "$D/cfg" > "$D/cfg32"
+	cp "$D/cfg" "$D/cfg.keep"; cp "$D/cfg32" "$D/cfg"; : > "$D/rules"; rm -f "$D/state/fw"
+	wg0 firewall
+	check "firewall: a /32 tunnel address: the peers' addresses masqueraded (not disabled or keyless ones)" sh -c "
+		r='$D/rules'; for s in 192.168.89.2/32 192.168.89.3/32 192.168.50.0/24; do
+			grep -qx \"iptables nat POSTROUTING -s \$s -o ppp0 -j MASQUERADE\" \$r || exit 1
+		done; ! grep -q -e '192.168.89.9/32' -e '192.168.89.10/32' -e '192.168.89.24/32' \$r"
+	cp "$D/cfg.keep" "$D/cfg"; : > "$D/rules"; rm -f "$D/state/fw"; wg0 firewall
+	sed -i '/^CFG_SECTIONS_ddns_host=/d' "$D/cfg"
+	printf 'wan=ppp0\nwan_ip=100.70.12.34\nkind=cgnat\n' > "$D/bin/wan"
+	echo '2: br0    inet6 2001:db8:1::1/64 scope global dynamic' > "$D/addr6"
+	out=$(wg0 client p1)
+	check "behind CGNAT, no DDNS name: the router's IPv6 address as endpoint" sh -c "echo '$out' | grep -qx 'Endpoint = \[2001:db8:1::1\]:51999'"
+	printf 'wan=ppp0\nwan_ip=5.6.7.8\nkind=public\n' > "$D/bin/wan"
+	out=$(wg0 client p1)
+	check "public WAN, no DDNS name: the WAN address as endpoint" sh -c "echo '$out' | grep -qx 'Endpoint = 5.6.7.8:51999'"
+
+	rm -f "$D/calls"
+	wg0 down
+	check "down: rules, routes and wg0 removed" sh -c "
+		[ ! -s '$D/rules' ] && grep -qx 'ip link del dev wg0' '$D/calls' &&
+		grep -q 'ip -4 route del 192.168.50.0/24 dev wg0' '$D/calls' && [ ! -d '$D/sys/class/net/wg0' ]"
+
+	# a load that crashed the kernel: not tried again at the next start
+	rm -rf "$D/sys/module"/* "$D/state/error"; : > "$D/calls"
+	mkdir -p "$D/etc"; echo crashed > "$D/etc/wireguard.loading"
+	check "an unfinished module load (crash) is not repeated: up refuses, says how to retry" sh -c "
+		! PATH='$D/bin:$PATH' '$BB' sh '$D/wireguard' up 2>/dev/null && grep -q 'did not finish' '$D/state/error' &&
+		! grep -q '^insmod' '$D/calls'"
+	PATH="$D/bin:$PATH" "$BB" sh "$D/wireguard" retry 2>/dev/null
+	check "retry: loads the modules again and clears the marker" sh -c "
+		grep -q '^insmod.*wireguard.ko' '$D/calls' && [ ! -e '$D/etc/wireguard.loading' ]"
+
+	rm -rf "$D/kmod/5.10.70"; rm -rf "$D/sys/module"/*
+	check "no module for the running kernel: up fails with a clear error" sh -c "
+		! PATH='$D/bin:$PATH' '$BB' sh '$D/wireguard' up 2>/dev/null && grep -q 'no WireGuard module for kernel 5.10.70' '$D/state/error'"
+
+	pyjson "menu: Services > WireGuard after DDNS" "$TOP/package/luci-app-nijika/root/usr/share/luci/menu.d/luci-app-nijika.json" \
+		"d['admin/services/wireguard']['action']['path'] == 'nijika/wireguard' and d['admin/services/wireguard']['order'] > d['admin/services/ddns']['order']"
+	pyjson "ACL: wg_status to read, wg_keys and wg_client (private keys) to write" "$TOP/package/luci-app-nijika/root/usr/share/rpcd/acl.d/luci-app-nijika.json" \
+		"'wg_status' in d['luci-app-nijika']['read']['ubus']['nijika'] and {'wg_keys', 'wg_client'} <= set(d['luci-app-nijika']['write']['ubus']['nijika']) and 'wg_client' not in d['luci-app-nijika']['read']['ubus']['nijika']"
+}
+
+# ------------------------------------------------------------------- kmod
+
+# the modules built for the stock kernel (./build.sh kmod)
+t_kmod() {
+	echo "kmod (modules for the stock kernel: vermagic, symbols, load order)"
+	local K="$TOP/build/kmod/5.10.70" S="$TOP/build/kmod/stock-kernel" X m
+	X=$(ls -d "$TOP"/build/toolchain/*/bin 2>/dev/null | head -n 1)
+	if [ ! -f "$K/modules.load" ] || [ ! -f "$S/vmlinux.symvers" ] || [ -z "$X" ]; then
+		skp "kernel modules" "not built (./build.sh kmod)"
+		return
+	fi
+	X="$X/aarch64-linux-"
+	modinfo() { "${X}objcopy" -O binary --only-section=.modinfo "$1" /dev/stdout 2>/dev/null | tr '\0' '\n' | sed -n "s/^$2=//p"; }
+
+	check "vermagic of every module = the stock kernel's (5.10.70 SMP mod_unload aarch64)" sh -c "
+		for k in '$K'/*.ko; do
+			[ \"\$('${X}objcopy' -O binary --only-section=.modinfo \"\$k\" /dev/stdout | tr '\0' '\n' | sed -n 's/^vermagic=//p')\" = '5.10.70 SMP mod_unload aarch64' ] || exit 1
+		done"
+	for k in "$K"/*.ko; do "${X}nm" "$k" | awk '$3 ~ /^__ksymtab_/ { sub(/^__ksymtab_/, "", $3); print $3 }'; done | sort -u > "$W/kmod.exp"
+	for k in "$K"/*.ko; do "${X}nm" -u "$k" | awk '{ print $2 }'; done | sort -u > "$W/kmod.undef"
+	cut -f 2 "$S/vmlinux.symvers" | sort -u > "$W/kmod.vmlinux"
+	check "every symbol the modules need: exported by the stock kernel or by one of them" \
+		sh -c "[ -z \"\$(comm -23 '$W/kmod.undef' \$(printf '%s\n' '$W/kmod.exp' '$W/kmod.vmlinux' | xargs sort -u | tee '$W/kmod.have' >/dev/null; echo '$W/kmod.have'))\" ]"
+	check "modules.load: every module once, dependencies first" sh -c "
+		[ \"\$(ls '$K' | sed -n 's/\.ko\$//p' | sort | tr '\n' ' ')\" = \"\$(sort '$K/modules.load' | tr '\n' ' ')\" ] || exit 1
+		seen=' '
+		while read -r m; do
+			for d in \$('${X}objcopy' -O binary --only-section=.modinfo '$K'/\$m.ko /dev/stdout | tr '\0' '\n' | sed -n 's/^depends=//p' | tr ',' ' '); do
+				case \"\$seen\" in *\" \$d \"*|*\" \$(echo \$d | tr _ -) \"*) ;; *) exit 1 ;; esac
+			done
+			seen=\"\$seen\$m \"
+		done < '$K/modules.load'"
+	check "WireGuard and the NEON ChaCha20/Poly1305 are among them" sh -c "
+		grep -qx wireguard '$K/modules.load' && grep -qx chacha-neon '$K/modules.load' && grep -qx poly1305-neon '$K/modules.load'"
+	if [ -d "$TOP/build/stage/rtk/lib/modules" ]; then
+		find "$TOP/build/stage/rtk/lib/modules" -name '*.ko' > "$W/kmod.stock"
+		while read -r k; do "${X}nm" -u "$k"; done < "$W/kmod.stock" | awk '{ print $2 }' | sort -u > "$W/kmod.sundef"
+		while read -r k; do "${X}nm" "$k" | awk '$3 ~ /^__ksymtab_/ { sub(/^__ksymtab_/, "", $3); print $3 }'; done < "$W/kmod.stock" | sort -u > "$W/kmod.sexp"
+		check "ksymtab.py: the stock kernel's exports cover what all stock modules import" sh -c "
+			[ -z \"\$(comm -23 '$W/kmod.sundef' \$(sort -u '$W/kmod.sexp' '$W/kmod.vmlinux' > '$W/kmod.shave'; echo '$W/kmod.shave'))\" ]"
+	else
+		skp "ksymtab.py against the stock modules" "no build/stage"
+	fi
+}
+
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint parsers wrapper ucimirror spi apply easymesh ddns helpers stockshell bootenv fwu banner theme}"
+groups="${*:-syntax json lint parsers wrapper ucimirror spi apply easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|easymesh|ddns|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
+		syntax|json|lint|parsers|wrapper|ucimirror|spi|apply|easymesh|ddns|wireguard|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done
