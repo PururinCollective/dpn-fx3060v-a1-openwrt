@@ -113,6 +113,14 @@ Other build-time changes to `/rtk`:
 
 * `home/httpd/boa.conf`: `Port 80` → `Port 8080` (uhttpd/LuCI owns port 80)
 * `etc/inetd.conf`: `ssh` line commented (OpenWrt dropbear owns port 22)
+* `etc/miniupnpd.conf` **added**: the stock `upnpctrl up` starts miniupnpd
+  1.3 as `-i <wan> -a <lan ip> -p 52869` (no `-f`, no `-S`), so it reads
+  this default file, which stock does not have: without it any LAN host can
+  map any port (22, 80, 443 ...), also to another host's address. Now
+  `secure_mode=yes` (mappings only to the requesting host) and only ports
+  1024-65535, external and internal (`allow`/`deny` rules; UPnP IGD and
+  NAT-PMP both check them). Upstream OpenWrt's miniupnpd has the same
+  defaults.
 * `bin/ccom_linkkit` **removed**: D-Link's Alibaba Cloud Link Kit agent
   (MQTT to `iot-*.aliyuncs.com`, cloud firmware/config push, remote
   property/service calls, AWSS WiFi provisioning, ALCS LAN control). An inert

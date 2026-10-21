@@ -255,6 +255,7 @@ return view.extend({
 		s.addremove = true;
 		s.nodescriptions = true;
 		s.modaltitle = function(sid) { return nc.wanLabel(rec(sid), recIndex(sid)); };
+		nc.modalSaveErrors(s);
 		s.renderSectionAdd = function() { return E([]); };
 		s.handleRemove = function(sid) {
 			var label = nc.wanLabel(rec(sid), recIndex(sid));
@@ -537,6 +538,9 @@ return view.extend({
 		o.value('1', 'IA_NA');
 		o.value('2', 'IA_PD');
 		o.rmempty = false;
+		/* neither is a valid setting (0, e.g. SLAAC only); not optional,
+		 * LuCI refused to save the dialog of such a connection */
+		o.optional = true;
 		o.cfgvalue = function(sid) {
 			var v = +uci.get('rtk', sid, 'Ipv6DhcpRequest') || 0;
 			return [ '1', '2' ].filter(function(b) { return v & +b; });

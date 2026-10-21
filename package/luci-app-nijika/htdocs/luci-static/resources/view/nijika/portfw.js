@@ -13,10 +13,15 @@
  * Rules a LAN device opened through UPnP (Dynamic) are shown, not edited.
  * The table size is the stock configuration's (flash all, chain info).
  *
- * Record fields (flash names): IP, PortStart/PortEnd (internal ports),
- * externalportStart/End (0 = the internal ones), Protocol (1 TCP, 2 UDP,
- * 3 both: D-Link's encoding), remotehost (0.0.0.0 = any source), OutInf
- * (WAN ifIndex, 65535 = any), Comment, enable.
+ * Record fields (flash names): IP, externalportStart/End (the WAN port(s)
+ * a rule matches, libmib portfw_modify: --dport; 0 would match every
+ * port), PortStart/PortEnd (internal ports, the DNAT target port and the
+ * FORWARD accept rule's port; 0 = unchanged, accept any port), Protocol
+ * (1 TCP, 2 UDP, 3 both: D-Link's encoding), remotehost (0.0.0.0 = any
+ * source), OutInf (WAN ifIndex, 65535 = any), Comment, enable.
+ * Like a MikroTik dst-nat (protocol, dst-port, to-addresses, to-ports): the
+ * external port is required, an empty internal port is the external one
+ * (written as such, so the accept rule covers only that port).
  */
 
 var ANY_WAN = '65535';
@@ -107,28 +112,40 @@ return view.extend({
 			return node;
 		};
 
+		/* the order of a dst-nat rule: what it matches (protocol, source,
+		 * destination port), then where it goes; * = required */
 		o = s.option(form.Flag, 'enable', _('On'));
 		o.default = '1';
 		o.rmempty = false;
-		o = s.option(form.Value, 'comment', _('Name'));
-		o.datatype = 'maxlength(59)';
-		o = s.option(form.ListValue, 'proto', _('Protocol'));
+		o = s.option(form.Value, 'comment', _('Name') + ' *');
+		o.rmempty = false;
+		o.validate = function(sid, v) {
+			v = String(v || '').trim();
+			return !v ? _('Required') : (v.length > 59 ? _('At most 59 characters') : true);
+		};
+		o = s.option(form.ListValue, 'proto', _('Protocol') + ' *');
 		o.value('3', 'TCP + UDP');
 		o.value('1', 'TCP');
 		o.value('2', 'UDP');
 		o.default = '3';
 		o.textvalue = choiceText;
-		o = s.option(form.Value, 'ext', _('External port'), _('Empty: the same as the internal port(s).'));
+		o = s.option(form.Value, 'rhost', _('Source Address'), _('Only from this address; empty: from anywhere.'));
+		o.datatype = 'ip4addr("nomask")';
+		o.placeholder = _('any');
+		o.textvalue = function(sid) { return this.cfgvalue(sid) || _('any'); };
+		o = s.option(form.Value, 'ext', _('External Port') + ' *', _('The destination port or port range on the WAN, e.g. 80 or 8000-8100.'));
+		o.rmempty = false;
+		o.placeholder = '80';
+		o.validate = function(sid, v) { return v ? validRange(sid, v) : _('Required'); };
+		o = s.option(form.Value, 'ip', _('Internal Address') + ' *');
+		o.datatype = 'ip4addr("nomask")';
+		o.rmempty = false;
+		o.validate = function(sid, v) { return v ? true : _('Required'); };
+		o = s.option(form.Value, 'int', _('Internal Port'), _('The port or port range on the device; empty: the same as the external port.'));
 		o.placeholder = _('same');
 		o.validate = validRange;
 		o.textvalue = function(sid) { return this.cfgvalue(sid) || _('same'); };
-		o = s.option(form.Value, 'ip', _('Internal address'));
-		o.datatype = 'ip4addr("nomask")';
-		o.rmempty = false;
-		o = s.option(form.Value, 'int', _('Internal port'));
-		o.rmempty = false;
-		o.validate = function(sid, v) { return v ? validRange(sid, v) : _('Required'); };
-		o = s.option(form.ListValue, 'wan', _('WAN'));
+		o = s.option(form.ListValue, 'wan', _('WAN Interface'));
 		o.value(ANY_WAN, _('Any'));
 		uci.sections('rtk', 'ATM_VC_TBL').forEach(function(r, i) {
 			if (r.ChannelMode != '0')
@@ -136,14 +153,11 @@ return view.extend({
 		});
 		o.default = ANY_WAN;
 		o.textvalue = choiceText;
-		o = s.option(form.Value, 'rhost', _('Source address'), _('Only from this address; empty: from anywhere.'));
-		o.modalonly = true;
-		o.datatype = 'ip4addr("nomask")';
 
 		var dyn = this.dynamic.length ? E('div', { 'class': 'cbi-section' }, [
 			E('h3', {}, _('Opened through UPnP')),
 			E('table', { 'class': 'table' }, [
-				E('tr', { 'class': 'tr table-titles' }, [ _('Name'), _('Protocol'), _('External port'), _('Internal address'), _('Internal port') ]
+				E('tr', { 'class': 'tr table-titles' }, [ _('Name'), _('Protocol'), _('External Port'), _('Internal Address'), _('Internal Port') ]
 					.map(function(t) { return E('th', { 'class': 'th' }, t); }))
 			].concat(this.dynamic.map(function(r) {
 				return E('tr', { 'class': 'tr' }, [ r.Comment || '-', { 1: 'TCP', 2: 'UDP' }[r.Protocol] || 'TCP + UDP',
@@ -159,10 +173,13 @@ return view.extend({
 		var self = this, m = this.map;
 		return m.save().then(function() {
 			var rules = m.data.sections('json', 'rule').map(function(r) {
-				var e = range(r.ext), i = range(r.int) || [ 0, 0 ];
+				/* no internal port: the external one */
+				var e = range(r.ext) || [ 0, 0 ], i = range(r.int) || e;
+				if (i[1] != i[0] && i[1] - i[0] != e[1] - e[0])
+					throw new Error(_('%s: the internal port range must be as long as the external one').format(r.comment || '?'));
 				return {
-					enable: r.enable == '0' ? 0 : 1, comment: r.comment || '', proto: +r.proto || 3,
-					ip: r.ip || '', from: i[0], to: i[1], efrom: e ? e[0] : 0, eto: e ? e[1] : 0,
+					enable: r.enable == '0' ? 0 : 1, comment: String(r.comment || '').trim(), proto: +r.proto || 3,
+					ip: r.ip || '', from: i[0], to: i[1], efrom: e[0], eto: e[1],
 					rhost: r.rhost || '0.0.0.0', ifindex: +r.wan || 65535
 				};
 			});

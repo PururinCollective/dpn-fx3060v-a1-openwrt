@@ -415,6 +415,31 @@ return baseclass.extend({
 		}, { once: true });
 	},
 
+	/* A grid section's edit dialog: LuCI saves it silently and keeps it
+	 * open on any error (a field on a tab not shown, say), so Save looks
+	 * like it does nothing. Check the fields first and show the error at
+	 * the top of the dialog. */
+	modalSaveErrors: function(s) {
+		/* LuCI's own steps (form.js handleModalSave: save the dialog's map,
+		 * reload its parents, close), with the error kept; calling the
+		 * original from an instance override confuses LuCI's super() */
+		s.handleModalSave = function(modalMap, ev) {
+			var node = this.getActiveModalMap(), m = node ? dom.findClassInstance(node) : null, p, pm;
+			if (!m)
+				return Promise.resolve();
+			p = m.save(null, true);
+			for (pm = m; pm.parent; ) {
+				pm = pm.parent;
+				p = p.then(L.bind(pm.load, pm)).then(L.bind(pm.reset, pm));
+			}
+			return p.then(L.bind(this.handleModalCancel, this, modalMap, ev, true)).catch(function(e) {
+				var box = node.querySelector('.nijika-modal-error') ||
+					node.insertBefore(E('div', { 'class': 'alert-message warning nijika-modal-error' }), node.firstChild);
+				dom.content(box, E('p', _('Not saved: %s').format((e && e.message) || e)));
+			});
+		};
+	},
+
 	/* Keep a status box under a form.Map's title and description: LuCI
 	 * redraws the map's contents after a modal save or a reset, which
 	 * drops nodes added to it, so put it back after every redraw. */

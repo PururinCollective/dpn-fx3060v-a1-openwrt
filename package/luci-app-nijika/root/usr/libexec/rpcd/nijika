@@ -567,11 +567,13 @@ is_port() {
 	[ "$1" -ge 1 ] && [ "$1" -le 65535 ]
 }
 
-# {"enable": bool, "rules": [{"enable", "comment", "ip", "from", "to",
-#  "proto" (1 TCP, 2 UDP, 3 both: D-Link stores "both" as 3), "rhost",
-#  "efrom", "eto" (0 = the internal ports), "ifindex" (65535 = any WAN)}]}
+# {"enable": bool, "rules": [{"enable", "comment", "ip", "efrom", "eto"
+#  (the WAN port(s), required: libmib matches --dport on them), "from", "to"
+#  (internal ports; none: the external ones), "proto" (1 TCP, 2 UDP, 3 both:
+#  D-Link stores "both" as 3), "rhost", "ifindex" (65535 = any WAN)}]}
 # Replaces the static rules; UPnP's (Dynamic=1) stay. Records go in with the
-# stock `flash add/del/set`, then setupPortFW like the stock page.
+# stock `flash add/del/set`, committed before the reply (the page reads them
+# back from flash), then setupPortFW like the stock page.
 m_portfw_set() {
 	need_vendor
 	local en n i k total idx out vals="$NIJIKA_RUNDIR/portfw.$$" ok=0
@@ -590,14 +592,14 @@ m_portfw_set() {
 		json_get_var r_if ifindex
 		json_select ..
 		r_comment=$(printf '%s' "$r_comment" | tr -d '\000-\037' | cut -c1-59)
-		: "${r_to:=$r_from}" "${r_efrom:=0}" "${r_eto:=$r_efrom}" "${r_if:=65535}" "${r_rhost:=0.0.0.0}"
+		: "${r_eto:=$r_efrom}" "${r_if:=65535}" "${r_rhost:=0.0.0.0}"
 		is_ip4 "$r_ip" || { rm -f "$vals"; err "rule $((i)): internal address"; }
-		is_port "$r_from" && is_port "$r_to" && [ "$r_to" -ge "$r_from" ] || { rm -f "$vals"; err "rule $((i)): internal ports"; }
-		if [ "$r_efrom" != 0 ]; then
-			is_port "$r_efrom" && is_port "$r_eto" && [ "$r_eto" -ge "$r_efrom" ] || { rm -f "$vals"; err "rule $((i)): external ports"; }
-		else
-			r_eto=0
-		fi
+		is_port "$r_efrom" && is_port "$r_eto" && [ "$r_eto" -ge "$r_efrom" ] || { rm -f "$vals"; err "rule $((i)): external port"; }
+		# no internal port: the external one (the FORWARD accept rule then
+		# covers only that port; 0 would accept every port)
+		case "${r_from:-0}" in 0) r_from=$r_efrom r_to=$r_eto ;; esac
+		: "${r_to:=$r_from}"
+		is_port "$r_from" && is_port "$r_to" && [ "$r_to" -ge "$r_from" ] || { rm -f "$vals"; err "rule $((i)): internal port"; }
 		case "$r_proto" in 1|2|3) ;; *) rm -f "$vals"; err "rule $((i)): protocol" ;; esac
 		is_ip4 "$r_rhost" || { rm -f "$vals"; err "rule $((i)): source address"; }
 		case "$r_if" in ''|*[!0-9]*) rm -f "$vals"; err "rule $((i)): WAN" ;; esac
@@ -627,6 +629,9 @@ m_portfw_set() {
 	done < "$vals"
 	rm -f "$vals"
 	mib_set PORT_FW_ENABLE "$( [ "$en" = 1 ] || [ "$en" = true ] && echo 1 || echo 0)"
+	# configd keeps writes in RAM and `flash get` reads flash: without the
+	# commit the page's reload would still show the old switch and rules
+	rtk /bin/mib commit cs now >/dev/null 2>&1
 	apply_detached portfw
 	json_init
 	json_add_int ok "$ok"

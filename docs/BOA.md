@@ -236,14 +236,22 @@ on a settings change, and puts `DHCP_MODE` back to 2 after an agent.
 
 ## Port forwarding (formPortFw, PORT_FW_TBL)
 
-Record fields: `IP`, `PortStart`/`PortEnd` (internal), `externalportStart`/
-`externalportEnd` (0: the internal ones), `Protocol` (1 TCP, 2 UDP, 3 both:
+Record fields: `IP`, `externalportStart`/`externalportEnd` (the WAN
+port(s): libmib's `portfw_modify` matches `--dport` on them; 0 makes the
+DNAT rule match every port of the protocol), `PortStart`/`PortEnd` (the
+internal port(s): the DNAT target `IP:port` and the port of the FORWARD
+accept rule; 0 keeps the port, but the accept rule then takes any port:
+`! -i br0 -o br0 -p tcp -j ACCEPT`), `Protocol` (1 TCP, 2 UDP, 3 both:
 D-Link maps the form's "4" to 3), `remotehost`, `OutInf` (WAN ifIndex,
 65535 any), `Comment` (59 characters), `enable`, `Dynamic` (UPnP, not
-editable). The stock page adds up to 12 rules per submit; the table's size
+editable). A forward needs protocol, external port and internal address,
+like a MikroTik dst-nat (dst-port, to-addresses; to-ports optional); the
+LuCI page writes the external port(s) as the internal ones when none are
+given. The stock page adds up to 12 rules per submit; the table's size
 is libmib's (`flash all`, MIB Chain Information; SDK: 8, 32 in the TRUE
 build). rpcd `portfw_set` rewrites the static rules with `flash del/add/set`
-(TM build: through configd, committed) and runs `rtk-apply portfw`.
+(TM build: through configd), runs `mib commit cs now` so the page reads the
+new rules back from flash, and runs `rtk-apply portfw`.
 
 ## IP QoS (Advance > QoS pages, IP_QOS_* tables)
 

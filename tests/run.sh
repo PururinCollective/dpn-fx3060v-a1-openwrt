@@ -548,6 +548,12 @@ t_stockshell() {
 		[ \"\$(qemu-aarch64-static -L '$R' '$R/bin/busybox' sh -c 'last=2f; echo \$(( 0x\$last % 63 + 1 ))')\" = 48 ]"
 	check "fwu.sh reads the A1 PHY IDs under the stock ash" sh -c "
 		[ \"\$(qemu-aarch64-static -L '$R' '$R/bin/busybox' sh '$W/phy.sh')\" = '[001ccac4 001ccac4 001ccac4 001ccac4 ffffffff ffffffff ffffffff]' ]"
+	# without -p the stock miniupnpd stops after reading its options (usage),
+	# before it opens any socket
+	check "stock miniupnpd reads etc/miniupnpd.conf without a parse error" sh -c "
+		o=\$(timeout 5 qemu-aarch64-static -L '$R' '$R/bin/miniupnpd' -d -i lo -a 127.0.0.1 \
+			-f '$TOP/package/rtk-vendor/files/rtk/etc/miniupnpd.conf' 2>&1)
+		case \"\$o\" in *'parsing error'*|*'Error reading'*) exit 1 ;; *Usage:*) ;; *) exit 1 ;; esac"
 }
 
 # ------------------------------------------------ preinit boot-env hook

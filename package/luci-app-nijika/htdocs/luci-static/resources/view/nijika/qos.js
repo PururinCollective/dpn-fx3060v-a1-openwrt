@@ -181,6 +181,7 @@ function ruleGrid(s) {
 			return form.GridSection.prototype.renderMoreOptionsModal.apply(self, args);
 		});
 	};
+	nc.modalSaveErrors(s);
 }
 
 /* classification row -> qos_set rule (the fields of qos_rule_fields) */
