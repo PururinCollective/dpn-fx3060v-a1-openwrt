@@ -1,0 +1,5 @@
+# Code owners: GitHub asks them to review every pull request that changes
+# these files. The documentation is maintained by the repo members only,
+# here and in forks (AGENTS.md, section 4).
+*.md        @ryukora @Anime4000
+/.github/   @ryukora @Anime4000

@@ -469,6 +469,10 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
 * **Other hardware variants** (B1 and others): talk to the author or a repo
   member first, and send the work back here as a pull request
   ([docs/PORTING.md](docs/PORTING.md)).
+* **Documentation** (every `.md` file, this README included) is maintained by
+  repo members only, here and in forks: keep it as it is. Send corrections as
+  an issue or a pull request; the code owners in
+  [.github/CODEOWNERS](.github/CODEOWNERS) review them.
 * **AI agents**: read [AGENTS.md](AGENTS.md).
 
 ## Credits
