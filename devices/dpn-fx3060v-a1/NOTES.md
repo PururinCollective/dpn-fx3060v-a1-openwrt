@@ -42,8 +42,7 @@ Facts measured on the test unit with stock firmware `DPN-FX3060V_V1.1.2`
 
 ## Revisions
 
-* **B1** (not supported yet): 2.5GbE port through a Realtek RTL8221B PHY
-  (PHY ID `0x001CC849`), stock firmware V2.x (the `dpn-fx3060v` ONT identity
-  preset reports hardware `B1`, software `V2.0.6`). Expect a different device
-  tree, a different `DEVICE_PHY_IDS`, and possibly different UBI sizes. See
-  docs/PORTING.md.
+* **B1** (supported, tested on hardware): 2.5GbE port through a Realtek
+  RTL8221B PHY (PHY ID `0x001CC849` on switch ports 4-5), stock firmware V2.x.
+  Its flash reserves extra volumes (framework/apps), so the rootfs volume is
+  25 MiB (not 70). See `devices/dpn-fx3060v-b1/` and docs/PORTING.md.
