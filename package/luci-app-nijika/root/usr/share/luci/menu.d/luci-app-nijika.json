@@ -109,6 +109,18 @@
 		}
 	},
 
+	"admin/network/qos": {
+		"title": "QoS",
+		"order": 42,
+		"action": {
+			"type": "view",
+			"path": "nijika/qos"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
 	"admin/services/voip": {
 		"title": "VoIP",
 		"order": 10,

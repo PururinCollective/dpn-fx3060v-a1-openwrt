@@ -45,6 +45,9 @@ extern int restart_ethernet(int instnum);
 extern int setup_wlan_block(void);
 extern int setupPortFW(void);
 extern void reWriteAllDhcpcScript(void);
+/* IP QoS (SDK subr_qos_3.c): take_qos_effect() is stopIPQ() + setupIPQ() */
+extern int stopIPQ(void);
+extern void take_qos_effect(void);
 /* EasyMesh (D-Link libmib, as called by boa's formMultiAP) */
 extern int setupMultiAPController(char *role, char *role_prev, char *backhaul_link,
 				  unsigned char *dhcp_mode);
@@ -78,6 +81,8 @@ static int usage(void)
 	fputs("usage: rtk-apply <command>\n"
 	      "  firewall      IPv4/IPv6 filter rules, SPI default action, DMZ, MAC filter\n"
 	      "  portfw        port forwarding (PORT_FW_ENABLE, PORT_FW_TBL)\n"
+	      "  qos-stop      before the QoS configuration changes: tear the running QoS down\n"
+	      "  qos           after the change: QoS policies, classification, traffic shaping\n"
 	      "  lan           LAN address and DHCP server\n"
 	      "  wan-down <n>  before ATM_VC_TBL record <n> changes: take its connection down\n"
 	      "  wan-up <n>    after the change: bring record <n> up again, resync VoIP\n"
@@ -243,6 +248,15 @@ int main(int argc, char **argv)
 		/* formPortFw (stock V1.1.2 boa 0x45d730), after its Commit */
 		reWriteAllDhcpcScript();
 		setupPortFW();
+	} else if (!strcmp(cmd, "qos-stop")) {
+		/* formUpstreamQosPolicy / formDownstreamQosPolicy (stock V1.1.2
+		 * boa 0x443644 / 0x443dbc): stopIPQ() while the old policy is
+		 * still configured, before QOS_POLICY changes */
+		stopIPQ();
+	} else if (!strcmp(cmd, "qos")) {
+		/* the QoS forms (0x443644, 0x443dbc, formQosRule 0x4426d8,
+		 * formQosTraffictl 0x441a3c), after their mib writes */
+		take_qos_effect();
 	} else if (!strcmp(cmd, "lan")) {
 		/* formTcpipLanSetup (LAN IP change), formDhcpd */
 		restart_lanip();

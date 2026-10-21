@@ -4,7 +4,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint parsers wrapper ucimirror spi lanmgmt apply easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme
+# Groups: syntax json lint parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -309,6 +309,8 @@ t_apply() {
 		tr '\n' ';' < "$D/calls"
 	}
 	check "port forwarding keys: portfw, after the firewall (DMZ)" sh -c "[ \"$(areas PORT_FW_TBL.0.IP DMZ_IP PORT_FW_ENABLE)\" = 'firewall portfw' ]"
+	check "QoS keys and tables: qos, after port forwarding, before the LAN" sh -c "[ \"$(areas ENABLE_QOS IP_QOS_TBL.0.Name LAN_IP_ADDR PORT_FW_ENABLE QOS_DOWNSTREAM_POLICY TOTAL_DOWNSTREAM_BANDWIDTH IP_QOS_TC_TBL.1.rate)\" = 'portfw qos lan' ]"
+	check "qos as the stock QoS forms: stopIPQ before the write, take_qos_effect after" sh -c "[ \"$(run 1 "apply_before qos; echo WRITE >> '$D/calls'; apply_after qos")\" = '/bin/rtk-apply qos-stop;WRITE;/bin/rtk-apply qos;rc=0;' ]"
 	check "WAN mode change: wan-mode before the record comes up" sh -c "[ \"$(areas ATM_VC_TBL.1.ChannelMode ATM_VC_TBL.1.vid ATM_VC_TBL.0.MTU)\" = 'wanmode:1 wan:0 wan:1' ]"
 	check "wan-mode, then wan-up, nothing before the write" sh -c "[ \"$(run 1 "apply_before wanmode:1 wan:1; echo WRITE >> '$D/calls'; apply_after wanmode:1 wan:1")\" = '/bin/rtk-apply wan-down 1;WRITE;/bin/rtk-apply wan-mode 1;/bin/rtk-apply wan-up 1;rc=0;' ]"
 	check "WAN edit: wan-down before the write, wan-up after" sh -c "[ \"$(run 1 "apply_before wan:0 firewall; echo WRITE >> '$D/calls'; apply_after wan:0 firewall")\" = '/bin/rtk-apply wan-down 0;WRITE;/bin/rtk-apply wan-up 0;/bin/rtk-apply firewall;rc=0;' ]"
@@ -318,6 +320,75 @@ t_apply() {
 	check "reboot area: the live parts run, return 1" sh -c "[ \"$(run 1 'apply_after wlan reboot')\" = '/bin/rtk-apply wlan;rc=1;' ]"
 	check "live_apply=0: nothing runs, reboot needed" sh -c "[ \"$(run 0 'apply_before wan:0; apply_after wan:0 wlan')\" = 'rc=1;' ]"
 	check "live_apply=0, nothing written: no reboot" sh -c "[ \"$(run 0 'apply_after')\" = 'rc=0;' ]"
+}
+
+# ------------------------------------------------------------------- qos
+
+# Network > QoS (qos.sh): records in the encoding of the stock V1.1.2 QoS
+# forms (docs/BOA.md, IP QoS)
+t_qos() {
+	echo "qos (stock IP QoS records, as the stock forms write them)"
+	local D="$W/qos"
+	mkdir -p "$D"
+	q() { # FUNCTION [ARG...] -- r_VAR=value...: the output as one line, or "ERR <message>"
+		local fn="$1" a=""
+		shift
+		while [ $# -gt 0 ] && [ "$1" != -- ]; do a="$a $1"; shift; done
+		[ "$1" = -- ] && shift
+		if env "$@" "$BB" sh -c ". '$LIB/qos.sh'; $fn$a" > "$D/out" 2> "$D/err"; then
+			tr '\n' ';' < "$D/out"
+		else
+			echo "ERR $(cat "$D/err")"
+		fi
+	}
+	is() { [ "$1" = "$2" ] || { echo "got: $1"; return 1; }; }
+	check "rule by source IP: TCP+UDP bits, prefix length, DSCP EF remark, zeroed fields left out" is \
+		"$(q qos_rule_fields -- r_name=gaming_pc r_direction=0 r_ipver=1 r_classtype=0 r_proto=3 r_sip=192.168.0.50 r_smask=32 r_prio=1 r_mdscp=185 r_order=1)" \
+		'Name=gaming_pc;IPVersion=1;Enable=1;Prior=1;OutInf=65535;QoSOrder=1;m_dscp=185;Protocol=3;SrcIP=192.168.0.50;SrcMask=32;'
+	check "connection type rule: applicationtype only (VOICE 8)" is \
+		"$(q qos_rule_fields -- r_name=voice r_direction=0 r_ipver=1 r_classtype=1 r_conntype=8 r_prio=1 r_proto=3 r_sip=10.0.0.1)" \
+		'Name=voice;IPVersion=1;classtype=1;Enable=1;Prior=1;OutInf=65535;applicationtype=8;'
+	check "downstream IPv6 rule: port, MAC as 12 hex digits, 802.1p as value + 1" is \
+		"$(q qos_rule_fields -- r_name=nas r_direction=1 r_ipver=2 r_classtype=0 r_proto=1 r_dip6=2001:db8::10 r_dip6len=128 r_dport=443 r_smac=AA:BB:CC:00:11:22 r_prio=3 r_m1p=6 r_vlan1p=1 r_outif=65536)" \
+		'Name=nas;direction=1;IPVersion=2;Enable=1;Prior=3;OutInf=65536;m_1p=6;Protocol=1;vlan1p=1;DstIP6=2001:db8::10;DstIP6PrefixLen=128;DstPort=443;SMac=aabbcc001122;'
+	starts() { # PREFIX OUTPUT [PREFIX OUTPUT...]: every OUTPUT starts with its PREFIX
+		while [ $# -ge 2 ]; do
+			case "$2" in "$1"*) ;; *) echo "got: $2"; return 1 ;; esac
+			shift 2
+		done
+	}
+	check "rejected like the stock page: name, port without TCP/UDP, nothing to match" starts \
+		'ERR rule name' "$(q qos_rule_fields -- 'r_name=a b' r_direction=0 r_ipver=1 r_classtype=0 r_proto=1 r_prio=1)" \
+		"ERR Please don't set Port" "$(q qos_rule_fields -- r_name=x r_direction=0 r_ipver=1 r_classtype=0 r_proto=4 r_dport=80 r_prio=1)" \
+		'ERR Please set rule match information!' "$(q qos_rule_fields -- r_name=x r_direction=0 r_ipver=1 r_classtype=0 r_prio=1)"
+	check "rejected: DSCP not a stock code, queue 0, unknown connection type, bad address" starts \
+		'ERR DSCP' "$(q qos_rule_fields -- r_name=x r_direction=0 r_ipver=1 r_classtype=0 r_dscp=184 r_prio=1)" \
+		'ERR priority' "$(q qos_rule_fields -- r_name=x r_direction=0 r_ipver=1 r_classtype=0 r_proto=1 r_prio=0)" \
+		'ERR connection type' "$(q qos_rule_fields -- r_name=x r_direction=0 r_ipver=1 r_classtype=1 r_conntype=5 r_prio=1)" \
+		'ERR source IPv4' "$(q qos_rule_fields -- r_name=x r_direction=0 r_ipver=1 r_classtype=0 r_sip=192.168.0.256 r_prio=1)"
+	check "traffic control: entryid, kbit/s rate, IPv4 source" is \
+		"$(q qos_tc_fields -- r_entryid=1 r_ipver=1 r_direction=1 r_proto=0 r_sip=192.168.0.60 r_smask=32 r_rate=10240)" \
+		'entryid=1;ifIndex=65535;IPVersion=1;direction=1;rate=10240;Srcip=192.168.0.60;srcmask=32;'
+	check "traffic control IPv4/IPv6: both address families written" is \
+		"$(q qos_tc_fields -- r_entryid=2 r_ipver=3 r_direction=0 r_sip=10.0.0.1 r_sip6=2001:db8::1 r_sip6len=64 r_rate=512)" \
+		'entryid=2;ifIndex=65535;IPVersion=3;rate=512;Srcip=10.0.0.1;SrcIP6=2001:db8::1;SrcIP6PrefixLen=64;'
+	check "traffic control: a rate that is not a multiple of 512 is refused (stock message)" is \
+		"$(q qos_tc_fields -- r_entryid=1 r_ipver=1 r_direction=0 r_rate=1000)" \
+		'ERR Speed rate 1000kbs is invalid! Please enter the multiple of 512!'
+	check "queues: WRR weight, a WRR queue of weight 0 is off, CAR rate, strict priority only enable" is \
+		"$(q qos_queue_fields up 1 -- r_enable=1 r_weight=40)|$(q qos_queue_fields up 1 -- r_enable=1 r_weight=0)|$(q qos_queue_fields up 2 -- r_enable=1 r_car=2048)|$(q qos_queue_fields up 0 -- r_enable=0 r_weight=40)" \
+		'weight=40;enable=1;|weight=0;enable=0;|car=2048;enable=1;|enable=0;'
+	check "downstream queues: WLAN priority with strict priority, no CAR policy" is \
+		"$(q qos_queue_fields down 0 -- r_enable=1 r_wifi=3)|$(q qos_queue_fields down 2 -- r_enable=1 | cut -c1-3)" \
+		'wifiPrior=3;enable=1;|ERR'
+	check "scalars: only the QoS keys, only the values the stock pages write" "$BB" sh -c ". '$LIB/qos.sh'
+		qos_mib_ok QOS_POLICY 2 && ! qos_mib_ok QOS_POLICY 3 && qos_mib_ok QOS_DOWNSTREAM_POLICY 1 &&
+		! qos_mib_ok QOS_DOWNSTREAM_POLICY 2 && qos_mib_ok TOTAL_BANDWIDTH 45000 && ! qos_mib_ok TOTAL_BANDWIDTH 0 &&
+		qos_mib_ok ENABLE_1P 2 && ! qos_mib_ok ENABLE_DSCP_MARK 2 && ! qos_mib_ok LAN_IP_ADDR 1"
+	pyjson "menu: Network > QoS after DMZ" "$TOP/package/luci-app-nijika/root/usr/share/luci/menu.d/luci-app-nijika.json" \
+		"d['admin/network/qos']['action']['path'] == 'nijika/qos' and d['admin/network/qos']['order'] > d['admin/network/dmz']['order']"
+	pyjson "ACL: qos_get to read, qos_set to write" "$TOP/package/luci-app-nijika/root/usr/share/rpcd/acl.d/luci-app-nijika.json" \
+		"'qos_get' in d['luci-app-nijika']['read']['ubus']['nijika'] and 'qos_set' in d['luci-app-nijika']['write']['ubus']['nijika']"
 }
 
 # ------------------------------------- EasyMesh role pinned (easymesh-pin)
@@ -390,7 +461,7 @@ t_helpers() {
 import json, sys
 d = json.load(open(sys.argv[1]))
 views = {v.get('action', {}).get('path') for v in d.values()}
-assert {'nijika/wan', 'nijika/lan', 'nijika/wlan', 'nijika/portfw', 'nijika/dmz', 'nijika/voip', 'nijika/gpon'} <= views, views
+assert {'nijika/wan', 'nijika/lan', 'nijika/wlan', 'nijika/portfw', 'nijika/dmz', 'nijika/qos', 'nijika/voip', 'nijika/gpon'} <= views, views
 assert 'nijika/omci' not in views
 assert d['admin/nijika/identity']['depends']['uci'] == {'nijika': {'ui': {'developer': '1'}}}
 order = sorted((v['order'], k) for k, v in d.items() if k.startswith('admin/nijika/'))
@@ -1115,10 +1186,10 @@ FN
 
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint parsers wrapper ucimirror spi lanmgmt apply easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme}"
+groups="${*:-syntax json lint parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|parsers|wrapper|ucimirror|spi|lanmgmt|apply|easymesh|ddns|wireguard|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
+		syntax|json|lint|parsers|wrapper|ucimirror|spi|lanmgmt|apply|qos|easymesh|ddns|wireguard|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

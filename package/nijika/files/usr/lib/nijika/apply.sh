@@ -16,6 +16,9 @@
 #   port:<n>  LAN port n on/off           formTcpipLanSetup (SW_PORT_TBL.<n>.Enable)
 #   firewall  filters, SPI, DMZ           formFilter, formFilterV6, formDMZ
 #   portfw    port forwarding             formPortFw
+#   qos       QoS policies, classification, traffic shaping
+#                                         formUpstreamQosPolicy, formDownstreamQosPolicy,
+#                                         formQosRule, formQosTraffictl
 #   lan       LAN address, DHCP server    formTcpipLanSetup, formDhcpd
 #   snooping  IGMP/MLD snooping (MP_MODE) formTcpipLanSetup
 #   wlanblock LAN <-> WiFi blocking       formTcpipLanSetup
@@ -56,6 +59,9 @@ apply_area() {
 			echo firewall ;;
 		PORT_FW_ENABLE|PORT_FW_TBL*)
 			echo portfw ;;
+		ENABLE_QOS|QOS_POLICY|TOTAL_BANDWIDTH|TOTAL_BANDWIDTH_LIMIT|ENABLE_DSCP_MARK|ENABLE_1P|\
+		ENABLE_DOWNSTREAM_*|QOS_DOWNSTREAM_POLICY|TOTAL_DOWNSTREAM_BANDWIDTH*|IP_QOS_*)
+			echo qos ;;
 		LAN_IP_ADDR|LAN_SUBNET|LAN_IP_ADDR2|LAN_SUBNET2|LAN_ENABLE_IP2|LAN_DHCP*|DHCP_MODE|DHCPS_*|DHCP_SUBNET_MASK)
 			echo lan ;;
 		WLAN_*|WLAN1_*|WSC_*|SSID|CHANNEL|AUTO_CHANNEL*|HIDDEN_SSID|BEACON_INTERVAL|DTIM_PERIOD|WIFI_STA_CONTROL|MAP_*)
@@ -77,7 +83,7 @@ apply_areas() {
 	while IFS= read -r k; do apply_area "$k"; done | awk '
 		{ seen[$0] = 1 }
 		END {
-			n = split("firewall portfw lan snooping wlanblock wlan loid ploam omci voip reboot", order, " ")
+			n = split("firewall portfw qos lan snooping wlanblock wlan loid ploam omci voip reboot", order, " ")
 			for (a in seen) if (a ~ /^wanmode:/) out = out " " a
 			for (a in seen) if (a ~ /^wan:/) out = out " " a
 			for (a in seen) if (a ~ /^port:/) out = out " " a
@@ -90,7 +96,10 @@ apply_before() {
 	local a
 	apply_enabled || return 0
 	for a in "$@"; do
-		case "$a" in wan:*) rtk_apply wan-down "${a#wan:}" ;; esac
+		case "$a" in
+			wan:*) rtk_apply wan-down "${a#wan:}" ;;
+			qos) rtk_apply qos-stop ;;
+		esac
 	done
 }
 
@@ -110,7 +119,7 @@ apply_after() {
 			port:*) rtk_apply lan-port "${a#port:}" ;;
 			snooping) rtk_apply snooping ;;
 			wlanblock) rtk_apply wlan-block ;;
-			firewall|portfw|lan|wlan|voip) rtk_apply "$a" ;;
+			firewall|portfw|qos|lan|wlan|voip) rtk_apply "$a" ;;
 			loid)
 				loid=$(mib_get LOID) pw=$(mib_get LOID_PASSWD)
 				logger -t rtk-apply "omcicli set loid"

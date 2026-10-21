@@ -28,7 +28,7 @@ PORT = int(os.environ.get('PORT', '8080'))
 THEME = os.environ.get('LUCI_THEME', 'perfect')
 HTDOCS = sorted(os.path.join(TOP, 'package', p, 'htdocs') for p in os.listdir(os.path.join(TOP, 'package'))
                 if os.path.isdir(os.path.join(TOP, 'package', p, 'htdocs')))
-VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'voip', 'ddns', 'wireguard', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
+VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'qos', 'voip', 'ddns', 'wireguard', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
 BOOT = time.time()
 
 
@@ -211,6 +211,11 @@ def nijika_call(method, args):
              'enable': '1', 'remotehost': '0.0.0.0', 'externalportStart': '3074', 'externalportEnd': '3074', 'Dynamic': '1'}]}}
     if method == 'portfw_set':
         return {'ok': len(args.get('rules', [])), 'applied': ['portfw'], 'reboot_required': False}
+    if method == 'qos_get':
+        return QOS
+    if method == 'qos_set':
+        qos_store(args)
+        return {'ok': True, 'applied': ['qos'], 'reboot_required': False}
     if method == 'easymesh_get':
         return {'role': UCI['rtk']['mib'].get('_role', 'controller'), 'pinned': 'controller', 'name': UCI['rtk']['mib'].get('MAP_DEVICE_NAME', ''), 'running': []}
     if method == 'easymesh_set':
@@ -251,6 +256,50 @@ UCI = {'nijika': {
                   'url': 'mock'},
     'cfg0c5f60': {'.type': 'ddns_host', '.name': 'cfg0c5f60', '.anonymous': True, 'enabled': '1', 'provider': 'dynu',
                   'hostname': 'nohost.example.net', 'username': 'mock', 'password': 'mock'}}}
+
+
+# Stock IP QoS as `flash all` / `flash get` show it on an A1 (V1.1.2): the
+# queue tables' factory records, one classification rule, one rate limit.
+def qos_queue(i, wifi):
+    return {'outif': '65535', 'prior': str(i + 1), 'weight': '0', 'shaping_rate': '0', 'shaping_burst_size': '0',
+            'enable': '1', 'desc': '', 'QueueInstNum': str(i + 1), 'car': '0', 'wifiPrior': str(wifi)}
+
+
+QOS = {
+    'mib': {'ENABLE_QOS': '0', 'QOS_POLICY': '0', 'TOTAL_BANDWIDTH_LIMIT': '0', 'TOTAL_BANDWIDTH': '1000000',
+            'ENABLE_DSCP_MARK': '1', 'ENABLE_1P': '2', 'ENABLE_DOWNSTREAM_QOS': '0', 'QOS_DOWNSTREAM_POLICY': '0',
+            'TOTAL_DOWNSTREAM_BANDWIDTH_LIMIT': '0', 'TOTAL_DOWNSTREAM_BANDWIDTH': '1000000',
+            'ENABLE_DOWNSTREAM_DSCP_MARK': '1', 'ENABLE_DOWNSTREAM_1P': '2'},
+    'rules_max': 64, 'tc_max': 64,
+    'queues': {'table': 'IP_QOS_QUEUE_TBL', 'num': 8, 'records': [qos_queue(i, 0) for i in range(8)]},
+    'dqueues': {'table': 'IP_QOS_DOWNSTREAM_QUEUE_TBL', 'num': 8,
+                'records': [qos_queue(i, w) for i, w in enumerate((1, 0, 0, 1, 2, 2, 3, 3))]},
+    'rules': {'table': 'IP_QOS_TBL', 'num': 1, 'records': [
+        {'direction': '0', 'TYPE': '0', 'Name': 'gaming_pc', 'SrcIP': '192.168.0.50', 'SrcMask': '32', 'SrcPort': '0',
+         'SrcPortRangeMax': '0', 'DstIP': '0.0.0.0', 'DstMask': '0', 'DstPort': '0', 'DstPortRangeMax': '0', 'Protocol': '3',
+         'SMac': '000000000000', 'DMac': '000000000000', 'PhyPort': '0', 'qosDscp': '0', 'vlan1p': '0', 'OutInf': '65535',
+         'Prior': '1', 'm_1p': '0', 'm_dscp': '185', 'Enable': '1', 'QoSOrder': '0', 'IPVersion': '1', 'SrcIP6': '::',
+         'DstIP6': '::', 'SrcIP6PrefixLen': '0', 'DstIP6PrefixLen': '0', 'applicationtype': '0', 'classtype': '0'}]},
+    'tc': {'table': 'IP_QOS_TC_TBL', 'num': 1, 'records': [
+        {'entryid': '1', 'ifIndex': '65535', 'Srcip': '192.168.0.60', 'srcmask': '32', 'dstip': '0.0.0.0', 'dstmask': '0',
+         'srcport': '0', 'dstport': '0', 'protocol': '0', 'rate': '10240', 'IPVersion': '1', 'SrcIP6': '::', 'DstIP6': '::',
+         'SrcIP6PrefixLen': '0', 'DstIP6PrefixLen': '0', 'direction': '1', 'vlanID': '0', 'ssid': ''}]},
+}
+
+
+def qos_store(args):
+    """qos_set: keep what was saved (scalars, queues), echo the rest to stderr."""
+    sys.stderr.write('qos_set %s\n' % json.dumps(args, sort_keys=True))
+    for k, v in (args.get('mib') or {}).items():
+        QOS['mib'][k] = str(v)
+    for key, part in (('queues', 'queues'), ('dqueues', 'dqueues')):
+        for rec, q in zip(QOS[part]['records'], args.get(key) or []):
+            rec['enable'] = str(q.get('enable', rec['enable']))
+            rec['weight'] = str(q.get('weight', rec['weight']))
+            if 'car' in q:
+                rec['car'] = str(q['car'])
+            if 'wifi' in q:
+                rec['wifiPrior'] = str(q['wifi'])
 
 
 def rtk_uci():

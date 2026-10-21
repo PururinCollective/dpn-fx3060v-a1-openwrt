@@ -8,6 +8,7 @@
 . /usr/lib/nijika/pon.sh
 . /usr/lib/nijika/fw.sh
 . /usr/lib/nijika/apply.sh
+. /usr/lib/nijika/qos.sh
 
 FW_PATH=/tmp/nijika-fw.bin
 FW_LOG=/tmp/nijika-fw.log
@@ -633,6 +634,180 @@ m_portfw_set() {
 	json_dump
 }
 
+# --- QoS (stock Advance > Upstream / Downstream QoS Policy, QoS -------------
+# Classification, Traffic Shaping; /usr/lib/nijika/qos.sh)
+
+QOS_TABLES="IP_QOS_QUEUE_TBL IP_QOS_DOWNSTREAM_QUEUE_TBL IP_QOS_TBL IP_QOS_TC_TBL"
+
+# qos_flash_set KEY VALUE...: one stock `flash set`; it exits 0 even for a
+# key it refuses, but prints "set KEY=VALUE" for each one it took
+qos_flash_set() {
+	[ "$(rtk /bin/flash set "$@" 2>/dev/null | grep -c '^set ')" = $(($# / 2)) ]
+}
+
+# {"mib": {KEY: value} (QOS_KEYS), "queues", "dqueues", "rules", "tc": chain
+#  JSON ({"num", "records"}), "rules_max", "tc_max": the tables' sizes}
+m_qos_get() {
+	need_vendor
+	local all="$NIJIKA_RUNDIR/qos_all.$$" t sep=
+	mkdir -p "$NIJIKA_RUNDIR"
+	rtk /bin/flash all > "$all" 2>/dev/null
+	printf '{"mib":{'
+	for t in $QOS_KEYS; do
+		printf '%s"%s":"%s"' "$sep" "$t" "$(sed -n "s/^$t=//p" "$all" | head -n 1 | tr -cd '0-9')"
+		sep=,
+	done
+	printf '},"rules_max":%d,"tc_max":%d' \
+		"$(awk '$1 ~ /^[0-9]+$/ && $2 == "IP_QOS_TBL" { print $NF; exit }' "$all")" \
+		"$(awk '$1 ~ /^[0-9]+$/ && $2 == "IP_QOS_TC_TBL" { print $NF; exit }' "$all")"
+	rm -f "$all"
+	set -- queues dqueues rules tc
+	for t in $QOS_TABLES; do
+		printf ',"%s":' "$1"
+		rtk /bin/flash get "$t" 2>/dev/null | awk -v table="$t" -f "$NIJIKA_LIB/chain.awk" | tr -d '\n'
+		shift
+	done
+	printf '}\n'
+}
+
+# qos_chain_rewrite TABLE FILE: the records of TABLE become the ones in FILE
+# ("Field=value" lines, "--" after each record), with the stock `flash
+# del/add/set` (TM build: through configd)
+qos_chain_rewrite() {
+	local t="$1" num idx rec="" kv
+	rtk /bin/mib commit cs now >/dev/null 2>&1
+	num=$(rtk /bin/flash get "$t.NUM" 2>/dev/null | sed -n 's/.*NUM=//p')
+	while [ "${num:-0}" -gt 0 ]; do
+		rtk /bin/flash del "$t" >/dev/null 2>&1
+		num=$((num - 1))
+	done
+	while IFS= read -r kv; do
+		if [ "$kv" != -- ]; then
+			rec="$rec$kv
+"
+			continue
+		fi
+		idx=$(rtk /bin/flash add "$t" 2>/dev/null | sed -n 's/.*NUM=//p')
+		[ -n "$idx" ] || return 1
+		idx=$((idx - 1))
+		set --
+		while IFS= read -r kv; do
+			[ -n "$kv" ] && set -- "$@" "$t.$idx.${kv%%=*}" "${kv#*=}"
+		done <<EOF
+$rec
+EOF
+		qos_flash_set "$@" || return 1
+		rec=""
+	done < "$2"
+}
+
+# {"mib": {KEY: value}, "queues": [{"enable", "weight", "car"}] (8),
+#  "dqueues": [{"enable", "weight", "wifi"}] (8), "rules": [...], "tc": [...]}
+# Each part is optional; "rules" / "tc" replace the whole table (fields: the
+# r_* names of qos_rule_fields / qos_tc_fields without "r_"). Everything is
+# checked before anything is written. Then, like the stock forms: stopIPQ,
+# the writes, Commit, take_qos_effect.
+m_qos_set() {
+	need_vendor
+	local k v i n keys sets="" policy dpolicy dir="$NIJIKA_RUNDIR/qos_set.$$" t part tbl qpol
+	local r_enable r_weight r_car r_wifi r_name r_direction r_ipver r_classtype r_conntype r_phyport r_proto
+	local r_dscp r_vlan1p r_outif r_sip r_smask r_dip r_dmask r_sip6 r_sip6len r_dip6 r_dip6len r_sport
+	local r_sport_end r_dport r_dport_end r_smac r_dmac r_prio r_mdscp r_m1p r_order r_entryid r_ifindex r_rate
+	json_load "$1"
+	rm -rf "$dir"
+	mkdir -p "$dir"
+	if json_select mib 2>/dev/null; then
+		json_get_keys keys
+		for k in $keys; do
+			json_get_var v "$k"
+			qos_mib_ok "$k" "$v" || { rm -rf "$dir"; err "$k: invalid value"; }
+			sets="$sets $k $v"
+		done
+		json_select ..
+	fi
+	policy=$(echo "$sets" | awk '{ for (i = 1; i < NF; i += 2) if ($i == "QOS_POLICY") print $(i + 1) }')
+	dpolicy=$(echo "$sets" | awk '{ for (i = 1; i < NF; i += 2) if ($i == "QOS_DOWNSTREAM_POLICY") print $(i + 1) }')
+	: "${policy:=$(mib_get QOS_POLICY)}" "${dpolicy:=$(mib_get QOS_DOWNSTREAM_POLICY)}"
+	for part in queues:IP_QOS_QUEUE_TBL:up dqueues:IP_QOS_DOWNSTREAM_QUEUE_TBL:down; do
+		t=${part%%:*} tbl=${part#*:} tbl=${tbl%:*}
+		json_select "$t" 2>/dev/null || continue
+		json_get_keys n
+		[ "${part##*:}" = up ] && qpol=$policy || qpol=$dpolicy
+		i=0
+		for k in $n; do
+			[ $i -lt 8 ] || break
+			json_select "$k"
+			r_enable= r_weight= r_car= r_wifi=
+			json_get_var r_enable enable; json_get_var r_weight weight
+			json_get_var r_car car; json_get_var r_wifi wifi
+			json_select ..
+			qos_queue_fields "${part##*:}" "$qpol" > "$dir/q" 2> "$dir/err" ||
+				{ v=$(cat "$dir/err"); rm -rf "$dir"; err "Q$((i + 1)): $v"; }
+			sed "s/^/$tbl.$i./" "$dir/q" >> "$dir/queues"
+			i=$((i + 1))
+		done
+		json_select ..
+	done
+	if json_select rules 2>/dev/null; then
+		json_get_keys n
+		set -- $n
+		: > "$dir/rules"
+		i=0
+		for k in $n; do
+			json_select "$k"
+			for v in name direction ipver classtype conntype phyport proto dscp vlan1p outif sip smask dip dmask \
+				sip6 sip6len dip6 dip6len sport sport_end dport dport_end smac dmac prio mdscp m1p; do
+				eval "r_$v="
+				json_get_var "r_$v" "$v"
+			done
+			json_select ..
+			r_order=$(($# - 1 - i))
+			qos_rule_fields >> "$dir/rules" 2> "$dir/err" ||
+				{ v=$(cat "$dir/err"); rm -rf "$dir"; err "rule $((i + 1)): $v"; }
+			echo -- >> "$dir/rules"
+			i=$((i + 1))
+		done
+		json_select ..
+	fi
+	if json_select tc 2>/dev/null; then
+		json_get_keys n
+		: > "$dir/tc"
+		i=0
+		for k in $n; do
+			json_select "$k"
+			for v in ipver direction proto ifindex sip smask dip dmask sip6 sip6len dip6 dip6len sport dport rate; do
+				eval "r_$v="
+				json_get_var "r_$v" "$v"
+			done
+			json_select ..
+			r_entryid=$((i + 1))
+			qos_tc_fields >> "$dir/tc" 2> "$dir/err" ||
+				{ v=$(cat "$dir/err"); rm -rf "$dir"; err "rule $((i + 1)): $v"; }
+			echo -- >> "$dir/tc"
+			i=$((i + 1))
+		done
+		json_select ..
+	fi
+
+	apply_before qos
+	# shellcheck disable=SC2086 # key value pairs
+	[ -z "$sets" ] || qos_flash_set $sets || { rm -rf "$dir"; err "writing the QoS settings failed"; }
+	if [ -s "$dir/queues" ]; then
+		set --
+		while IFS= read -r v; do set -- "$@" "${v%%=*}" "${v#*=}"; done < "$dir/queues"
+		qos_flash_set "$@" || { rm -rf "$dir"; err "writing the queue settings failed"; }
+	fi
+	[ ! -f "$dir/rules" ] || qos_chain_rewrite IP_QOS_TBL "$dir/rules" || { rm -rf "$dir"; err "the stock classification table is full or refused a rule"; }
+	[ ! -f "$dir/tc" ] || qos_chain_rewrite IP_QOS_TC_TBL "$dir/tc" || { rm -rf "$dir"; err "the stock traffic control table is full or refused a rule"; }
+	rm -rf "$dir"
+	rtk /bin/mib commit cs now >/dev/null 2>&1
+	apply_detached qos
+	json_init
+	json_add_boolean ok 1
+	json_add_apply qos
+	json_dump
+}
+
 # --- WAN status (stock Status > Device Status, WAN table) ------------------
 
 # One line per WAN connection: rec|ifIndex|ChannelMode|ChannelStatus|vlan|vid|
@@ -965,6 +1140,8 @@ case "$1" in
 	"easymesh_pair": {},
 	"portfw_get": {},
 	"portfw_set": { "enable": false, "rules": [] },
+	"qos_get": {},
+	"qos_set": { "mib": {}, "queues": [], "dqueues": [], "rules": [], "tc": [] },
 	"wan_status": {},
 	"ddns_status": {},
 	"ddns_update": {},
@@ -1005,6 +1182,8 @@ EOF
 			easymesh_pair) m_easymesh_pair ;;
 			portfw_get) m_portfw_get ;;
 			portfw_set) m_portfw_set "$input" ;;
+			qos_get) m_qos_get ;;
+			qos_set) m_qos_set "$input" ;;
 			wan_status) m_wan_status ;;
 			ddns_status) m_ddns_status ;;
 			ddns_update) m_ddns_update ;;

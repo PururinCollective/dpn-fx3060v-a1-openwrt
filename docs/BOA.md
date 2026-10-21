@@ -35,6 +35,9 @@ about:
 | WLAN Basic, Security | `formWlanSetup` (0x43153c), `formWlEncrypt` (0x4322d8) | `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)`, the same call as the stock `wlan_apply restart` |
 | GPON Settings | `formgponConf` (0x42ad0c) | LOID: `omcicli set loid <loid> [<password>]`; PLOAM: `rt_gpon_deactivate()`, `diag rt_gpon set registrationId-hex <hex>`, `rt_gpon_activate(0)`; LOID, Device Type or OLT mode changed: `restartOMCIsettings` (`rt_gpon_deactivate()`, `omcicli mib reset`, `rt_gpon_activate(0)`) |
 | VoIP | `web_restart_solar` (0x481018) | `voip_flash_server_update()`, `echo x > /var/run/solar_control.fifo`, the same as `reSync_reStartVoIP()` |
+| Advance > Upstream / Downstream QoS Policy | `formUpstreamQosPolicy` (0x443644), `formDownstreamQosPolicy` (0x443dbc) | `stopIPQ()` before `QOS_POLICY` / `QOS_DOWNSTREAM_POLICY` changes, then `Commit()`, `take_qos_effect()` |
+| Advance > QoS Classification | `formQosRuleEdit` (0x440e78, add / edit: `mib_chain_add` / `_update`, `UpdateQoSOrder`), `formQosRule` (0x4426d8, delete, Apply) | `take_qos_effect()`, `Commit()` |
+| Advance > Traffic Shaping | `formQosTraffictlEdit` (0x44232c, add), `formQosTraffictl` (0x441a3c: total bandwidth Apply / Clear, delete) | `take_qos_effect()`, `Commit()` |
 
 Constants: `CONFIGONE 0`, `CONFIGALL 1` (utility.h), `ACT_RESTART 3`
 (mib.h), `CONFIG_SSID_ALL 8` (subr_wlan.h). PLOAM hex: each password byte
@@ -64,6 +67,8 @@ queue, no initialisation needed.
 | `wlan` | `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)` |
 | `wlan-block` | `setup_wlan_block()` |
 | `portfw` | formPortFw (0x45d730) after its `Commit()`: `reWriteAllDhcpcScript()`, `setupPortFW()` |
+| `qos-stop` | the QoS policy forms before the policy changes: `stopIPQ()` |
+| `qos` | the QoS forms after their writes: `take_qos_effect()` (`stopIPQ()`, `setupIPQ()`) |
 | `easymesh <role> <prev> <backhaul> [norestart]` | formMultiAP (0x44791c) Apply: `setupMultiAPController(role, prev, backhaul, &dhcp)` / `setupMultiAP_TMAuto()` / `setupMultiAPDisabled()`, `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)`, `Commit()` |
 | `easymesh-pair` | formMultiAP Start PBC (controller): `echo 2 > /tmp/virtual_push_button` |
 | `snooping` | `rtk_multicast_snooping()` |
@@ -102,6 +107,8 @@ set`, `isp`, `ploam`, `loid`) use it.
 | `MP_MODE` (IGMP snooping, bit 2) | `snooping` | | `snooping` |
 | `WLAN_BLOCK_ETH2WIR` | `wlanblock` | | `wlan-block` |
 | `IPF_*`, `V6_IPF_*`, `MACF_*`, `DMZ_*`, `IPFILTER_SPI_ENABLE`, `V6_SESSION_FW_ENABLE`, filter tables | `firewall` | | `firewall` |
+| `PORT_FW_ENABLE`, `PORT_FW_TBL` | `portfw` | | `portfw` |
+| `ENABLE_QOS`, `QOS_POLICY`, `TOTAL_BANDWIDTH`, `TOTAL_BANDWIDTH_LIMIT`, `ENABLE_DSCP_MARK`, `ENABLE_1P`, their `DOWNSTREAM` twins, the `IP_QOS_*` tables | `qos` | `qos-stop` | `qos` |
 | `LAN_IP_ADDR`, `LAN_SUBNET`, `LAN_*2`, `LAN_DHCP*`, `DHCP_MODE`, `DHCPS_*` | `lan` | | `lan` |
 | `WLAN_*`, `WLAN1_*`, `WSC_*`, `SSID` | `wlan` | | `wlan` |
 | `LOID`, `LOID_PASSWD` | `loid` | | `omcicli set loid`, then `gpon-omci` last |
@@ -110,7 +117,7 @@ set`, `isp`, `ploam`, `loid`) use it.
 | VoIP (`voipflashcmd set`, Quick Setup) | `voip` | | `voip` |
 | anything else (`GPON_SN`, OMCI identity, ...) | `reboot` | | read when the stock services start |
 
-Order after writing: WAN records, firewall, LAN, WiFi, LOID, PLOAM, OMCI restart, VoIP.
+Order after writing: WAN records, firewall, port forwarding, QoS, LAN, WiFi, LOID, PLOAM, OMCI restart, VoIP.
 LuCI replies first and applies a second later, so a WiFi or WAN restart can
 not outlast the call. `nijika.vendor.live_apply=0` turns all of it off.
 
@@ -237,3 +244,33 @@ editable). The stock page adds up to 12 rules per submit; the table's size
 is libmib's (`flash all`, MIB Chain Information; SDK: 8, 32 in the TRUE
 build). rpcd `portfw_set` rewrites the static rules with `flash del/add/set`
 (TM build: through configd, committed) and runs `rtk-apply portfw`.
+
+## IP QoS (Advance > QoS pages, IP_QOS_* tables)
+
+LuCI Network > QoS writes what the stock V1.1.2 forms write (rpcd
+`qos_get` / `qos_set`, `/usr/lib/nijika/qos.sh`), checked against the
+stock `boa` (form handlers above; record layouts from the `flash` tool's
+member tables, MIB ids from its MIB table):
+
+| Page | Keys (MIB id) |
+|---|---|
+| Upstream QoS Policy | `qosen` `ENABLE_QOS` (144), `enable_force_weight` `TOTAL_BANDWIDTH_LIMIT` (149), `enable_dscp_remark` `ENABLE_DSCP_MARK` (151), `enable_1p_remark` `ENABLE_1P` (152: 0 disable, 1 transparent, 2 translate), `policy=` `QOS_POLICY` (147: 0 strict priority, 1 WRR, 2 CAR), `IP_QOS_QUEUE_TBL` (8 records): `w<i>` is `weight` (WRR) or `car` (CAR), `qen<i>` `enable` (a WRR queue of weight 0 is off) |
+| Downstream QoS Policy | the same as `ENABLE_DOWNSTREAM_QOS` (491), `TOTAL_DOWNSTREAM_BANDWIDTH_LIMIT` (493), `ENABLE_DOWNSTREAM_DSCP_MARK` (496), `ENABLE_DOWNSTREAM_1P` (497), `QOS_DOWNSTREAM_POLICY` (494: 0, 1), `IP_QOS_DOWNSTREAM_QUEUE_TBL`: `wifiq<i>` `wifiPrior` (strict priority; 0 background, 1 best effort, 2 video, 3 voice) or `w<i>` `weight` (WRR) |
+| Traffic Shaping | total bandwidth Apply: `TOTAL_BANDWIDTH` (148, kbit/s) and the limit on, Clear: the limit off (the policy pages' switch is the same key); `IP_QOS_TC_TBL` rules: `entryid` (lowest free 1..255), `ifIndex`, `IPVersion` (1, 2, 3 both), `direction`, `protocol` (0 none, 1 TCP, 2 UDP, 3 ICMP), addresses with prefix lengths, `srcport`, `dstport`, `rate` (kbit/s, a multiple of 512) |
+
+Classification records (`IP_QOS_TBL`, D-Link's parser 0x43f1c0, record 371
+bytes): `Protocol` is a bit mask of the page's checkboxes (TCP 1, UDP 2,
+ICMP 4, RTP 8; the SDK's enum does not apply), the connection type goes to
+`applicationtype` as bits (TR069 1, INTERNET 2, IPTV 4, VOICE 8; the
+list's TR069_INTERNET 3, TR069_VOICE 9, VOICE_INTERNET 10,
+TR069_VOICE_INTERNET 11), `classtype` 0 flow based, 1 connection type
+based. `qosDscp` / `m_dscp` hold the page's DSCP codes ((DSCP << 2) | 1, 0
+none), `vlan1p` / `m_1p` 802.1p + 1, `PhyPort` LAN1-4 as 1-4, masks as
+prefix lengths, `SMac` / `DMac` 12 hex digits, `OutInf` the WAN ifIndex
+(65535 any), `Prior` the queue (1-8), `Enable` 1. Rules are applied by
+`QoSOrder` (0 first); the stock add gives the new rule 0 and moves the
+others up (`UpdateQoSOrder`), so `qos_set` gives rule i of n the order
+n-1-i, as a series of stock adds would.
+
+`flash set` takes several key/value pairs and prints `set KEY=VALUE` for
+each one it took; its exit code is 0 even for a key it refused.

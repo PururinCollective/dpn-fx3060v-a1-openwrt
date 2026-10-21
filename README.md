@@ -91,6 +91,12 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
     reloads after saving.
   * Network > Port Forwarding and DMZ: the stock rules (table size as the
     stock configuration has it, UPnP rules shown read-only), DMZ host.
+  * Network > QoS: the stock Upstream QoS Policy, Downstream QoS Policy,
+    QoS Classification and Traffic Shaping pages as tabs, worded like the
+    stock pages. The stock IP QoS does the work in the switch / PON
+    hardware (8 queues with strict priority, WRR or CAR, rules by port,
+    protocol, IP, MAC, DSCP, 802.1p or connection type, rate limits in steps
+    of 512 kbit/s), so traffic keeps its hardware acceleration.
   * Network > Wireless: a tab per radio (mode incl. "no 802.11b" and
     "802.11ax only", channel, width, TX power, OFDMA, beacon/DTIM, WMM),
     main and guest SSIDs (WPA2/WPA3, PMF, 802.11r/k/v), WPS (push button,

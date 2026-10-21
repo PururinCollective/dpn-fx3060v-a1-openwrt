@@ -354,11 +354,14 @@ reload trigger on `nijika`):
 
 ## Traffic control (QoS)
 
-Groundwork only, no QoS page yet. Two ways to do QoS on this unit:
+Two ways to do QoS on this unit. LuCI Network > QoS is the hardware one;
+the software one is groundwork (modules and `tc`, no page).
 
 * **Hardware (the stock QoS)**: the stock pages (Advance > Upstream /
-  Downstream QoS Policy, QoS Classification, Traffic Shaping) are
-  `libmib`'s IP QoS. iptables/ebtables chains (`QOS_IP_US_CHAIN`,
+  Downstream QoS Policy, QoS Classification, Traffic Shaping), in LuCI as
+  Network > QoS (`nijika/qos`, rpcd `qos_get` / `qos_set`,
+  `/usr/lib/nijika/qos.sh`; records and encodings: [BOA.md](BOA.md#ip-qos-advance--qos-pages-ip_qos_-tables)).
+  They are `libmib`'s IP QoS. iptables/ebtables chains (`QOS_IP_US_CHAIN`,
   `QOS_EB_DS_CHAIN`, ...) put a queue and a meter id into the skb mark; the
   FC hardware NAT (`fc_8277c.ko`, `/proc/fc/ctrl/skbmark_qid`,
   `skbmark_meterId`) offloads the flow with them, and the CA8277 network
@@ -379,6 +382,17 @@ Groundwork only, no QoS page yet. Two ways to do QoS on this unit:
     tc actions such as `mirred`/`police`) is off and is not a module, it
     changes `struct sk_buff`. Downloads are shaped on the LAN egress
     (`br0`) instead.
+  * Measured on an A1 (`hwnat` 0, CAKE on `ppp0` and `br0`): the CPU
+    forwards 160-215 Mbit/s downstream (two cores at 100 % softirq; CPU2
+    is not in the vendor's RPS mask `b`), so a 385 Mbit/s line loses half
+    its download; upstream latency under load improved (12 ms instead of
+    up to 260 ms).
+* **Not usable as-is**: the FC driver's own AQM (`diag rt_qos ... aqm`: a
+  flow table that sorts flows into small / middle / big, then "Modify
+  COS" or hardware PIE). With the one PON queue the OLT provisions
+  (`diag rt_gpon show tcont-queue`), Modify COS sends flows to a T-CONT
+  queue that does not exist; hardware PIE acts on the path to the LAN
+  only.
 
 ## Firewall and services
 

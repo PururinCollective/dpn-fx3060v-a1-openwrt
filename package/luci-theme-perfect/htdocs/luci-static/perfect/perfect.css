@@ -251,6 +251,13 @@ h4 { line-height: 1.4; }
 	margin-bottom: 0;
 	padding: 0;
 }
+/* a section that is an inactive tab of a tabbed map: LuCI only collapses
+ * its height, the card's border, padding and margin would stay */
+.cbi-section[data-tab-title]:not([data-tab-active="true"]) {
+	border: 0;
+	margin: 0;
+	padding: 0;
+}
 
 .table { font-variant-numeric: tabular-nums; }
 .table .td,

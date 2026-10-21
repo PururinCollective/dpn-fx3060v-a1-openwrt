@@ -229,6 +229,8 @@ return baseclass.extend({
 	callEasymeshPair: rpc.declare({ object: 'nijika', method: 'easymesh_pair' }),
 	callPortfwGet: rpc.declare({ object: 'nijika', method: 'portfw_get' }),
 	callPortfwSet: rpc.declare({ object: 'nijika', method: 'portfw_set', params: [ 'enable', 'rules' ] }),
+	callQosGet: rpc.declare({ object: 'nijika', method: 'qos_get' }),
+	callQosSet: rpc.declare({ object: 'nijika', method: 'qos_set', params: [ 'mib', 'queues', 'dqueues', 'rules', 'tc' ] }),
 	callWanStatus: rpc.declare({ object: 'nijika', method: 'wan_status', expect: { wans: [] } }),
 	callDdnsStatus: rpc.declare({ object: 'nijika', method: 'ddns_status' }),
 	callDdnsUpdate: rpc.declare({ object: 'nijika', method: 'ddns_update' }),
@@ -332,7 +334,7 @@ return baseclass.extend({
 		var names = {
 			firewall: _('firewall'), lan: _('LAN'), wlan: _('WiFi'), loid: _('PON registration'),
 			ploam: _('PON registration'), omci: _('PON registration'), voip: _('VoIP'),
-			snooping: _('IGMP snooping'), wlanblock: _('LAN/WiFi blocking'), portfw: _('port forwarding')
+			snooping: _('IGMP snooping'), wlanblock: _('LAN/WiFi blocking'), portfw: _('port forwarding'), qos: _('QoS')
 		};
 		var seen = {}, list = [];
 		(res && res.applied || []).forEach(function(a) {
