@@ -832,7 +832,9 @@ t_wireguard() {
 	local D="$W/wg" out
 	mkdir -p "$D/bin" "$D/state" "$D/kmod/5.10.70" "$D/sys/module" "$D/sys/class/net" "$D/rtk/proc/self"
 	printf '%s\n' libchacha chacha-neon poly1305-neon libchacha20poly1305 libcurve25519-generic \
-		libcurve25519 libblake2s-generic libblake2s wireguard > "$D/kmod/5.10.70/modules.load"
+		libcurve25519 libblake2s-generic libblake2s wireguard > "$D/kmod/5.10.70/wireguard.load"
+	# every module built (CAKE too): not what WireGuard loads
+	{ echo sch_cake; cat "$D/kmod/5.10.70/wireguard.load"; } > "$D/kmod/5.10.70/modules.load"
 	mkdir -p "$D/sys/module/libchacha"	# already loaded: skipped
 	# stock iptables in the chroot: rules kept in a file, -C/-I/-D on it
 	cat > "$D/bin/rtkrun" <<RUN
@@ -920,7 +922,7 @@ FN
 	wg0 up
 	check "up: a private key is made and stored when none is set" grep -q "uci -q set nijika.wireguard.private_key=" "$D/calls"
 	check "up: the load marker is gone once the modules are in" test ! -e "$D/etc/wireguard.loading"
-	check "up: modules loaded in modules.load order, the loaded one skipped" sh -c "
+	check "up: modules loaded in wireguard.load order (not CAKE), the loaded one skipped" sh -c "
 		[ \"\$(grep '^insmod' '$D/calls' | sed 's|.*/||' | tr '\n' ' ')\" = 'chacha-neon.ko poly1305-neon.ko libchacha20poly1305.ko libcurve25519-generic.ko libcurve25519.ko libblake2s-generic.ko libblake2s.ko wireguard.ko ' ]"
 	check "up: wg0 created, MTU from the WAN (PPPoE 1492 - 80), its address set" sh -c "
 		grep -qx 'ip link add dev wg0 type wireguard' '$D/calls' && grep -qx 'ip link set dev wg0 mtu 1412 up' '$D/calls' &&
@@ -1041,8 +1043,13 @@ t_kmod() {
 			done
 			seen=\"\$seen\$m \"
 		done < '$K/modules.load'"
-	check "WireGuard and the NEON ChaCha20/Poly1305 are among them" sh -c "
-		grep -qx wireguard '$K/modules.load' && grep -qx chacha-neon '$K/modules.load' && grep -qx poly1305-neon '$K/modules.load'"
+	check "WireGuard and the NEON ChaCha20/Poly1305 are among them, and CAKE" sh -c "
+		grep -qx wireguard '$K/modules.load' && grep -qx chacha-neon '$K/modules.load' && grep -qx poly1305-neon '$K/modules.load' &&
+		grep -qx sch_cake '$K/modules.load'"
+	check "a load list per feature: wireguard.load every module but CAKE (modules.load order), sch_cake.load CAKE alone" sh -c "
+		[ \"\$(cat '$K/wireguard.load')\" = \"\$(grep -vx sch_cake '$K/modules.load')\" ] &&
+		[ \"\$(cat '$K/sch_cake.load')\" = sch_cake ] &&
+		[ \"\$(ls '$K' | sed -n 's/\.load\$//p' | grep -v '^modules\$' | sort | tr '\n' ' ')\" = 'sch_cake wireguard ' ]"
 	if [ -d "$TOP/build/stage/rtk/lib/modules" ]; then
 		find "$TOP/build/stage/rtk/lib/modules" -name '*.ko' > "$W/kmod.stock"
 		while read -r k; do "${X}nm" -u "$k"; done < "$W/kmod.stock" | awk '{ print $2 }' | sort -u > "$W/kmod.sundef"

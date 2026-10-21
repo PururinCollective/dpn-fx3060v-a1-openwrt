@@ -63,7 +63,8 @@ done
 # dependencies, e.g. kmod-wireguard by wireguard-tools) are not for it.
 rm -rf "$R"/lib/modules/[0-9]* "$R"/etc/modules.d "$R"/etc/modules-boot.d
 # Modules built for the stock kernel (scripts/build-kmod.sh): WireGuard and
-# its crypto libraries, loaded by /usr/libexec/nijika/wireguard.
+# its crypto libraries, loaded by /usr/libexec/nijika/wireguard
+# (wireguard.load), and the CAKE qdisc (sch_cake.load).
 rm -rf "$R/usr/lib/nijika/kmod"
 if [ -f "$BUILD_DIR/kmod/5.10.70/modules.load" ]; then
 	mkdir -p "$R/usr/lib/nijika/kmod" "$R/lib/modules"
@@ -74,7 +75,7 @@ if [ -f "$BUILD_DIR/kmod/5.10.70/modules.load" ]; then
 	ln -s ../../usr/lib/nijika/kmod/5.10.70 "$R/lib/modules/5.10.70"
 	log "kernel modules: $(tr '\n' ' ' < "$BUILD_DIR/kmod/5.10.70/modules.load")"
 else
-	warn "no kernel modules for the stock kernel (./build.sh kmod): no WireGuard in this image"
+	warn "no kernel modules for the stock kernel (./build.sh kmod): no WireGuard and no CAKE in this image"
 fi
 # The opkg -> apk cheat sheet printed at every login (base-files).
 rm -f "$R/etc/profile.d/apk-cheatsheet.sh"

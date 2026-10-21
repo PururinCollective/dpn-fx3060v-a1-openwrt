@@ -59,7 +59,7 @@ modules_load() {
 	[ -d /sys/module/wireguard ] && return 0
 	kv=$(uname -r)
 	dir=$KMOD/$kv
-	[ -f "$dir/modules.load" ] || die "no WireGuard module for kernel $kv (built for: $(ls "$KMOD" 2>/dev/null | tr '\n' ' '))"
+	[ -f "$dir/wireguard.load" ] || die "no WireGuard module for kernel $kv (built for: $(ls "$KMOD" 2>/dev/null | tr '\n' ' '))"
 	[ -f "$LOADING" ] && die "loading the WireGuard modules did not finish last time (crash or power loss); not loading them again: run 'wireguard retry' (/usr/libexec/nijika/wireguard) to try once more"
 	mkdir -p "${LOADING%/*}"
 	date > "$LOADING"
@@ -69,7 +69,7 @@ modules_load() {
 		[ -d "/sys/module/$(echo "$m" | tr - _)" ] && continue
 		f=$dir/$m.ko
 		insmod "$f" 2>"$STATE/insmod.err" || { rm -f "$LOADING"; die "loading $m failed: $(head -n 1 "$STATE/insmod.err")"; }
-	done < "$dir/modules.load"
+	done < "$dir/wireguard.load"
 	rm -f "$LOADING"
 	sync
 	log "loaded the WireGuard modules"
@@ -415,7 +415,7 @@ cmd_status() {
 	json_add_boolean enabled "$en"
 	json_add_boolean up "$( [ -d "/sys/class/net/$IF" ] && echo 1 || echo 0)"
 	json_add_boolean module "$( [ -d /sys/module/wireguard ] && echo 1 || echo 0)"
-	json_add_boolean module_available "$( [ -f "$KMOD/$(uname -r)/modules.load" ] && echo 1 || echo 0)"
+	json_add_boolean module_available "$( [ -f "$KMOD/$(uname -r)/wireguard.load" ] && echo 1 || echo 0)"
 	json_add_string kernel "$(uname -r)"
 	json_add_string error "$(cat "$STATE/error" 2>/dev/null)"
 	config_get key wireguard private_key

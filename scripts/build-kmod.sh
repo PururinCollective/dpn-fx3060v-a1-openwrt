@@ -1,7 +1,7 @@
 #!/bin/bash
 # Kernel modules for the stock Realtek 5.10.70 kernel (KMOD_CONFIG in
-# build.conf: WireGuard and the crypto libraries it selects), built so the
-# stock kernel takes them:
+# build.conf: WireGuard and the crypto libraries it selects, the CAKE qdisc),
+# built so the stock kernel takes them:
 #   - source: the kernel tree of the Realtek Luna SDK (KERNEL_SDK), the tree
 #     D-Link's kernel comes from. Prepared once into
 #     dl/linux-5.10.70-rtk.tar.zst (links fixed, Realtek directories the
@@ -13,9 +13,10 @@
 #     Bootlin's aarch64 toolchain (KMOD_TOOLCHAIN_URL, sha256 checked).
 #   - symbols: modpost checks the modules against the stock kernel's
 #     exports (scripts/ksymtab.py), vermagic against the stock modules'.
-# Output: build/kmod/<kernel>/*.ko and modules.load (load order).
-# Without the SDK or its prepared tree the step is skipped with a warning
-# and the image has no WireGuard.
+# Output: build/kmod/<kernel>/*.ko, modules.load (load order) and a
+# <module>.load per feature module (wireguard.load, sch_cake.load: it and its
+# dependencies). Without the SDK or its prepared tree the step is skipped
+# with a warning and the image has no WireGuard and no CAKE.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
@@ -121,7 +122,7 @@ modinfo_field() { # ko field
 }
 
 if [ ! -f "$KTAR" ] && ! prepare_tree; then
-	warn "no kernel tree: neither $KTAR nor the Realtek SDK in KERNEL_SDK=$KERNEL_SDK; building without kernel modules (no WireGuard)"
+	warn "no kernel tree: neither $KTAR nor the Realtek SDK in KERNEL_SDK=$KERNEL_SDK; building without kernel modules (no WireGuard, no CAKE)"
 	rm -rf "$OUT"
 	exit 0
 fi
@@ -168,7 +169,8 @@ cp "$KSTOCK/vmlinux.symvers" "$KSRC/Module.symvers"
 # each other (libchacha20poly1305 calls the NEON chacha/poly1305, which fall
 # back to libchacha): lib/crypto first with missing symbols allowed, then
 # again once the NEON modules exist, strictly and with their dependencies.
-dirs="lib/crypto arch/arm64/crypto drivers/net/wireguard"
+# net/sched: only CAKE is a module there, the other qdiscs are built in.
+dirs="lib/crypto arch/arm64/crypto drivers/net/wireguard net/sched"
 symvers() { # dirs...: their Module.symvers, for KBUILD_EXTRA_SYMBOLS
 	local d
 	for d in "$@"; do [ -f "$KSRC/$d/Module.symvers" ] && printf '%s ' "$KSRC/$d/Module.symvers"; done
@@ -183,6 +185,7 @@ build_dir lib/crypto warn
 build_dir arch/arm64/crypto
 build_dir lib/crypto
 build_dir drivers/net/wireguard
+build_dir net/sched
 
 rm -rf "$OUT"
 mkdir -p "$OUT"
@@ -211,5 +214,18 @@ while [ -n "$todo" ]; do
 	[ "$(echo $next)" != "$(echo $todo)" ] || die "module dependencies do not resolve: $next"
 	todo=$(echo $next)
 done
+
+# A load list per feature, so that it loads only its own modules: those built
+# in its directories, in load order. Not from depends= alone: libcurve25519
+# (a self-test, nothing imports it) is WireGuard's too.
+feature_load() { # feature dirs...: <feature>.load, when <feature>.ko was built
+	local f=$1 d
+	shift
+	[ -f "$OUT/$f.ko" ] || return 0
+	for d in "$@"; do find "$KSRC/$d" -maxdepth 1 -name '*.ko' -printf '%f\n'; done |
+		sed 's/\.ko$//' | grep -Fx -f - "$OUT/modules.load" > "$OUT/$f.load"
+}
+feature_load wireguard lib/crypto arch/arm64/crypto drivers/net/wireguard
+feature_load sch_cake net/sched
 cp "$KSRC/.config" "$OUT/kernel.config"
 log "kernel modules for $KVER: $(tr '\n' ' ' < "$OUT/modules.load")($(du -sh "$OUT" | cut -f1))"

@@ -221,16 +221,17 @@ selection live in [`build.conf`](build.conf).
 
 ### Kernel modules for the stock kernel
 
-The stock 5.10.70 kernel has no WireGuard. `./build.sh kmod`
-([scripts/build-kmod.sh](scripts/build-kmod.sh)) builds it as modules,
-with the crypto libraries it selects, so that the stock kernel loads them:
+The stock 5.10.70 kernel has no WireGuard and no CAKE qdisc. `./build.sh
+kmod` ([scripts/build-kmod.sh](scripts/build-kmod.sh)) builds them as
+modules, with the crypto libraries WireGuard selects, so that the stock
+kernel loads them:
 
 * **Source**: the kernel tree of the Realtek Luna SDK, which D-Link's kernel
   is built from. Point `KERNEL_SDK` at its `rtl819x` directory (default
   `/media/realtek/root/SDK/rtl819x`, e.g. the SDK VM's disk mounted with
   `guestmount -a <disk> -i --ro /media/realtek`). It is needed once: the
   prepared tree is kept as `dl/linux-5.10.70-rtk.tar.zst`. Without it the
-  step is skipped and the image has no WireGuard.
+  step is skipped and the image has no WireGuard and no CAKE.
 * **Config**: the stock kernel's own (`IKCONFIG` from the stock `kimage`)
   plus `KMOD_CONFIG` as modules; the step stops if anything built into the
   kernel would change.
@@ -241,6 +242,10 @@ with the crypto libraries it selects, so that the stock kernel loads them:
 * **Checks**: `modpost` resolves every symbol against the stock kernel's
   exports ([scripts/ksymtab.py](scripts/ksymtab.py) reads them from its
   `__ksymtab`), and the vermagic must equal the stock modules'.
+* **In the image**: `/usr/lib/nijika/kmod/5.10.70/` with `modules.load`
+  (all of them, dependencies first) and a load list per feature,
+  `wireguard.load` and `sch_cake.load`, so a feature loads only its own
+  modules.
 
 The tree, config and compiler reproduce the stock kernel's ABI: stock
 modules built from the same sources (`nf_conntrack_ftp/tftp/pptp`,
@@ -424,7 +429,7 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
 ## Known limitations (stage 1)
 
 * The kernel is the stock 5.10.70 build: no nftables (`fw4`), TUN, mac80211
-  or kmods from OpenWrt (WireGuard is built for it, see above). Firewall, NAT,
+  or kmods from OpenWrt (WireGuard and CAKE are built for it, see above). Firewall, NAT,
   PPPoE, DHCP and WiFi are done by the stock stack, and LuCI's *Network*
   pages are intentionally not installed.
 * Values written via Quick Setup/MIB are applied by the stock stack after a

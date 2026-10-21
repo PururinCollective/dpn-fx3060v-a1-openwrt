@@ -307,7 +307,7 @@ can reach. Under NijikaWrt it does not run (wrapper, see above) and
 
 The stock kernel has no WireGuard; `scripts/build-kmod.sh` builds it for
 the stock kernel (README: *Kernel modules for the stock kernel*) into
-`/usr/lib/nijika/kmod/5.10.70/` with `modules.load` (dependencies first:
+`/usr/lib/nijika/kmod/5.10.70/` with `wireguard.load` (dependencies first:
 libchacha, chacha-neon, poly1305-neon, libchacha20poly1305,
 libcurve25519(-generic), libblake2s(-generic), wireguard). `wg` comes from
 OpenWrt's `wireguard-tools` (its 6.12 `kmod-wireguard` dependency is
@@ -351,6 +351,34 @@ reload trigger on `nijika`):
   endpoint), `wg_keys` (key pair + preshared key, or the public key of a
   private key), `wg_client` (configuration and its QR code as SVG; write
   ACL, it holds a private key).
+
+## Traffic control (QoS)
+
+Groundwork only, no QoS page yet. Two ways to do QoS on this unit:
+
+* **Hardware (the stock QoS)**: the stock pages (Advance > Upstream /
+  Downstream QoS Policy, QoS Classification, Traffic Shaping) are
+  `libmib`'s IP QoS. iptables/ebtables chains (`QOS_IP_US_CHAIN`,
+  `QOS_EB_DS_CHAIN`, ...) put a queue and a meter id into the skb mark; the
+  FC hardware NAT (`fc_8277c.ko`, `/proc/fc/ctrl/skbmark_qid`,
+  `skbmark_meterId`) offloads the flow with them, and the CA8277 network
+  engine schedules 8 queues (strict priority, WRR, CAR:
+  `rt_qos_schedulingQueue_set`, `rtk_ponmac_*`) and polices rates with
+  hardware meters (`rtk_qos_share_meter_set`). Almost no CPU, but only
+  priorities and hard caps: no AQM, no per-flow fairness. Linux `tc`
+  (`prio bands 8`, HTB) only covers what stays on the CPU.
+* **Software (Linux qdiscs)**: the stock kernel has fq_codel, HTB, TBF and
+  PRIO built in, the `u32` and `fw` classifiers, iptables `CLASSIFY`/`DSCP`/
+  `MARK` and ipset; CAKE is built for it (`sch_cake.ko`, `sch_cake.load`,
+  README: *Kernel modules for the stock kernel*). `tc` is OpenWrt's
+  `tc-tiny` (the stock `/rtk/bin/tc` has no CAKE). Two limits:
+  * Flows offloaded by the FC hardware NAT never reach a qdisc: software
+    QoS needs `hwnat` off (`/proc/fc/ctrl/hwnat`) or the flows it shapes
+    kept on the CPU (`skbmark_fwdByPs`, `skbmark_skipFcFunc`).
+  * No ingress shaping: `NET_CLS_ACT` (and with it `sch_ingress`, IFB and
+    tc actions such as `mirred`/`police`) is off and is not a module, it
+    changes `struct sk_buff`. Downloads are shaped on the LAN egress
+    (`br0`) instead.
 
 ## Firewall and services
 
