@@ -456,6 +456,21 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
   mirrored into `/rtk`. If a driver complains about a missing file, that's the
   first place to look.
 
+## Contributing
+
+* **Clean room only**: this repository contains no vendor source code.
+  Proprietary code (the stock firmware, the Realtek SDK, vendor binaries and
+  anything decompiled from them) is kept offline and never committed.
+* **Default DNS and other shipped defaults** (the DoH resolver and bootstrap
+  DNS, vendor management off, branding; the full list is in
+  [AGENTS.md](AGENTS.md#2-protected-defaults-repo-members-only)) are changed
+  by repo members only. On your own router, set them in *Nijika > Settings*
+  or with `nijika doh url <URL>`.
+* **Other hardware variants** (B1 and others): talk to the author or a repo
+  member first, and send the work back here as a pull request
+  ([docs/PORTING.md](docs/PORTING.md)).
+* **AI agents**: read [AGENTS.md](AGENTS.md).
+
 ## Credits
 
 * Anime4000: NIJIKA firmware and the [RTL960x](https://github.com/Anime4000/RTL960x) project
