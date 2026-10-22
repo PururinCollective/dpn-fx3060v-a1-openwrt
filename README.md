@@ -1,3 +1,5 @@
+![NIJK](docs/images/nijk_banner.jpg)
+
 # TESTING
 **Warning:** This firmware is experimental. The drivers are not fully
 reverse engineered yet, and the firmware does not have full control of the
@@ -16,8 +18,6 @@ DO NOT TRY ON B1 VARIANT, DO NOT MODIFY TO MAKE IT WORK.
 MUST RUN TEST ON REAL XGS-PON/GPON OLT
 
 # NijikaWrt for the D-Link DPN-FX3060V (A1)
-
-![NIJK](docs/images/nijk_banner.jpg)
 
 OpenWrt userland for the D-Link DPN-FX3060V (A1) GPON HGU, the Realtek
 RTL9607DQ "Taurus" router with a built-in ONT. It runs on the
