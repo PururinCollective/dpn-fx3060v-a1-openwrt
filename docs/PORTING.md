@@ -41,36 +41,88 @@ boot. The installers check before writing anything:
 Unreadable PHY IDs only warn. `touch /tmp/nijika_force` (or `sysupgrade -F`)
 overrides. `nijika hw` shows the expected and the live fingerprint.
 
+## UART log: a must
+
+A port to the B1 or another variant starts with the UART (serial console) log
+of that hardware, and keeps it through the bring-up (AGENTS.md section 12):
+
+* **Stock boot first**: the stock firmware from power-on (U-Boot, kernel,
+  stock init) before anything is changed. Keep the terminal logging from
+  power-on; nothing is cut out.
+* **Every NijikaWrt boot** of the bring-up, the failed ones included.
+* **Source of truth for the initial hardware init**: the U-Boot environment
+  and boot command, `bootargs`, the MTD and UBI layout, memory, the PHY and
+  SerDes (LAN SDS) init, the switch ports, the PON chip and BOSA, the WiFi
+  chips, the driver load order and their errors. `device.conf` and
+  `NOTES.md` take their values from the UART log and `tools/probe.sh`, not
+  from A1, a guess or the device tree string (the same on every Taurus
+  board). [FLASH_LAYOUT.md](FLASH_LAYOUT.md) is the A1 example: taken from
+  the factory UART log.
+* The logs go with the issue or the pull request of the port (serials, MAC
+  addresses and credentials removed).
+* A1 console: ttyS0, 115200 8N1.
+
+## Reference: the Realtek LUNA SDK
+
+Kernel, driver, vendor stack and ubus work refers to the out-of-tree
+proprietary Realtek LUNA SDK, kept offline at
+`/opt/Realtek_LUNA_SDK_Ubuntu-14-04/rootfs` (the SDK VM disk, mounted
+read-only with `luna-sdk-mount.sh`):
+
+| Path in the SDK | Reference for |
+|---|---|
+| `root/SDK/rtl819x/linux-5.10.x` | the kernel the stock kernel is built from: drivers (switch, PHY, PON, WiFi), Kconfig, `KERNEL_SDK` of the module build |
+| `root/SDK/rtl819x/user/boa` | libmib, configd (message codes, `msgparser.c`), the boa form handlers and their apply calls |
+| `root/SDK/rtl819x/user` | the rest of the vendor userland: `diagshell` (`diag`), upnpctrl, miniupnpd, ... |
+| `root/SDK/rtl819x/rtk_voip` | the VoIP stack and its OMCI library |
+
+The OMCI application (`omci_app`, `omcicli`) is not in this SDK copy: for it,
+the stock binaries and their observed behaviour are the reference.
+
+The SDK gives the prototypes, structure layouts, constants, message codes and
+call order that the OpenWrt side needs (`rtk-apply`, the rpcd / ubus bridge,
+`patch-vendor.sh`). Guessed interfaces cost bring-up time and break the
+running stack. The stock binaries are the reference only where the D-Link
+build differs from the SDK. The clean-room rule stays: read the SDK, write
+the code and the prototypes by hand, no SDK file or excerpt in the repository
+(AGENTS.md section 1).
+
 ## Bring-up checklist (B1)
 
-1. **Collect the facts on the stock firmware.** Copy `tools/probe.sh` to the
+1. **UART log of the stock boot.** Connect the serial console, start
+   logging, power on the B1 with its stock firmware and keep the full log
+   (see above). Nothing is changed before this log exists.
+2. **Collect the facts on the stock firmware.** Copy `tools/probe.sh` to the
    B1 (serial or telnet shell) and run it. Its hardware section prints the
    switch port status, the PHY ID of every switch port, the device tree, the
    relevant kernel options and the PHY boot messages; it also records `/proc/mtd`,
    the UBI volumes and the U-Boot environment.
-2. **Get the stock firmware** (`DPN-FX3060V_V2.x_....bin`) into `stock/`.
-3. **Compare with A1** (`devices/dpn-fx3060v-a1/NOTES.md`): kernel config
+3. **Get the stock firmware** (`DPN-FX3060V_V2.x_....bin`, V2.0.7 or newer)
+   into `stock/`.
+4. **Compare with A1** (`devices/dpn-fx3060v-a1/NOTES.md`): kernel config
    (2.5G PHY driver, bonding, netfilter), UBI volume sizes (`pfl_*_sz`), MTD
    layout, `/etc/version` format, stock rc scripts (`/etc/init.d/rc*`), the
    stock tools (`diag rt_gpon`, `omcicli`, `flash`, `nv`, `voipflashcmd`), boa,
-   FXS count, WiFi.
-4. **Create `devices/dpn-fx3060v-b1/`**: copy the A1 profile and set
+   FXS count, WiFi. Check every difference against the UART log and the
+   SDK (kernel config, drivers, vendor userland).
+5. **Create `devices/dpn-fx3060v-b1/`**: copy the A1 profile and set
    `DEVICE_ID`, `DEVICE_BOARD`, `DEVICE_MODEL`, `DEVICE_STOCK_MATCH` (e.g.
    `^DPN-FX3060V_V2\.`), `DEVICE_STOCK_MIN` (B1: `V2.0.7`, AGENTS.md section
    10), `DEVICE_PHY_IDS` (from step 1; the RTL8221B reads `001cc849`) and
-   the UBI sizes. Write the facts into `NOTES.md`.
-5. **Build and test**: `DEVICE=dpn-fx3060v-b1 ./build.sh` and `tests/run.sh`.
+   the UBI sizes. Write the facts into `NOTES.md`, each with its source (UART
+   log line, `probe.sh` output).
+6. **Build and test**: `DEVICE=dpn-fx3060v-b1 ./build.sh` and `tests/run.sh`.
    The `fwu` group runs against the B1 factory image; the dry run takes the
    matching (and a differing) fingerprint and stock version from the image's
    own `fwu.sh`. Add the B1 stock version to its sample list if the pattern
    does not match `V2.0.6`.
-6. **First boot over serial**, watching for the A1 pitfalls below: vendor rc
+7. **First boot over serial, logged**, watching for the A1 pitfalls below: vendor rc
    numbering (`vendor-boot` runs rc0..9 synchronously, then rc10..63), the
    rc lines `patch-vendor.sh` comments out (it matches by content and logs what
    it changed), boa and the VoIP flash server, `fw_loaded.sh`, the U-Boot env
    after a trial boot (`nijika boot`), the LAN port to `eth0.N` mapping and the
-   2.5G port's speed.
-7. **With fibre**: `tools/omci-capture.sh` for an OMCI baseline; add the parts
+   2.5G port's speed. Keep the UART log of every boot for the pull request.
+8. **With fibre**: `tools/omci-capture.sh` for an OMCI baseline; add the parts
    the parsers need to `tests/fixtures/` (with serials and credentials removed),
    and check *PON > OLT Provision*.
 

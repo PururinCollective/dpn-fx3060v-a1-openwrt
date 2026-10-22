@@ -22,6 +22,13 @@ kept offline** by the maintainers and are **not included**:
 The build reads them from the builder's own copy at build time.
 `.gitignore` keeps `stock/`, `dl/`, `build/` and `bin/` out of git.
 
+The offline copy of the Realtek LUNA SDK is at
+`/opt/Realtek_LUNA_SDK_Ubuntu-14-04/rootfs` (the SDK VM disk, mounted
+read-only by the maintainers' `luna-sdk-mount.sh`): kernel tree
+`root/SDK/rtl819x/linux-5.10.x`, vendor userland sources
+`root/SDK/rtl819x/user`. It is read as the reference (section 12), never
+copied into the repository.
+
 What that means for an agent:
 
 * Never commit, paste, quote or reconstruct vendor code: no SDK files or
@@ -90,6 +97,8 @@ variant (the B1, another revision, another Realtek ONT or router):
 * follows [docs/PORTING.md](docs/PORTING.md): its own `devices/<id>/`
   profile, the measured facts in its `NOTES.md`, a variable in `device.conf`
   rather than an `if` on the device name;
+* needs the UART log of the variant: the stock boot before any change, then
+  every NijikaWrt boot of the bring-up (section 12). No UART log, no port;
 * never weakens the hardware guard (`DEVICE_PHY_IDS`, `DEVICE_STOCK_MATCH`,
   the board check) and never edits the A1 profile so that an A1 image
   installs on other hardware.
@@ -255,14 +264,54 @@ firmware, at least this version (`DEVICE_STOCK_MIN` in
   UART log.
 * Reason: NijikaWrt is at an early stage and not yet stable.
 
+## 12. Porting and low-level work: UART log and the Realtek SDK
+
+### UART log: a must for a port
+
+* A port to the B1 or another variant needs the UART (serial console) log of
+  that hardware: the stock firmware boot from power-on (U-Boot, kernel, stock
+  init) before anything is changed, then every NijikaWrt boot of the
+  bring-up. The terminal logs from power-on; nothing is cut out.
+* The UART log is the source of truth for the initial hardware init: the
+  U-Boot environment and boot command, `bootargs`, the MTD and UBI layout,
+  memory, the PHY and SerDes (LAN SDS) init, the switch ports, the PON chip
+  and BOSA, the WiFi chips, the driver load order and their errors. The
+  values in `devices/<id>/device.conf` and the facts in `NOTES.md` come from
+  the UART log (and `tools/probe.sh`), not from another variant, a guess or
+  the device tree string (the same on every Taurus board).
+* The log goes with the issue or the pull request of the port (serials,
+  MAC addresses and credentials removed).
+* A1 console: ttyS0, 115200 8N1.
+
+### Kernel, drivers, vendor stack, ubus: the Realtek SDK is the reference
+
+* Work on the kernel (modules, `KMOD_CONFIG`), drivers, the vendor stack
+  (libmib, configd, boa, PON and switch `diag`, VoIP) and the ubus / rpcd
+  bridge to it (`rtk-apply`, `usr/libexec/rpcd/nijika`) refers to the
+  out-of-tree proprietary Realtek LUNA SDK at
+  `/opt/Realtek_LUNA_SDK_Ubuntu-14-04/rootfs` (section 1): prototypes,
+  structure layouts, constants, message codes, call order, Kconfig options,
+  compiler and flags. Guessed interfaces cost bring-up time and break the
+  running stack; the SDK makes the OpenWrt side faster to develop and free
+  of these errors.
+* The stock binaries (decompiler) are the reference only where the D-Link
+  build differs from the SDK or the SDK copy lacks the part (the OMCI
+  application); the SDK comes first.
+* Section 1 applies in full: read the SDK, never copy it. Prototypes are
+  written by hand, observed behaviour goes to `docs/BOA.md` and
+  `docs/ARCHITECTURE.md`, no SDK file or excerpt enters the repository.
+* When `/opt/Realtek_LUNA_SDK_Ubuntu-14-04/rootfs` is not mounted, ask the
+  user to mount it (`luna-sdk-mount.sh`) before such work.
+
 ## Preconditions: stop when one is not fulfilled
 
-Sections 9 to 11 are preconditions. When one is not fulfilled (working copy
-not synced, `[FAIL]` from the bank check, no UART log for a major change),
-the agent stops: no build, no flash, no pull request, no issue, no further
-work on the task. Section 11 stops the pull request of the major change and
-any statement that the feature works. The agent tells the user which
-condition is missing and continues only after the user has fulfilled it.
+Sections 9 to 12 are preconditions. When one is not fulfilled (working copy
+not synced, `[FAIL]` from the bank check, no UART log for a major change or
+a port, no SDK reference for kernel, driver or vendor stack work), the agent
+stops: no build, no flash, no pull request, no issue, no further work on the
+task. Section 11 stops the pull request of the major change and any
+statement that the feature works. The agent tells the user which condition
+is missing and continues only after the user has fulfilled it.
 
 ## Before you finish
 
@@ -271,5 +320,6 @@ condition is missing and continues only after the user has fulfilled it.
   dash, the SPDX header of every source file, the attribution notice code.
 * The firmware is experimental. Do not describe a change as tested on a
   router unless it was tested on one.
-* Sections 9 to 11 are fulfilled: the working copy is synced, `nijika boot`
-  shows `[ OK ]`, a major change has its UART log.
+* Sections 9 to 12 are fulfilled: the working copy is synced, `nijika boot`
+  shows `[ OK ]`, a major change or a port has its UART log, kernel, driver
+  and vendor stack work is checked against the SDK.

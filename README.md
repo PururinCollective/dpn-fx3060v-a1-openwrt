@@ -263,8 +263,8 @@ kernel loads them:
 
 * **Source**: the kernel tree of the Realtek Luna SDK, which D-Link's kernel
   is built from. Point `KERNEL_SDK` at its `rtl819x` directory (default
-  `/media/realtek/root/SDK/rtl819x`, e.g. the SDK VM's disk mounted with
-  `guestmount -a <disk> -i --ro /media/realtek`). It is needed once: the
+  `/opt/Realtek_LUNA_SDK_Ubuntu-14-04/rootfs/root/SDK/rtl819x`: the SDK VM
+  disk mounted read-only with `luna-sdk-mount.sh`). It is needed once: the
   prepared tree is kept as `dl/linux-5.10.70-rtk.tar.zst`. Without it the
   step is skipped and the image has no WireGuard and no CAKE.
 * **Config**: the stock kernel's own (`IKCONFIG` from the stock `kimage`)
@@ -492,7 +492,10 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
   or with `nijika doh url <URL>`.
 * **Other hardware variants** (B1 and others): talk to the author or a repo
   member first, and send the work back here as a pull request
-  ([docs/PORTING.md](docs/PORTING.md)).
+  ([docs/PORTING.md](docs/PORTING.md)). The UART log of the variant is a
+  must (the stock boot, then every NijikaWrt boot): it is the source of truth
+  for the hardware init. Kernel, driver and vendor stack work refers to the
+  Realtek LUNA SDK (offline, `/opt/Realtek_LUNA_SDK_Ubuntu-14-04/rootfs`).
 * **Documentation** (every `.md` file, this README included) is maintained by
   repo members only, here and in forks: keep it as it is. Send corrections as
   an issue or a pull request; the code owners in
