@@ -183,7 +183,7 @@ the U-Boot bank logic.
 | Revision | | Profile |
 |---|---|---|
 | A1 | 4× GbE, stock firmware V1.x: supported and tested | `devices/dpn-fx3060v-a1` |
-| B1 | 2.5GbE port (RTL8221B), stock firmware V2.x: supported and tested | `devices/dpn-fx3060v-b1` |
+| B1 | 2.5GbE port (RTL8221B), stock firmware V2.x: not yet | see [docs/PORTING.md](docs/PORTING.md) |
 
 Images are built per revision (`DEVICE=` in `build.conf`) because they carry
 that revision's stock kernel and device tree. The installers compare the

@@ -5,18 +5,20 @@
 # reserve) with a high volume id so the gluebi mtd numbers of the stock volumes
 # (root=31:8 / 31:11) never shift.
 #
-# UBI can be briefly busy (EBUSY) right after attach or ubimkvol on this SoC:
-# the first UBIFS mount then races UBI's own background work. On the B1 that
-# left the first boot after a factory flash with no overlay (read-only root:
-# dropbear could not write host keys, /etc/config/rtk could not be created)
-# until a second boot found the volume ready. The create and the mounts are
-# retried on EBUSY, and each step is logged to /dev/kmsg so a first-boot
-# failure is visible in the kernel log without a serial console.
+# UBI can be briefly busy right after attach / ubimkvol on this SoC, and the
+# volume create or its first UBIFS mount then fails. On the B1 that left the
+# first boot after a factory flash with no overlay (read-only root: dropbear
+# could not write host keys, /etc/config/rtk could not be created) until a
+# second boot found the volume ready. So the *create path* (first boot only)
+# retries, bounded; the per-boot mount below stays a single attempt, so every
+# boot once the volume exists behaves exactly as before (A1 included). Steps
+# are logged to /dev/kmsg so a first-boot overlay failure is visible in the
+# kernel log without a serial console.
 
 NIJIKA_DATA_VOL=rootfs_data
 NIJIKA_DATA_ID=120
 NIJIKA_DATA_RESERVE=8
-NIJIKA_DATA_TRIES=10
+NIJIKA_DATA_TRIES=8
 NIJIKA_GLIBC=/usr/libexec/rtk/glibc
 
 nijika_log() {
@@ -25,7 +27,9 @@ nijika_log() {
 }
 
 # nijika_retry <tries> <cmd...>: run until it succeeds or the tries run out,
-# pausing 1s between attempts (for transient UBI EBUSY right after attach).
+# pausing 1s between attempts. Used only on the volume-create path (first boot
+# after a flash). Retries on any failure: the shell cannot tell a transient
+# EBUSY from a real error by exit code, and the attempt count is the bound.
 nijika_retry() {
 	local n="$1"
 	shift
@@ -68,20 +72,22 @@ nijika_rootfs_data() {
 			nijika_log "ubimkvol failed, no persistent overlay"
 			return 0
 		fi
-		# Let UBIFS lay down an empty filesystem so fstools recognises it and
+		# Format it (an empty UBIFS) so fstools/mount_root recognise it and
 		# mount_root (the next preinit hook) finds a ready volume. This first
 		# mount is the one that raced UBI settling right after ubimkvol, so
-		# retry it rather than giving up and leaving a read-only root.
+		# retry it rather than leaving a read-only root.
 		mkdir -p $mnt
 		if nijika_retry $NIJIKA_DATA_TRIES mount -t ubifs ubi0:$NIJIKA_DATA_VOL $mnt; then
 			umount $mnt
 		else
-			nijika_log "could not format $NIJIKA_DATA_VOL (UBI busy); overlay may be unavailable this boot"
+			nijika_log "could not format $NIJIKA_DATA_VOL (UBI busy); mount_root will retry"
 		fi
 	fi
 
+	# Every boot: process a pending wipe left by sysupgrade. Single attempt,
+	# unchanged from before (the volume already exists on a normal boot).
 	mkdir -p $mnt
-	nijika_retry $NIJIKA_DATA_TRIES mount -t ubifs ubi0:$NIJIKA_DATA_VOL $mnt || return 0
+	mount -t ubifs ubi0:$NIJIKA_DATA_VOL $mnt 2>/dev/null || return 0
 	if [ -f $mnt/.nijika_wipe ]; then
 		nijika_log "firmware changed, resetting overlay"
 		[ -f $mnt/.nijika_keep.tgz ] && gzip -dc $mnt/.nijika_keep.tgz > /tmp/sysupgrade.tar
