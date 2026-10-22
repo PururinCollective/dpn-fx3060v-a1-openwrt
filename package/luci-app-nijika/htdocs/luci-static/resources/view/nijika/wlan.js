@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -18,7 +20,7 @@
  * Backed by /etc/config/rtk: radio settings are MIB scalars (rtk.mib), the
  * SSIDs the table records. Save & Apply writes the changed fields and
  * restarts WiFi like the stock pages (config_WLAN). WPS and EasyMesh
- * buttons act on the running stack right away (rpcd nijika).
+ * buttons act on the running stack at once (rpcd nijika).
  *
  * Encodings (SDK mib.h, stock wlbasic.asp / fmwlan.c / hapd_conf.c):
  *   band   bits 1 b, 2 g, 4 a, 8 n, 64 ac, 128 ax (stock GUI: value - 1);
@@ -136,8 +138,8 @@ return view.extend({
 	render: function(data) {
 		var em = data[1] || {}, m, s, o;
 
-		m = new form.Map('rtk', _('Wireless'),
-			_('Both radios, their SSIDs and EasyMesh, as on the stock GUI\'s WLAN pages. Save & Apply restarts WiFi (a few seconds without wireless).'));
+		m = new form.Map('rtk', _('WLAN Configuration'),
+			_('This page is used to configure the parameters for both radios, their SSIDs and EasyMesh, as the stock WLAN pages. Save & Apply restarts the WLAN (a few seconds without wireless).'));
 		m.tabbed = true;
 		this.map = m;
 

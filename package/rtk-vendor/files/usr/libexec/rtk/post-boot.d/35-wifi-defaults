@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Once per installation (marker nijika.vendor.wifi_defaults = the last step
 # done): the WiFi settings NijikaWrt prefers over the D-Link factory ones,
 # written to the stock configuration (shared with the stock firmware bank)

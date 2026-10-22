@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt: finish the A/B boot bookkeeping U-Boot leaves undone.
 #
 # U-Boot's boot_by_tryactive sets sw_tryactive=2 and sw_active=<bank>, then

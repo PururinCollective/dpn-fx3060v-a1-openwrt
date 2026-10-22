@@ -1,10 +1,12 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt offline regression tests: no router needed.
 #
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme
+# Groups: syntax json lint origin parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -94,11 +96,88 @@ t_lint() {
 	[ -z "$hits" ] && ok "no backslash in gsub()/sub() replacements" || bad "backslash in gsub()/sub() replacement" "$hits"
 
 	# device-specific values belong in devices/<id>/device.conf
-	# (comments and the ${VAR:-fallback} defaults for older images excepted)
+	# (comments, the ${VAR:-fallback} defaults for older images and the name
+	# of the original repository excepted)
 	hits=$(grep -rnI 'dpn-fx3060v-a1' "$TOP/package" "$TOP/scripts" "$TOP/firmware" |
 		awk '{ code = $0; sub(/^[^:]*:[0-9]+:/, "", code); sub(/(^|[ \t])#.*/, "", code)
+		       gsub(/PururinCollective\/dpn-fx3060v-a1-openwrt/, "", code)
 		       if (code ~ /dpn-fx3060v-a1/ && code !~ /:[-=]dlink,dpn-fx3060v-a1/) print }' || true)
 	[ -z "$hits" ] && ok "no hardcoded device id outside devices/ (fallbacks excepted)" || bad "hardcoded device id" "$hits"
+
+	# AGENTS.md sections 7 and 8
+	if [ -n "$PY" ]; then
+		check "no em dash, en dash or minus sign (ASCII '-')" "$PY" -I "$TOP/tests/style_check.py" dashes
+		check "SPDX license identifier in every source file (GPL-2.0-only, LuCI packages Apache-2.0)" \
+			"$PY" -I "$TOP/tests/style_check.py" spdx
+	else
+		skp "dashes, SPDX headers" "no python3"
+	fi
+}
+
+# ---------------------------------------- origin and attribution notice
+
+# AGENTS.md section 6: a build that is not from the original repository
+# shows the notice (scripts/lib.sh, scripts/assemble.sh)
+t_origin() {
+	echo "origin (attribution notice of forks and copies)"
+	local D="$W/origin" f
+	if ! command -v git >/dev/null || ! command -v bash >/dev/null; then
+		skp "origin check" "no git or bash"
+		return
+	fi
+	mkdir -p "$D"
+	org() { # remote URL ("" = none, - = not a git checkout) -> origin
+		rm -rf "$D/repo"; mkdir -p "$D/repo"
+		if [ "$1" != - ]; then
+			git -C "$D/repo" init -q
+			[ -z "$1" ] || git -C "$D/repo" remote add origin "$1"
+		fi
+		bash -c ". '$TOP/scripts/lib.sh'; TOPDIR='$D/repo'; nijika_origin"
+	}
+	check "original repository (HTTPS, SSH, any case): upstream" sh -c "
+		[ \"$(org https://github.com/PururinCollective/dpn-fx3060v-a1-openwrt.git)\" = upstream ] &&
+		[ \"$(org https://github.com/PururinCollective/dpn-fx3060v-a1-openwrt)\" = upstream ] &&
+		[ \"$(org git@github.com:PururinCollective/dpn-fx3060v-a1-openwrt.git)\" = upstream ] &&
+		[ \"$(org ssh://git@github.com/pururincollective/dpn-fx3060v-a1-openwrt.git)\" = upstream ]"
+	check "fork, look-alike, other host, no remote, no git: fork" sh -c "
+		[ \"$(org https://github.com/someone/dpn-fx3060v-a1-openwrt.git)\" = fork ] &&
+		[ \"$(org https://github.com/PururinCollective/dpn-fx3060v-a1-openwrt-copy.git)\" = fork ] &&
+		[ \"$(org https://example.com/PururinCollective/dpn-fx3060v-a1-openwrt.git)\" = fork ] &&
+		[ \"$(org '')\" = fork ] && [ \"$(org -)\" = fork ]"
+	check "notice text as AGENTS.md shows it" sh -c "
+		[ \"\$(bash -c '. \"$TOP/scripts/lib.sh\"; printf \"\$NIJIKA_NOTICE_FMT\" r38 V1.1.2')\" = \
+		  'Nijika Firmware r38, V1.1.2, Open PON Foundation (project lead by Anime4000/RTL960x)' ]"
+
+	# nijika_notice_apply on copies of the pages
+	for m in fork upstream; do
+		mkdir -p "$D/$m/usr/share/ucode/luci/template/themes/perfect" "$D/$m/usr/share/ucode/luci/template/themes/bootstrap" \
+			"$D/$m/www/luci-static/resources/view/status/include"
+		cp "$TOP/package/luci-theme-perfect/root/usr/share/ucode/luci/template/themes/perfect/sysauth.ut" \
+			"$D/$m/usr/share/ucode/luci/template/themes/perfect/"
+		cp "$TOP/package/luci-app-nijika/htdocs/luci-static/resources/view/status/include/11_nijika_notice.js" \
+			"$D/$m/www/luci-static/resources/view/status/include/"
+		printf '%s\n' '<section hidden>' '	<form method="post" class="cbi-map">' '	</form>' '</section>' \
+			> "$D/$m/usr/share/ucode/luci/template/themes/bootstrap/sysauth.ut"
+	done
+	bash -c ". '$TOP/scripts/lib.sh'; nijika_notice_apply '$D/fork' 'Nijika Firmware r9, V1.1.2, x <&>'; nijika_notice_apply '$D/upstream' ''"
+	f="usr/share/ucode/luci/template/themes"
+	check "fork: notice on the Perfect and Bootstrap login, Status > Overview (escaped)" sh -c "
+		grep -qF '<p class=\"perfect-login-notice\">Nijika Firmware r9, V1.1.2, x &lt;&amp;&gt;</p>' '$D/fork/$f/perfect/sysauth.ut' &&
+		grep -qF '<p class=\"nijika-notice\">Nijika Firmware r9, V1.1.2, x &lt;&amp;&gt;</p>' '$D/fork/$f/bootstrap/sysauth.ut' &&
+		grep -qF \"var NOTICE = 'Nijika Firmware r9, V1.1.2, x <&>';\" '$D/fork/www/luci-static/resources/view/status/include/11_nijika_notice.js'"
+	check "original repository: no notice, no placeholder left" sh -c "
+		! grep -rq -e '@NIJIKA_NOTICE@' -e 'perfect-login-notice\">' -e nijika-notice '$D/upstream' &&
+		grep -qF \"var NOTICE = '';\" '$D/upstream/www/luci-static/resources/view/status/include/11_nijika_notice.js'"
+	check "assemble.sh runs the origin check and the notice" sh -c "
+		grep -q 'origin=\$(nijika_origin)' '$TOP/scripts/assemble.sh' && grep -q 'nijika_notice_apply \"\$R\" \"\$notice\"' '$TOP/scripts/assemble.sh'"
+	local st="$TOP/build/stage"
+	if [ -f "$st/etc/nijika_release" ]; then
+		check "staged image: origin recorded, no placeholder left" sh -c "
+			grep -qE \"^NIJIKA_ORIGIN='(upstream|fork)'\$\" '$st/etc/nijika_release' &&
+			! grep -rqF '@NIJIKA_NOTICE@' '$st/usr/share/ucode/luci/template' '$st/www/luci-static/resources/view/status/include'"
+	else
+		skp "staged image" "no build/stage (./build.sh assemble)"
+	fi
 }
 
 # ---------------------------------------------------------------- parsers
@@ -525,8 +604,8 @@ assert {'admin/nijikawrt/settings', 'admin/nijikawrt/firmware', 'admin/nijikawrt
 			[ -x '$st/rtk/lib/nijika/cwmpClient' ] && [ -x '$st/rtk/lib/nijika/snmpd' ] &&
 			grep -q 'stock-services boot' '$st/usr/libexec/rtk/vendor-boot' &&
 			grep -q \"option tr069 '0'\" '$st/etc/config/nijika'"
-		check "Overview: System, PON / ONT, WAN, memory, storage (no empty OpenWrt cards)" sh -c "
-			[ \"\$(ls '$st/www/luci-static/resources/view/status/include' | tr '\n' ' ')\" = '10_system.js 15_nijika.js 17_nijika_wan.js 20_memory.js 25_storage.js ' ]"
+		check "Overview: System, notice (forks), PON / ONT, WAN, memory, storage (no empty OpenWrt cards)" sh -c "
+			[ \"\$(ls '$st/www/luci-static/resources/view/status/include' | tr '\n' ' ')\" = '10_system.js 11_nijika_notice.js 15_nijika.js 17_nijika_wan.js 20_memory.js 25_storage.js ' ]"
 		check "EasyMesh role pinned before the stock WiFi starts" sh -c "
 			grep -q 'easymesh-pin boot' '$st/usr/libexec/rtk/vendor-boot' && [ -x '$st/usr/libexec/rtk/easymesh-pin' ] &&
 			grep -q \"option easymesh 'controller'\" '$st/etc/config/nijika'"
@@ -1247,10 +1326,10 @@ FN
 
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme}"
+groups="${*:-syntax json lint origin parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|parsers|wrapper|ucimirror|spi|lanmgmt|apply|qos|easymesh|ddns|wireguard|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
+		syntax|json|lint|origin|parsers|wrapper|ucimirror|spi|lanmgmt|apply|qos|easymesh|ddns|wireguard|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

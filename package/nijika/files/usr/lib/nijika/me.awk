@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Parse `omcicli mib get <class>` into JSON:
 #   {"class":171,"name":"ExtVlanTagOperCfgData","instances":[
 #      {"attrs":[["EntityId","0x101"],...],"raw":"..."}, ...],"truncated":false}

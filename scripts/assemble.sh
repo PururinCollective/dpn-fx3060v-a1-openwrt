@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Merge the OpenWrt userland with the stock Realtek userland (/rtk) and
 # produce the squashfs rootfs. Runs entirely inside one fakeroot session so
 # ownership and device nodes stay consistent.
@@ -93,6 +95,21 @@ grep -q /usr/libexec/nijika/banner "$R/etc/profile" || warn "could not hook the 
 # (banner-layout.sh) without colour, animation or the live PON line.
 . "$R/etc/nijika_release"
 . "$R/etc/openwrt_release"
+
+# Attribution notice (AGENTS.md section 6): a build that is not from the
+# original repository (a fork, a copy, an archive) shows
+# "Nijika Firmware r<n>, <stock version>, Open PON Foundation (project lead
+# by Anime4000/RTL960x)" on the LuCI login page and on Status > Overview.
+# Do not remove this step or the notice.
+origin=$(nijika_origin)
+notice=""
+if [ "$origin" != upstream ]; then
+	# shellcheck disable=SC2059
+	notice=$(printf "$NIJIKA_NOTICE_FMT" "$NIJIKA_REVISION" "$(nijika_stock_version)")
+	log "origin: not github.com/$NIJIKA_UPSTREAM - notice: $notice"
+fi
+nijika_notice_apply "$R" "$notice"
+printf "NIJIKA_ORIGIN='%s'\nNIJIKA_NOTICE='%s'\n" "$origin" "$(printf '%s' "$notice" | sed "s/'/'\\\\''/g")" >> "$R/etc/nijika_release"
 release="$NIJIKA_DISTRO $NIJIKA_REVISION${NIJIKA_CODENAME:+ ($NIJIKA_CODENAME)}"
 (
 	owrt="OpenWrt $DISTRIB_RELEASE $DISTRIB_REVISION"

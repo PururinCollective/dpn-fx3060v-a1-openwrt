@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -289,7 +291,7 @@ return view.extend({
 		 * table only when it differs */
 		this.loaded = { mib: mib, rules: JSON.stringify(json.rule.map(rulePayload)), tc: JSON.stringify(json.tcrule.map(tcPayload)) };
 
-		m = new form.JSONMap(json, _('QoS'));
+		m = new form.JSONMap(json, _('QoS Configuration'));
 		m.tabbed = true;
 		this.map = m;
 

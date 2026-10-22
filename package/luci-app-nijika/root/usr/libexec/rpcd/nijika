@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+
 # rpcd backend for luci-app-nijika (ubus object "nijika").
 # Bridges LuCI to the stock Realtek tools in the /rtk vendor chroot.
 

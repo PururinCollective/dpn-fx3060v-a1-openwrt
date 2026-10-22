@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Pack the two firmware images from the same kernel/dtb/rootfs:
 #
 #  *-factory.bin     stock D-Link tar (fwu.sh dtb rootfs kimage fwu_ver hw_ver

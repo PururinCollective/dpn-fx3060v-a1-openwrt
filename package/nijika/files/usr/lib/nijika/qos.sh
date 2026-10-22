@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # shellcheck shell=ash
 # Stock IP QoS (Advance > Upstream / Downstream QoS Policy, QoS
 # Classification, Traffic Shaping): the records the stock V1.1.2 boa forms

@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt OMCI baseline capture (read-only). Writes /tmp/omci-baseline.txt
 # with passwords / user names / LOID masked.
 #

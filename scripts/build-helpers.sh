@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Native helpers, installed into the staged rootfs:
 #   rtk-apply  /rtk/bin: runs in the stock chroot, compiled for the stock
 #              userland (aarch64, glibc 2.30) against its libraries

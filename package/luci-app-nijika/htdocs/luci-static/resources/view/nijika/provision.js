@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require dom';
@@ -721,7 +723,7 @@ return view.extend({
 			nc.style(), E('style', {}, CSS),
 			E('h2', {}, _('OLT Provision')),
 			E('p', { 'class': 'cbi-map-descr' }, [
-				_('OMCI configuration received from the OLT: service flows, managed entity topology and upstream QoS. Last read: %s.').format(
+				_('This page shows the OMCI configuration received from the OLT: service flows, managed entity topology and upstream QoS. Last read: %s.').format(
 					d.updated ? new Date(d.updated * 1000).toLocaleTimeString() : '-'), ' ',
 				E('button', { 'class': 'cbi-button cbi-button-action', 'click': function() { location.reload(); } }, _('Refresh'))
 			]),

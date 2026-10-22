@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt wrapper for the stock SNMP agent (the real one is
 # /lib/nijika/snmpd, so pidof/killall snmpd still find it).
 #

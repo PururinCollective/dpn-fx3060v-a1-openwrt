@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -44,7 +46,7 @@ return view.extend({
 
 		m = new form.Map('rtk', _('UPnP Configuration'),
 			_('This page is used to configure UPnP. The system acts as a daemon when you enable it and select WAN interface (upstream) that will use UPnP.') + ' ' +
-			_('LAN devices can only open ports 1024-65535, and only to their own address.'));
+			_('A LAN device can open ports 1024-65535 only, and only to its own address.'));
 
 		s = m.section(form.NamedSection, 'mib', 'mib');
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 /*
  * rtk-apply: the "apply" half of the stock boa web forms.
  *

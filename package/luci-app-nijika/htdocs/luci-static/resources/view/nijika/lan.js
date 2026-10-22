@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -34,8 +36,8 @@ return view.extend({
 		var m, s, o, self = this;
 
 		this.orig = v || {};
-		m = new form.JSONMap({ lan: Object.assign({}, this.orig) }, _('LAN'),
-			_('The LAN side of the router. Changes apply right away, as on the stock GUI. After changing the router address, open LuCI at the new address.'));
+		m = new form.JSONMap({ lan: Object.assign({}, this.orig) }, _('LAN Interface Settings'),
+			_('This page is used to configure the LAN interface of the device. A change applies at once, as on the stock GUI. After a change of the router address, open LuCI at the new address.'));
 		this.map = m;
 
 		s = m.section(form.NamedSection, 'lan', 'lan');

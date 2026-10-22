@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt banner renderer.
 #
 # stdin: banner lines from banner-layout.sh. A line may start with a role:

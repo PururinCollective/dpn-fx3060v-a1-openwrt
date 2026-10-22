@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NIJIKA utility for NijikaWrt on the D-Link DPN-FX3060V
 # Created by Anime4000; OpenWrt port.
 #
@@ -595,6 +597,8 @@ nijika_version() {
 	echo "Linux $(uname -r) (stock Realtek kernel)"
 	echo "Device $NIJIKA_MODEL ($NIJIKA_DEVICE)"
 	echo "Bank $(running_bank): $(nv_get sw_version$(running_bank))"
+	# attribution notice of a build not from the original repository
+	[ -z "$NIJIKA_NOTICE" ] || echo "$NIJIKA_NOTICE"
 }
 
 # Hardware fingerprint: switch PHY IDs of this unit against the device

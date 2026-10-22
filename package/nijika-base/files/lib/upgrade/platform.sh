@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt sysupgrade for the D-Link DPN-FX3060V (A1).
 #
 # The image always goes to the OTHER bank. If that bank holds the stock

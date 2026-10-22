@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # shellcheck shell=bash
 # Shared helpers for the NijikaWrt build scripts.
 
@@ -55,4 +57,58 @@ nijika_revision() {
 
 nijika_githash() {
 	git -C "$TOPDIR" rev-parse --short=8 HEAD 2>/dev/null || echo "local"
+}
+
+# --- Origin and attribution notice (AGENTS.md section 6) ---------------------
+# The original repository. A build from any other source (a fork, a copy, an
+# archive without git) shows the attribution notice on the LuCI login page and
+# on Status > Overview. Do not remove or weaken this check or the notice.
+NIJIKA_UPSTREAM="PururinCollective/dpn-fx3060v-a1-openwrt"
+NIJIKA_NOTICE_FMT="Nijika Firmware %s, %s, Open PON Foundation (project lead by Anime4000/RTL960x)"
+NIJIKA_NOTICE_FILES="usr/share/ucode/luci/template/themes/perfect/sysauth.ut
+www/luci-static/resources/view/status/include/11_nijika_notice.js"
+NIJIKA_NOTICE_BOOTSTRAP="usr/share/ucode/luci/template/themes/bootstrap/sysauth.ut"
+
+# nijika_origin -> upstream | fork. upstream: the git remote "origin" of this
+# checkout is the original repository on GitHub.
+nijika_origin() {
+	local url
+	url=$(git -C "$TOPDIR" remote get-url origin 2>/dev/null) || { echo fork; return 0; }
+	if printf '%s\n' "$url" | grep -qiE "^(https://|ssh://git@|git@)github\.com[:/]${NIJIKA_UPSTREAM}(\.git)?/?$"; then
+		echo upstream
+	else
+		echo fork
+	fi
+}
+
+# nijika_stock_version -> "V1.1.2" (fwu_ver of the stock firmware:
+# "DPN-FX3060V_V1.1.2 -- <date>")
+nijika_stock_version() {
+	sed -n '1s/^[^_]*_\(V[0-9][0-9.]*\).*/\1/p' "$STOCK_DIR/fwu_ver" 2>/dev/null
+}
+
+# nijika_notice_apply ROOT NOTICE: write NOTICE (empty: no notice) into the
+# files of NIJIKA_NOTICE_FILES (placeholder @NIJIKA_NOTICE@) and below the
+# login form of the Bootstrap theme.
+nijika_notice_apply() {
+	local root="$1" notice="$2" html js f
+	html=$(printf '%s' "$notice" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e "s/'/\&#39;/g" -e 's/"/\&quot;/g')
+	js=$(printf '%s' "$notice" | sed -e 's/[\\'"'"']/\\&/g')
+	for f in $NIJIKA_NOTICE_FILES; do
+		[ -f "$root/$f" ] || die "notice: $f missing"
+		grep -q '@NIJIKA_NOTICE@' "$root/$f" || die "notice: no @NIJIKA_NOTICE@ in $f"
+		case "$f" in
+			*.js) sed -i "s#@NIJIKA_NOTICE@#$(printf '%s' "$js" | sed -e 's/[\\&#]/\\&/g')#g" "$root/$f" ;;
+			*) if [ -n "$notice" ]; then
+				sed -i "s#@NIJIKA_NOTICE@#$(printf '%s' "$html" | sed -e 's/[\\&#]/\\&/g')#g" "$root/$f"
+			   else
+				sed -i '/@NIJIKA_NOTICE@/d' "$root/$f"
+			   fi ;;
+		esac
+	done
+	f="$root/$NIJIKA_NOTICE_BOOTSTRAP"
+	if [ -n "$notice" ] && [ -f "$f" ]; then
+		grep -q '</form>' "$f" || die "notice: no </form> in $NIJIKA_NOTICE_BOOTSTRAP"
+		sed -i "0,/<\/form>/s#</form>#</form>\n\t<p class=\"nijika-notice\">$(printf '%s' "$html" | sed -e 's/[\\&#]/\\&/g')</p>#" "$f"
+	fi
 }

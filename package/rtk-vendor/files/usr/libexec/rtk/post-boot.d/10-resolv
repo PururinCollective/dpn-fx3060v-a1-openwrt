@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # OpenWrt runs no dnsmasq of its own: point the host resolver at the one
 # the stock stack maintains (/var/resolv.conf inside the chroot).
 [ -e /rtk/var/resolv.conf ] || exit 0

@@ -1,2 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Post-boot hook: host name of the stock stack (/usr/libexec/rtk/hostname).
 exec /usr/libexec/rtk/hostname

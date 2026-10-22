@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Reset the stock configuration to the D-Link factory defaults, as the stock
 # GUI's Restore Default does (boa formReboot: reset_cs_to_default(1), here
 # `rtk-apply factory-reset`): the current settings (cs: WAN connections,

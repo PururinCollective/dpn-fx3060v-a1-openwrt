@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Perfect LuCI theme for NijikaWrt (perfect.my colours over Bootstrap). Build
 # inside an OpenWrt tree/SDK with the luci feed installed (luci.mk).
 # build.sh does not need this: it copies htdocs/ and root/ straight into the

@@ -1,5 +1,7 @@
 #!/bin/sh
-# NijikaWrt device probe -- READ ONLY.
+# SPDX-License-Identifier: GPL-2.0-only
+
+# NijikaWrt device probe (read only).
 #
 # Collects the output formats NijikaWrt parses (diag, omcicli, flash chains,
 # voipflashcmd, nv) plus layout details (mtd/UBI, mounts, processes,

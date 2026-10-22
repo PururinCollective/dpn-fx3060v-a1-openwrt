@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt placeholder for /bin/slogd (runs inside the /rtk chroot).
 #
 # The stock syslog daemon creates /dev/log. /rtk/dev is the system /dev, so

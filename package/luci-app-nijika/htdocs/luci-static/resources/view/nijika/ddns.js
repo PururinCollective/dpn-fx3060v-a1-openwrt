@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -164,8 +166,8 @@ return view.extend({
 
 		this.st = data[1] || {};
 
-		m = new form.Map('nijika', _('Dynamic DNS'),
-			_('Keeps host names (A records, IPv4) on the router\'s public address, as the stock GUI\'s DDNS page, with freedns.afraid.org by update URL and Cloudflare added. Updates go over HTTPS, when the address changes and once a day.'));
+		m = new form.Map('nijika', _('Dynamic DNS Configuration'),
+			_('This page is used to configure the Dynamic DNS host names (A records, IPv4) of the public address of the router, as the stock DDNS page; freedns.afraid.org (update URL) and Cloudflare are added. An update is sent over HTTPS when the address changes and once a day.'));
 
 		s = m.section(form.GridSection, 'ddns_host', _('Entries'));
 		s.anonymous = true;

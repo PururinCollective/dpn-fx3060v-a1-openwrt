@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # shellcheck shell=ash
 # PON / ONT status collection. Requires common.sh and omci.sh.
 

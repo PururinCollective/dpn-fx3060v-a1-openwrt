@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # `omcicli dump qmap` -> JSON
 #   {"pq":[{"meid":"0x8000","qid":0,"policy":"WRR","pw":0,"tcid":0,"dp":0,
 #           "cir":0,"pir":0,"used":1}],

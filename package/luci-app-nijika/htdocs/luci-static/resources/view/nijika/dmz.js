@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -22,8 +24,8 @@ return view.extend({
 	render: function(data) {
 		var lan = data[1] || {}, m, s, o;
 
-		m = new form.Map('rtk', _('DMZ'),
-			_('Sends every incoming IPv4 connection that no port forwarding rule takes to one LAN device (the DMZ host), as on the stock GUI\'s DMZ page. That device is fully exposed to the internet: only its own firewall protects it.'));
+		m = new form.Map('rtk', _('DMZ Configuration'),
+			_('This page is used to configure the DMZ host, as the stock DMZ page. An incoming IPv4 connection that matches no port forwarding rule is sent to the DMZ host. The DMZ host is exposed to the Internet: only its own firewall protects it.'));
 
 		s = m.section(form.NamedSection, 'mib', 'mib');
 

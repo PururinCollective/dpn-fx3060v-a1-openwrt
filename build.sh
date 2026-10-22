@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt build for the D-Link DPN-FX3060V (A1)
 #
 #   ./build.sh            # everything: fetch stock kmod rootfs assemble firmware

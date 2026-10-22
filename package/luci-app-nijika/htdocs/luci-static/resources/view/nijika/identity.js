@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -40,8 +42,8 @@ return view.extend({
 		var data = { ident: Object.assign({}, this.current) };
 		var m, s, o;
 
-		m = new form.JSONMap(data, _('ONT Identity'),
-			_('How this ONT presents itself to the OLT. Some OLTs only provision services (ME 84/171) for known vendors/models. Changes need a reboot.'));
+		m = new form.JSONMap(data, _('ONT Identity Settings'),
+			_('This page is used to configure the identity the ONT reports to the OLT. Some OLTs provision services (ME 84/171) only for known vendors and models. A change takes effect after a reboot.'));
 		this.map = m;
 
 		s = m.section(form.NamedSection, 'ident', 'ident', _('Current values'));

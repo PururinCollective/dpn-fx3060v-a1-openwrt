@@ -1,3 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+# NijikaWrt integration of the stock Realtek userland (/rtk chroot): init
+# scripts, wrappers of the stock tools; the rtk-apply and logrelay sources
+# are built by scripts/build-helpers.sh.
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rtk-vendor

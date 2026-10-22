@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # /etc/config/rtk: the stock configuration (flash MIB) as a UCI config.
 #
 #   rtk.mib.<KEY>              every scalar of `flash all`

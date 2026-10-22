@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # The stock `startup` writes MIB DEVICE_NAME (RTK_GW) to
 # /proc/sys/kernel/hostname. Keep the OpenWrt hostname
 # (system.@system[0].hostname) instead; DEVICE_NAME stays in the MIB for the

@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt login banner (called from /etc/profile instead of `cat /etc/banner`).
 #
 # uci: nijika.banner.animate = ssh (default) | always | never

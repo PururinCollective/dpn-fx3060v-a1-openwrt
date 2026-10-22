@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt dynamic DNS (Services > DDNS; nijika.ddns and the ddns_host
 # sections): keeps the hosts' A records on the router's public IPv4
 # address. IPv4 only.

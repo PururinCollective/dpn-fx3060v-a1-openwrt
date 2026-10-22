@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Unpack the stock D-Link firmware (a plain tar) and verify its members.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"

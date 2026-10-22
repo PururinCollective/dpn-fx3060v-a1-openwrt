@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -81,7 +83,7 @@ return view.extend({
 		};
 
 		m = new form.JSONMap(json, _('Port Forwarding'),
-			_('Opens ports on the WAN address to a device on the LAN, as on the stock GUI\'s Port Forwarding page. Saving applies the rules right away.'));
+			_('Entries in this table are used to redirect ports of the WAN address to a device on the LAN, as the stock Port Forwarding page. The rules apply at once after saving.'));
 		this.map = m;
 
 		s = m.section(form.NamedSection, 'global', 'global');

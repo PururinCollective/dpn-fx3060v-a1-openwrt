@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt /sbin/firstboot (moved there by scripts/assemble.sh): the factory
 # reset of LuCI (System > Backup / Flash Firmware > Perform reset:
 # `firstboot -r -y`) and of the command line. Before fstools' factoryreset

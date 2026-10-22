@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Patch the stock rootfs so it can run as the /rtk chroot under OpenWrt.
 # Usage: patch-vendor.sh <path-to-rtk-tree>
 #

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require dom';
@@ -248,7 +250,7 @@ return view.extend({
 		var m, s, o;
 
 		m = new form.Map('rtk', _('PON WAN'),
-			_('The WAN connections of the stock configuration, one per VLAN, as on the stock GUI\'s PON WAN page. Changes are written to the stock configuration and applied right away: the connection restarts with the new settings (a brief interruption). The service of a connection is fixed by the stock configuration.'));
+			_('This page is used to configure the parameters for the PON WAN connections of the stock configuration, one per VLAN, as the stock PON WAN page. A change is written to the stock configuration and applied at once: the connection restarts with the new settings (a short interruption). The service of a connection is set by the stock configuration.'));
 
 		s = m.section(form.GridSection, 'ATM_VC_TBL', _('Connections'));
 		s.anonymous = true;

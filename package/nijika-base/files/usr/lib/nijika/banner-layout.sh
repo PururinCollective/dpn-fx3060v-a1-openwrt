@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # shellcheck shell=ash
 # NijikaWrt banner layout, shared by the login banner (live, colour,
 # animation: /usr/libexec/nijika/banner + banner.awk) and the static

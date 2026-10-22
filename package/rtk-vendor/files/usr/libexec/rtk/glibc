@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Run a self-contained stock glibc tool straight from /rtk without the
 # chroot. Used where the chroot is not available: preinit (UBI overlay
 # setup) and sysupgrade stage2.

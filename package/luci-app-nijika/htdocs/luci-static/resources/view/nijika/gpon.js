@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -28,8 +30,8 @@ return view.extend({
 		var m, s, o;
 
 		this.orig = v || {};
-		m = new form.JSONMap({ gpon: Object.assign({}, this.orig) }, _('Authentication'),
-			_('How this ONT authenticates to the OLT. Changes apply right away, as on the stock GUI: the ONT re-registers with the OLT, which interrupts the PON connection for a moment.'));
+		m = new form.JSONMap({ gpon: Object.assign({}, this.orig) }, _('GPON Settings'),
+			_('This page is used to configure the parameters for the GPON network access (authentication to the OLT). A change applies at once, as on the stock GUI: the ONT registers with the OLT again and the PON connection is interrupted for a moment.'));
 		this.map = m;
 
 		s = m.section(form.NamedSection, 'gpon', 'gpon');

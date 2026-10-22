@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt first boot defaults.
 
 # uhttpd: HTTP only (no TLS stack shipped), LuCI on port 80 of every

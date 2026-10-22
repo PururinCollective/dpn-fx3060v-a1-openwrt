@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Before the router reboots or halts: what the stock configd does before its
 # own reboot (sysReboot / doReleaseWanConneciton in the SDK's msgparser.c),
 # without its final reboot() (OpenWrt's shutdown does that):

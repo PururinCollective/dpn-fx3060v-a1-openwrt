@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Switches for the wrappers of stock programs, in /rtk/var/nijika:
 #   tr069, snmp        the TR-069 client (cwmpClient) and the SNMP agent
 #                      (snmpd) run only when nijika.vendor.tr069 / snmp are

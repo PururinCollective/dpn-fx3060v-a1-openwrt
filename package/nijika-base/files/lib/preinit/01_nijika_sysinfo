@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt: the stock device tree says "Realtek Taurus ENG Board"; give
 # OpenWrt (LuCI, sysupgrade) the real board identity. Runs before
 # 02_sysinfo, which only fills in missing values.

@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # EasyMesh role (nijika.vendor.easymesh) pinned in the stock configuration.
 #
 # The D-Link/TM default role "auto" makes this unit a mesh node when the WPS

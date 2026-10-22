@@ -1,8 +1,10 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Apply /etc/config/nijika vendor settings at runtime (uci reload trigger).
 # The stock boa always runs; nijika.vendor.boa only decides who may reach
 # its web GUI, which is a firewall question. The stock SPI firewall
-# switches (nijika.firewall) are written to flash and applied right away.
+# switches (nijika.firewall) are written to flash and applied at once.
 
 # LuCI evaluates menu dependencies (nijika.ui.developer shows PON > ONT
 # Identity) once and caches the result: rebuild it on the next request

@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Point the stock dnsmasq at the DNS over HTTPS proxy (nijika.doh.enabled=1)
 # or back at the ISP's DNS, through the switch file the stock dnsmasq wrapper
 # (/rtk/bin/dnsmasq) reads.

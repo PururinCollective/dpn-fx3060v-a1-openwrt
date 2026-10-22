@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /*
  * Perfect theme for NijikaWrt - perfect.my colours over LuCI Bootstrap.
  *
@@ -761,6 +763,13 @@ body.perfect-blank {
 	line-height: 1.5;
 	margin: 0 0 24px;
 }
+/* attribution notice of a build not from the original repository */
+.perfect-login-notice {
+	color: rgba(255, 255, 255, .85);
+	font-size: 13px;
+	line-height: 1.4;
+	margin: 16px 0 0;
+}
 
 .perfect-login-card {
 	display: flex;
@@ -832,4 +841,5 @@ body.perfect-blank {
 	.perfect-login h1 { order: 4; font-size: 30px; }
 	.perfect-login-lead { order: 5; font-size: 15px; margin-bottom: 18px; }
 	.perfect-login-card { order: 6; }
+	.perfect-login-notice { order: 7; }
 }

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # shellcheck shell=ash
 # NijikaWrt shared helpers (sourced by /usr/sbin/nijika, rpcd and the banner).
 

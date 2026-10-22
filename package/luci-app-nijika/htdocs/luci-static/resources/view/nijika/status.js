@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require poll';
@@ -130,10 +132,10 @@ function renderProvision(olt) {
 
 	return E([], [
 		warn,
-		E('h4', {}, 'ME 131 — ' + nc.meName(131)), renderMe131(olt.me131 || {}),
-		E('h4', {}, 'ME 256 — ' + nc.meName(256)), renderMe256(olt.me256 || {}),
-		E('h4', {}, 'ME 84 — ' + nc.meName(84)), renderMe84(olt.me84 || {}),
-		E('h4', {}, 'ME 171 — ' + nc.meName(171)), renderMe171(olt.me171 || {}, o5),
+		E('h4', {}, 'ME 131 - ' + nc.meName(131)), renderMe131(olt.me131 || {}),
+		E('h4', {}, 'ME 256 - ' + nc.meName(256)), renderMe256(olt.me256 || {}),
+		E('h4', {}, 'ME 84 - ' + nc.meName(84)), renderMe84(olt.me84 || {}),
+		E('h4', {}, 'ME 171 - ' + nc.meName(171)), renderMe171(olt.me171 || {}, o5),
 		E('p', { 'class': 'nijika-hint' },
 			_('Filter: "no tag" = untagged frames, "default" = default rule, "any" = any VID. Treatment: "pop N" removes N received tags, "drop" discards the frame, "copy inner/outer" keeps the received VID.'))
 	]);
@@ -173,7 +175,7 @@ return view.extend({
 			nc.style(),
 			E('h2', {}, _('ONT Status')),
 			E('div', { 'class': 'cbi-map-descr' },
-				_('Live GPON status of the built-in ONU, read from the stock Realtek stack (diag / omcicli).')),
+				_('This page shows the current GPON status of the built-in ONU, read from the stock Realtek stack (diag, omcicli).')),
 			st.error ? E('p', { 'class': 'alert-message warning' }, st.error) : '',
 			E('div', { 'class': 'cbi-section' }, [ E('h3', {}, _('PON link')), link ]),
 			E('div', { 'class': 'cbi-section' }, [ E('h3', {}, _('Optical transceiver (BOSA)')), optics ]),

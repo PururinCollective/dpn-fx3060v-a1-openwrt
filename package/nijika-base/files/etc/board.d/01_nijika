@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt board identity (from the device profile the image was built
 # for, /etc/nijika_release). No network/switch/LED defaults on purpose: the
 # stock Realtek stack owns the hardware (see /etc/config/network).

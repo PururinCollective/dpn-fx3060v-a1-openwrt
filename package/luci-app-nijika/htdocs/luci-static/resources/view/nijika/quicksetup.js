@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -59,7 +61,7 @@ return view.extend({
 
 		var m, s, o;
 		m = new form.JSONMap(data, _('Quick Setup'),
-			_('Get the built-in ONT online in one step. Settings are stored in the stock configuration and applied right away, like the stock GUI does; a changed serial number needs a reboot. Changing the PON or WAN settings briefly interrupts the Internet connection.'));
+			_('This page is used to configure the basic settings of the ONT in one step. The settings are stored in the stock configuration and applied at once, as on the stock GUI; a changed serial number takes effect after a reboot. A change of the PON or WAN settings interrupts the Internet connection for a moment.'));
 		this.map = m;
 
 		/* PON */
@@ -82,7 +84,7 @@ return view.extend({
 		/* WAN */
 		if (wan0) {
 			s = m.section(form.NamedSection, 'wan', 'wan', _('Internet (PPPoE)'),
-				_('Edits PON_0, the first WAN connection of the stock configuration: the Internet connection the ISP default creates. The other connections (IPTV, voice, TR-069 management, one per VLAN) are left as they are. Only fields you change are written.'));
+				_('Edits PON_0, the first WAN connection of the stock configuration: the Internet connection the ISP default creates. The other connections (IPTV, voice, TR-069 management, one per VLAN) are left as they are. Only the changed fields are written.'));
 			o = s.option(form.DummyValue, '_wan', _('WAN connection'));
 			o.cfgvalue = function() { return nc.wanLabel(wan0, 0); };
 			if (wan0.ChannelMode != '2')

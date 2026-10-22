@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt vendor boot (runs inside the /rtk chroot).
 #
 #   rcS <first> <last> [mark]

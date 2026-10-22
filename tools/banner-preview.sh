@@ -1,6 +1,8 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Preview the NijikaWrt login banner on a PC (needs busybox or any POSIX sh
-# + awk). Uses the very same script/renderer that ships in the image.
+# + awk). Uses the same script/renderer that ships in the image.
 #
 #   tools/banner-preview.sh                 # animated, auto colour
 #   COLOR=256 tools/banner-preview.sh       # truecolor|256|16|none

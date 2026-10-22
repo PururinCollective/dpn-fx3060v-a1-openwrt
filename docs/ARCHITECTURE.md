@@ -129,7 +129,7 @@ Other build-time changes to `/rtk`:
 * `bin/ccom_linkkit` **removed**: D-Link's Alibaba Cloud Link Kit agent
   (MQTT to `iot-*.aliyuncs.com`, cloud firmware/config push, remote
   property/service calls, AWSS WiFi provisioning, ALCS LAN control). An inert
-  placeholder of the same name keeps `startup`/`libmib` happy. TR-369
+  placeholder of the same name is there for `startup`/`libmib`. TR-369
   (`obuspa`) and speedtest are kept: they only talk to endpoints
   configured in the MIB (ISP controller) or when used.
 * `bin/updatedd` (stock DDNS client) moved to `lib/nijika/updatedd`; the
@@ -175,7 +175,7 @@ stock `omci_app` and `pondetect` held the lock taken at boot.
 
 ## boa (stock web server)
 
-The stock `boa` is not just the D-Link GUI. At startup it also creates the
+The stock `boa` is not only the D-Link GUI. At startup it also creates the
 **VoIP flash server** (`voip_flash_server_start`, SysV shared memory) that
 `VoIP_maserati` waits for. `startup`, `libmib`, `cwmpClient` and the Realtek
 `systemd` daemon also track it through `/var/run/boa.pid`. Boot 2 (r5/r6) ran a

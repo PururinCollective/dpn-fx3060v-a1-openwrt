@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Run the (patched) stock rc chain inside /rtk.
 #
 #   vendor-boot early   rc0..rc9: mounts, configd, DSP, kernel drivers, OMCI.

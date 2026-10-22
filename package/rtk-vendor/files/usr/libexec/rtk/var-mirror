@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Mirror the vendor /var (/rtk/var) into the host /var (= /tmp) so kernel
 # threads of the stock drivers, which resolve paths against the host root,
 # find /var/config, /var/run/solar_control.fifo etc. Never overrides host

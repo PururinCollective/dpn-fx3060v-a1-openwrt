@@ -33,7 +33,7 @@ swiotlb=noforce mtdparts=ca_spinand_flash:2048K(boot),256K@0x280000(env),256K@0x
 | 5 | `ubi_k1` | 0x600000 | kernel, bank 1 |
 | 6 | `ubi_r1` | 0x4600000 | rootfs, bank 1, `root=31:11` |
 | 7.. | (apps/framework/osgi) | | 11 user volumes in total on the factory unit |
-| 120 | `rootfs_data` | free space − 8 PEBs | **NijikaWrt only**: OpenWrt overlay (UBIFS), created on first boot |
+| 120 | `rootfs_data` | free space - 8 PEBs | **NijikaWrt only**: OpenWrt overlay (UBIFS), created on first boot |
 
 The factory unit reports 268 free PEBs (~32 MiB). NijikaWrt creates
 `rootfs_data` with an explicit high volume id (120) so the gluebi mtd numbers

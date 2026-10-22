@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 """logrelay filter test: tests/run.sh helpers.
 
     python3 tests/logrelay_test.py <logrelay-binary> <short-temp-dir>

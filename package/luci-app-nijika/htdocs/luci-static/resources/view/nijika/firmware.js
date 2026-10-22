@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require dom';
@@ -81,7 +83,7 @@ return view.extend({
 				]),
 				E('p', {}, _('The image is written to the other bank; the running firmware is not touched. OpenWrt settings on the overlay are kept.')),
 				res.target_stock ? E('div', { 'class': 'alert-message warning' }, [
-					E('p', {}, _('Bank %d holds the stock D-Link firmware (%s), your fallback. Flashing replaces it. To keep stock and NijikaWrt side by side, boot the stock bank and upload the -factory.bin image there instead.').format(res.target, res.target_version)),
+					E('p', {}, _('Bank %d holds the stock D-Link firmware (%s), the fallback. Flashing replaces it. To keep stock and NijikaWrt side by side, boot the stock bank and upload the -factory.bin image there instead.').format(res.target, res.target_version)),
 					E('label', {}, [ replace, ' ', _('Replace the stock firmware in bank %d').format(res.target) ])
 				]) : '',
 				mode,
@@ -138,9 +140,9 @@ return view.extend({
 		this.banksNode = E('div', {}, this.renderBanks(b || {}));
 		return E([], [
 			nc.style(),
-			E('h2', {}, _('Firmware Banks')),
+			E('h2', {}, _('Firmware Upgrade')),
 			E('div', { 'class': 'cbi-map-descr' },
-				_('The DPN-FX3060V keeps two complete firmwares. Flash NijikaWrt or a stock D-Link image to the inactive bank, try it once, and fall back automatically if it does not boot. CLI: <code>nijika boot</code>, <code>nijika upgrade</code>.')),
+				_('This page is used to manage the two firmware banks of the device. A NijikaWrt or stock D-Link image is written to the inactive bank and started once; the device starts the active bank again if the new image does not boot. CLI: <code>nijika boot</code>, <code>nijika upgrade</code>.')),
 			E('div', { 'class': 'cbi-section' }, [
 				E('h3', {}, _('Banks')),
 				E('p', {}, _('Running from bank %s.').format(b && b.running)),

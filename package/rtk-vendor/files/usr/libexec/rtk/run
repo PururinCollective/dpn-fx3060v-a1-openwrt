@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Run a command inside the stock Realtek chroot with the stock environment.
 #   /usr/libexec/rtk/run /bin/flash get GPON_SN
 # Without arguments an interactive stock shell is started.

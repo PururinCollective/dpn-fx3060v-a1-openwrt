@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require dom';
@@ -58,7 +60,7 @@ return view.extend({
 		});
 		return E([], [
 			E('p', { 'class': 'nijika-hint' }, _('%d of %d values').format(shown.length, Object.keys(values).length) +
-				(keys.length > shown.length ? ' — ' + _('refine the filter to see more') : '')),
+				(keys.length > shown.length ? ' - ' + _('refine the filter to see more') : '')),
 			E('table', { 'class': 'table' }, rows)
 		]);
 	},
@@ -105,8 +107,8 @@ return view.extend({
 			nc.style(),
 			E('h2', {}, _('MIB Browser')),
 			E('div', { 'class': 'cbi-map-descr' }, [
-				_('The stock Realtek configuration database. Changes are saved like `flash set` does (the stock configd writes them to flash shortly after, and before a reboot). WAN, firewall, LAN, WiFi and GPON keys are applied to the running stack like the stock GUI does; other keys take effect after a reboot.'),
-				' ', E('strong', {}, _('Wrong values can make the device unreachable; use Quick Setup for the common settings.'))
+				_('This page shows the stock Realtek configuration database (MIB) and is used to change single keys. A change is saved like `flash set` (the stock configd writes it to flash shortly after, and before a reboot). WAN, firewall, LAN, WiFi and GPON keys are applied to the running stack as on the stock GUI; other keys take effect after a reboot.'),
+				' ', E('strong', {}, _('A wrong value can make the device unreachable. Use Quick Setup for the common settings.'))
 			]),
 			E('div', { 'class': 'cbi-section' }, [
 				E('h3', {}, _('Chain tables')),

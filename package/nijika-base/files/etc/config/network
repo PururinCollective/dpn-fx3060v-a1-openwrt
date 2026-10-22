@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt: the stock Realtek stack (vendor chroot) owns LAN, WAN, PON,
 # WiFi and VoIP. netifd only manages loopback; do not add lan/wan here
 # unless you know what the stock stack does with br0/nas0/eth0.*.

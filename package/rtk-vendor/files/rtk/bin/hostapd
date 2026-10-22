@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt wrapper for the stock hostapd (the real one is /lib/nijika/hostapd,
 # so pidof/killall hostapd still find it). libmib writes
 # /var/hostapd.conf.<radio> and starts `hostapd <conf> -s -g ... -B -P ...` on

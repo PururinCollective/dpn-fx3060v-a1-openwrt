@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt wrapper for the stock UPnP control tool (the real one is
 # /lib/nijika/upnpctrl). libmib (restart_upnp: start_upnp / stop_upnp) runs
 # `upnpctrl up|down <wan> <lan>`.

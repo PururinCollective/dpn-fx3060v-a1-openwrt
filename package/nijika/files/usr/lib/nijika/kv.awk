@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # KEY=VALUE lines (flash all, nv getenv) -> JSON object {"KEY":"VALUE",...}
 # Lines that are not KEY=VALUE (chain summary tables, banners) are skipped.
 # Usage: flash all | awk -f kv.awk

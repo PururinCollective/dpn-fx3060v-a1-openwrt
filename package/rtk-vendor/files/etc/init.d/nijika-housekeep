@@ -1,4 +1,6 @@
 #!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Periodic fix-ups for the stock vendor stack (firewall LAN access, /var
 # mirror, hostname) and the UCI mirror of the stock configuration: a change
 # of /etc/config/rtk (reload_config, LuCI "Save & Apply") is written to flash.

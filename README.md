@@ -1,9 +1,11 @@
 # TESTING
-DONT BE STUPID TO TRY THIS, STILL EXPERIMENTAL STAGE AND DRIVER STILL NOT FULLY REVERSE ENGINEER, NOT ABLE TO TAKE FULL CONTROL OF THE HARDWARE!
+**Warning:** This firmware is experimental. The drivers are not fully
+reverse engineered yet, and the firmware does not have full control of the
+hardware. Do not install it unless you can recover the device.
 
-ONLY STUPID PEOPLE RUN A TEST AND CLAIM IT FAIL,
-
-DUH! STILL IN TESTING DUMB FUCK, CAN'T YOU READ?
+**Warning:** This firmware is still in testing. A failed test is expected at
+this stage and does not mean that the firmware is broken: report it as a test
+result, with the details of the test.
 
 THIS FOR A1 HARDWARE AND PLANNING TO UPSTREAM TO OPENWRT ONCE CLEAN ROOM REVERSE ENGINEER IN PLACE
 
@@ -147,7 +149,7 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   LOID, WiFi calibration. The reset button is still the stock one: it
   resets the stock configuration only.
 * **Live apply, like the stock GUI**: a change to the WAN, firewall, LAN,
-  WiFi, GPON registration or VoIP takes effect right away. `rtk-apply` makes
+  WiFi, GPON registration or VoIP takes effect at once. `rtk-apply` makes
   the same libmib calls the stock web forms make after "Apply"
   ([docs/BOA.md](docs/BOA.md)); only a few keys (GPON serial, ONT identity)
   still need a reboot.
@@ -186,7 +188,7 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   links, lit by a grey → cyan/blue/purple sweep. The two rules are the ONT's
   lights: the downstream light (RX 1490 nm) flows in as a wave, then the laser
   (TX 1310 nm) sends bursts out, as GPON does. Each rule is red only while that
-  light really exists (live reading above −35 dBm) and grey otherwise, so the
+  light exists (live reading above -35 dBm) and grey otherwise, so the
   banner never lies about the fibre. Over SSH only by default (~1.2 s); the
   serial console gets the static version. Links: `/usr/share/nijika/banner-links`.
 
@@ -202,7 +204,7 @@ Screenshots (LuCI mock with sample data): [banner](docs/screenshots/banner.jpg),
 | RAM | 512 MiB DDR3 |
 | Flash | 256 MiB SPI-NAND (MT29F2G01 / F50L2G41XA / XT26G02E / WSFVC32GBID), UBI |
 | PON | GPON, Semtech GN25L95 BOSA |
-| LAN | 4× GbE (internal PHYs on switch ports 0–3), USB |
+| LAN | 4× GbE (internal PHYs on switch ports 0-3), USB |
 | WiFi | Realtek AX (rtw/PHL driver), 2.4 + 5 GHz |
 | VoIP | 2× FXS (Si3228x) |
 | Boot | ATF BL1/BL2/BL31 → U-Boot 2020.01, dual bank (`sw_commit`, `sw_tryactive`) |
@@ -471,8 +473,8 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
   driver no trunking (details in `devices/dpn-fx3060v-a1/NOTES.md`).
 * Kernel threads of the stock drivers resolve paths against the OpenWrt root.
   `/lib/firmware`, `/etc/serdes`, `/etc/conf`, `/config` and `/var/*` are
-  mirrored into `/rtk`. If a driver complains about a missing file, that's the
-  first place to look.
+  mirrored into `/rtk`. A driver that reports a missing file: check this mirror
+  first.
 
 ## Contributing
 
@@ -491,6 +493,17 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
   repo members only, here and in forks: keep it as it is. Send corrections as
   an issue or a pull request; the code owners in
   [.github/CODEOWNERS](.github/CODEOWNERS) review them.
+* **Shell logo and name**: the ASCII logo of the login banner and its
+  animation are not changed, and the name "nijika" / "NijikaWrt" is not
+  removed or replaced, also in forks.
+* **Forks and copies**: a build that is not from
+  `github.com/PururinCollective/dpn-fx3060v-a1-openwrt` shows
+  `Nijika Firmware r<n>, <stock version>, Open PON Foundation (project lead
+  by Anime4000/RTL960x)` on the LuCI login page and on Status > Overview
+  (`scripts/assemble.sh`). Keep it.
+* **Wording and file headers**: Realtek style wording, `-` instead of the em
+  dash, an SPDX license identifier at the top of every source file
+  ([AGENTS.md](AGENTS.md#7-wording-realtek-style)).
 * **AI agents**: read [AGENTS.md](AGENTS.md).
 
 ## Credits

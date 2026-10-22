@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt WireGuard (Services > WireGuard; nijika.wireguard and the
 # wireguard_peer sections): one interface, wg0, for remote access (phones,
 # laptops) and site-to-site links. The stock 5.10.70 kernel has no

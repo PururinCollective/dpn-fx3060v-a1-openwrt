@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+
 """Exported symbol names of a raw (decompressed) arm64 kernel Image.
 
     ksymtab.py IMAGE > vmlinux.symvers

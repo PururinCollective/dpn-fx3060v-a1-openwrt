@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # shellcheck shell=ash
 # Live apply of stock configuration changes: after writing a key with
 # `flash set`, make the running vendor stack follow it the way the stock web
@@ -106,7 +108,7 @@ apply_before() {
 	done
 }
 
-# GPON as formgponConf: the LOID goes to OMCI right away, a new PLOAM
+# GPON as formgponConf: the LOID goes to OMCI at once, a new PLOAM
 # password re-registers, a change of LOID, device type or OLT mode ends
 # with restartOMCIsettings.
 apply_after() {

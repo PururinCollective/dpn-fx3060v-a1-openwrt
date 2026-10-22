@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # nijika-housekeep: re-apply what the stock stack may undo.
 #  - every 10 s: the OpenWrt hostname (stock `startup` writes DEVICE_NAME
 #    over it, also right after the vendor boot is marked done)

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # shellcheck shell=ash
 # A/B firmware handling for the DPN-FX3060V. Requires common.sh.
 #
@@ -111,7 +113,7 @@ fw_check() {
 	return 0
 }
 
-# fw_check_hw IMAGE -- the hardware revision the image was built for must be
+# fw_check_hw IMAGE: the hardware revision the image was built for must be
 # this unit (see the top of this file).
 fw_check_hw() {
 	local img="$1" want="" live stock

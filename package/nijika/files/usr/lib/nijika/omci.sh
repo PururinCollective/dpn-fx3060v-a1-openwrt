@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # shellcheck shell=ash
 # OMCI MIB access through the stock omcicli. Requires common.sh.
 #

@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt wrapper for the stock TR-069 client (the real one is
 # /lib/nijika/cwmpClient, so pidof/killall cwmpClient still find it).
 #

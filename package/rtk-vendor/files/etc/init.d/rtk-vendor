@@ -1,4 +1,6 @@
 #!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt: bring up the stock Realtek userland (PON, OMCI, WAN, WiFi,
 # VoIP) inside the /rtk chroot. The stock kernel drivers expect their own
 # daemons (configd, startup, systemd, boa...) so they run unmodified there.

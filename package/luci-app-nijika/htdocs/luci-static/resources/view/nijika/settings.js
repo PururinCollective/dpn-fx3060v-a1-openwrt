@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -9,7 +11,7 @@ return view.extend({
 		var m, s, o;
 
 		m = new form.Map('nijika', _('NijikaWrt Settings'),
-			_('How OpenWrt and the stock Realtek vendor stack (the <code>/rtk</code> chroot) cooperate.'));
+			_('This page is used to configure how OpenWrt and the stock Realtek vendor stack (the <code>/rtk</code> chroot) work together.'));
 
 		s = m.section(form.NamedSection, 'vendor', 'vendor', _('Vendor stack'));
 
@@ -42,12 +44,12 @@ return view.extend({
 		o.default = '0';
 
 		o = s.option(form.Flag, 'tr069', _('Stock TR-069 client'),
-			_('The ISP\'s auto-configuration server (ACS) can change the stock configuration through it: WAN, WiFi, VoIP, firmware. Off under NijikaWrt; the TR-069 WAN connection still comes up and gets its address. The stock GUI\'s TR-069 settings, which the stock firmware bank uses, are left as they are. Applied right away.'));
+			_('The ISP\'s auto-configuration server (ACS) can change the stock configuration through it: WAN, WiFi, VoIP, firmware. Off under NijikaWrt; the TR-069 WAN connection still comes up and gets its address. The stock GUI\'s TR-069 settings, which the stock firmware bank uses, are left as they are. Applied at once.'));
 		o.default = '0';
 		o.rmempty = false;
 
 		o = s.option(form.Flag, 'snmp', _('Stock SNMP agent'),
-			_('The stock snmpd (UDP 161), as configured on the stock GUI\'s SNMP page. Off under NijikaWrt; the stock settings are left as they are. Applied right away.'));
+			_('The stock snmpd (UDP 161), as configured on the stock GUI\'s SNMP page. Off under NijikaWrt; the stock settings are left as they are. Applied at once.'));
 		o.default = '0';
 		o.rmempty = false;
 
@@ -78,7 +80,7 @@ return view.extend({
 		o.depends('enabled', '1');
 
 		s = m.section(form.NamedSection, 'firewall', 'firewall', _('Stock SPI firewall'),
-			_('The <em>SPI Firewall</em> switches of the stock GUI (Firewall &gt; IPv4/IPv6 Port Filtering): the default action of the stock forwarding filter. <em>Off</em> allows new connections both ways, <em>On</em> drops new incoming ones (stock default; outgoing stays allowed). NijikaWrt writes them to the stock configuration at every boot; a change here is applied right away (with live apply on). The router\'s own services (LuCI, SSH, stock GUI) are guarded by separate rules either way. The stock configuration is shared with the stock firmware bank.'));
+			_('The <em>SPI Firewall</em> switches of the stock GUI (Firewall &gt; IPv4/IPv6 Port Filtering): the default action of the stock forwarding filter. <em>Off</em> allows new connections both ways, <em>On</em> drops new incoming ones (stock default; outgoing stays allowed). NijikaWrt writes them to the stock configuration at every boot; a change here is applied at once (with live apply on). The router\'s own services (LuCI, SSH, stock GUI) are guarded by separate rules either way. The stock configuration is shared with the stock firmware bank.'));
 		o = s.option(form.ListValue, 'spi_ipv4', _('IPv4'),
 			_('Unsolicited incoming IPv4 connections still need a port forward or DMZ (NAT).'));
 		o.value('off', _('Off'));
@@ -93,7 +95,7 @@ return view.extend({
 		o.default = 'off';
 
 		o = s.option(form.Flag, 'wan_ping', _('Answer ping from the internet'),
-			_('The stock remote access settings drop ping (ICMP echo) from the WAN. On: the router answers it, IPv4 and IPv6, at most 10 a second, so path MTU and reachability checks from outside work. The stock configuration is not changed. Applied right away.'));
+			_('The stock remote access settings drop ping (ICMP echo) from the WAN. On: the router answers it, IPv4 and IPv6, at most 10 a second, so path MTU and reachability checks from outside work. The stock configuration is not changed. Applied at once.'));
 		o.default = '1';
 		o.rmempty = false;
 

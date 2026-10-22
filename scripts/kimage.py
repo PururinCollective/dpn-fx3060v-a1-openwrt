@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+
 """Unpack the stock kernel: kimage.py KIMAGE OUTDIR -> OUTDIR/Image, OUTDIR/config
 
 The stock kimage (a FIT image) carries an LZMA (or gzip) compressed arm64

@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt wrapper for the stock dnsmasq (the real one is /lib/nijika/dnsmasq,
 # so `pidof`/`killall dnsmasq` still find it). The stock stack rewrites
 # /var/dnsmasq.conf and restarts dnsmasq on every WAN change; this runs each

@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt factory installer for the D-Link DPN-FX3060V.
 #
 # Runs on the STOCK firmware: the stock web upgrade (configd ->

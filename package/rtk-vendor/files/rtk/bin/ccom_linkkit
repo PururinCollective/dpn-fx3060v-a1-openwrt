@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt placeholder for /bin/ccom_linkkit (runs inside the /rtk chroot).
 #
 # The stock binary is D-Link's Alibaba Cloud Link Kit agent: MQTT to the

@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+# NijikaWrt inittab: OpenWrt rcS boot and shutdown, login on the serial
+# console (ttyS0).
+
 ::sysinit:/etc/init.d/rcS S boot
 ::shutdown:/etc/init.d/rcS K shutdown
 ttyS0::askfirst:/usr/libexec/login.sh

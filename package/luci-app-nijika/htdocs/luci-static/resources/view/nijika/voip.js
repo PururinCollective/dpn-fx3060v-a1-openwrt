@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -76,7 +78,7 @@ return view.extend({
 			var view = E([], [
 				E('h2', {}, _('VoIP')),
 				E('div', { 'class': 'cbi-map-descr' },
-					_('SIP accounts of the two phone ports (FXS). Each line registers with its primary proxy; the backup proxy is used when the primary does not answer. Saving restarts the VoIP stack: calls in progress are dropped.')),
+					_('This page is used to configure the SIP accounts of the two phone ports (FXS). Each line registers with its primary proxy; the backup proxy is used when the primary proxy does not answer. Saving restarts the VoIP stack: the calls in progress are dropped.')),
 				E('div', {}, nodes.map(function(node, i) {
 					return E('div', { 'data-tab': 'phone%d'.format(i + 1), 'data-tab-title': _('Phone %d').format(i + 1) }, [ node ]);
 				}))

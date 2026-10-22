@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Dry-run of the factory installer (firmware/fwu.sh) on a PC.
 #
 # Runs the fwu.sh shipped in the factory image against stubbed stock tools

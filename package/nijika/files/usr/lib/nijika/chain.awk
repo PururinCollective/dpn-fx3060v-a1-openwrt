@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 # `flash get <CHAIN_TBL>` -> JSON
 #   {"table":"ATM_VC_TBL","num":4,"records":[{"ifIndex":"...",...},...]}
 # Stock output: "<TBL>.NUM=4" (only for "get <TBL>.NUM"), then per record

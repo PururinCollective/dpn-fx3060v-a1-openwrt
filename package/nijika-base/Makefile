@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+# NijikaWrt board files: UBI overlay setup, A/B sysupgrade, board
+# identity, default configuration, login banner.
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nijika-base

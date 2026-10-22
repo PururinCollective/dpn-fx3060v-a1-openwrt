@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 'require view';
 'require form';
@@ -196,7 +198,7 @@ return view.extend({
 		this.st = data[1] || {};
 
 		m = new form.Map('nijika', _('WireGuard'),
-			_('A WireGuard VPN on the router (interface wg0): phones and laptops reach the LAN and the internet through it from anywhere, and other sites can be linked. Peers get the access of a LAN device. The stock kernel has no WireGuard; NijikaWrt builds the module for it.'));
+			_('This page is used to configure the WireGuard VPN of the router (interface wg0). Remote clients reach the LAN and the Internet through it, and other sites can be linked. A peer has the access of a LAN device. The stock kernel has no WireGuard; NijikaWrt builds the module for it.'));
 
 		s = m.section(form.NamedSection, 'wireguard', 'wireguard', _('Interface'));
 		s.addremove = false;

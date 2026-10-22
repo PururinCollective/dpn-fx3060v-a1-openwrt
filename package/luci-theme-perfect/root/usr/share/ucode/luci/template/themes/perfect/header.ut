@@ -1,4 +1,6 @@
 {#
+ SPDX-License-Identifier: Apache-2.0
+
  Perfect theme for NijikaWrt: perfect.my colours on top of Bootstrap.
  Based on luci-theme-bootstrap (Copyright 2008 Steven Barth, 2012 David
  Menting, 2008-2022 Jo-Philipp Wich). Licensed under the Apache License 2.0.

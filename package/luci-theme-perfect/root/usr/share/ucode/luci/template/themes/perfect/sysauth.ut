@@ -1,4 +1,6 @@
 {#
+ SPDX-License-Identifier: Apache-2.0
+
  Perfect theme login: blue page, logo, login card and the Perfect cat.
  Licensed under the Apache License 2.0.
 -#}
@@ -29,6 +31,8 @@
 
 			<button type="submit" class="btn cbi-button-action important">{{ _('Log in') }}</button>
 		</form>
+		{# attribution notice of a build not from the original repository: scripts/assemble.sh writes it in or removes the line (AGENTS.md section 6) #}
+		<p class="perfect-login-notice">@NIJIKA_NOTICE@</p>
 	</section>
 
 	<div class="perfect-login-art" aria-hidden="true">

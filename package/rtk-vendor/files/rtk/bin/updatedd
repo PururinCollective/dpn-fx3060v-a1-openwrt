@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # NijikaWrt wrapper for the stock DDNS client (the real one is
 # /lib/nijika/updatedd): not started. Under NijikaWrt, OpenWrt's
 # /usr/libexec/nijika/ddns (LuCI: Services > DDNS) does dynamic DNS, over

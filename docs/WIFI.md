@@ -38,7 +38,7 @@ has the code to program it (`HE_operation_handler`,
 
 NijikaWrt therefore adds it: the stock `/bin/hostapd` is a wrapper
 (`rtk/bin/hostapd`, real binary in `/lib/nijika/hostapd`) that appends
-`he_bss_color=<1..63>` to the config libmib just wrote, one colour per radio
+`he_bss_color=<1..63>` to the config libmib wrote, one colour per radio
 from the last byte of its BSSID, when `nijika.wifi.bss_color_<radio>` is on
 (default; Network > Wireless > Advanced). Turning it off or on restarts WiFi.
 

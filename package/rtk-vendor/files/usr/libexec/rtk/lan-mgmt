@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Keep the stock iptables ruleset (rebuilt by `startup` on WAN changes) in
 # line with NijikaWrt. Idempotent; run after vendor boot and every minute by
 # nijika-housekeep.

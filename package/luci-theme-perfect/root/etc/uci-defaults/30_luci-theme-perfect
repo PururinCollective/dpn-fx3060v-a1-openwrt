@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+
 # Register the Perfect theme beside Bootstrap and make it the default.
 # Runs after 30_luci-theme-bootstrap (same prefix, sorted by name). The
 # switch only happens while luci.themes.Perfect is missing, so a theme

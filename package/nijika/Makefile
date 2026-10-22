@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+# NijikaWrt `nijika` command line utility: PON status, OMCI, ONT identity,
+# ISP presets, boot banks and upgrade.
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nijika

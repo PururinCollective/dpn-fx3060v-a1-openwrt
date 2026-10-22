@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Build the OpenWrt userland with the ImageBuilder and unpack it to
 # $OWRT_ROOT. The NijikaWrt packages under package/*/files are injected as
 # the ImageBuilder FILES overlay.

@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
 # The stock "SPI Firewall" switches (stock GUI: Firewall > IPv4/IPv6 Port
 # Filtering) are the default actions of the stock forward filter (iptables
 # chains ipfilter / ipv6filter, FORWARD only: the router's own services are

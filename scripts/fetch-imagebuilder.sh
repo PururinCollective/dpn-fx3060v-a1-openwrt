@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Download and unpack the OpenWrt ImageBuilder for armsr/armv8.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"

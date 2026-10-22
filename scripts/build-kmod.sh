@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+
 # Kernel modules for the stock Realtek 5.10.70 kernel (KMOD_CONFIG in
 # build.conf: WireGuard and the crypto libraries it selects, the CAKE qdisc),
 # built so the stock kernel takes them:
