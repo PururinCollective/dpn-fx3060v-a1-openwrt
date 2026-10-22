@@ -129,7 +129,7 @@ chmod 0755 "$R"/usr/sbin/nijika "$R"/usr/libexec/rtk/* "$R"/usr/libexec/rtk/post
 	"$R"/etc/init.d/nijika-wireguard \
 	"$R"/etc/uci-defaults/90-nijika-defaults \
 	"$R"/rtk/bin/ccom_linkkit "$R"/rtk/bin/dnsmasq "$R"/rtk/bin/slogd "$R"/rtk/bin/cwmpClient \
-	"$R"/rtk/bin/snmpd "$R"/rtk/bin/hostapd "$R"/rtk/bin/updatedd "$R"/rtk/etc/nijika/rcS "$R"/usr/libexec/rtk/easymesh-pin 2>/dev/null || true
+	"$R"/rtk/bin/snmpd "$R"/rtk/bin/hostapd "$R"/rtk/bin/updatedd "$R"/rtk/bin/upnpctrl "$R"/rtk/etc/nijika/rcS "$R"/usr/libexec/rtk/easymesh-pin 2>/dev/null || true
 chmod 0755 "$R/rtk/var" "$R/rtk/run" "$R/rtk/proc" "$R/rtk/sys" "$R/rtk/dev"
 
 # Enable our services (IB only enables packages it installed itself).

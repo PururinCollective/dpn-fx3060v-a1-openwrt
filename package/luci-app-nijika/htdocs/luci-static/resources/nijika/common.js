@@ -334,7 +334,8 @@ return baseclass.extend({
 		var names = {
 			firewall: _('firewall'), lan: _('LAN'), wlan: _('WiFi'), loid: _('PON registration'),
 			ploam: _('PON registration'), omci: _('PON registration'), voip: _('VoIP'),
-			snooping: _('IGMP snooping'), wlanblock: _('LAN/WiFi blocking'), portfw: _('port forwarding'), qos: _('QoS')
+			snooping: _('IGMP snooping'), wlanblock: _('LAN/WiFi blocking'), portfw: _('port forwarding'), qos: _('QoS'),
+			upnp: _('UPnP')
 		};
 		var seen = {}, list = [];
 		(res && res.applied || []).forEach(function(a) {

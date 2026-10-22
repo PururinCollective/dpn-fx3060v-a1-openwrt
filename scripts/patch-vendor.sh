@@ -95,6 +95,15 @@ if [ -f "$RTKDIR/bin/hostapd" ] && ! grep -q "NijikaWrt wrapper" "$RTKDIR/bin/ho
 	log "moved bin/hostapd to lib/nijika/hostapd (BSS colouring)"
 fi
 
+# Stock UPnP control tool: a wrapper (rtk/bin/upnpctrl) removes the LAN
+# rule for the IGD port that the real one, kept as lib/nijika/upnpctrl,
+# adds on every start and never deletes.
+if [ -f "$RTKDIR/bin/upnpctrl" ] && ! grep -q "NijikaWrt wrapper" "$RTKDIR/bin/upnpctrl" 2>/dev/null; then
+	mkdir -p "$RTKDIR/lib/nijika"
+	mv "$RTKDIR/bin/upnpctrl" "$RTKDIR/lib/nijika/upnpctrl"
+	log "moved bin/upnpctrl to lib/nijika/upnpctrl (IGD port rule)"
+fi
+
 # Stock DDNS client: OpenWrt's /usr/libexec/nijika/ddns (Services > DDNS)
 # does dynamic DNS instead; the wrapper (rtk/bin/updatedd) keeps the stock
 # one, kept as lib/nijika/updatedd, from publishing the WAN's own address

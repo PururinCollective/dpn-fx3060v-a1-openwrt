@@ -35,6 +35,7 @@ about:
 | WLAN Basic, Security | `formWlanSetup` (0x43153c), `formWlEncrypt` (0x4322d8) | `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)`, the same call as the stock `wlan_apply restart` |
 | GPON Settings | `formgponConf` (0x42ad0c) | LOID: `omcicli set loid <loid> [<password>]`; PLOAM: `rt_gpon_deactivate()`, `diag rt_gpon set registrationId-hex <hex>`, `rt_gpon_activate(0)`; LOID, Device Type or OLT mode changed: `restartOMCIsettings` (`rt_gpon_deactivate()`, `omcicli mib reset`, `rt_gpon_activate(0)`) |
 | VoIP | `web_restart_solar` (0x481018) | `voip_flash_server_update()`, `echo x > /var/run/solar_control.fifo`, the same as `reSync_reStartVoIP()` |
+| Advance > UPnP | `formUpnp` | `UPNP` (daemon on/off), `UPNP_EXT_ITF` (ifIndex of the WAN connection; 65535 = none, what the form writes while the daemon is off), then `restart_upnp(CONFIGALL, 0, 0, 0)` (SDK `fmupnp.c`): `stop_upnp()`, then `start_upnp()` when `UPNP` is 1 (`upnpctrl down` / `up <wan> br0`) |
 | Advance > Upstream / Downstream QoS Policy | `formUpstreamQosPolicy` (0x443644), `formDownstreamQosPolicy` (0x443dbc) | `stopIPQ()` before `QOS_POLICY` / `QOS_DOWNSTREAM_POLICY` changes, then `Commit()`, `take_qos_effect()` |
 | Advance > QoS Classification | `formQosRuleEdit` (0x440e78, add / edit: `mib_chain_add` / `_update`, `UpdateQoSOrder`), `formQosRule` (0x4426d8, delete, Apply) | `take_qos_effect()`, `Commit()` |
 | Advance > Traffic Shaping | `formQosTraffictlEdit` (0x44232c, add), `formQosTraffictl` (0x441a3c: total bandwidth Apply / Clear, delete) | `take_qos_effect()`, `Commit()` |
@@ -69,6 +70,7 @@ queue, no initialisation needed.
 | `portfw` | formPortFw (0x45d730) after its `Commit()`: `reWriteAllDhcpcScript()`, `setupPortFW()` |
 | `qos-stop` | the QoS policy forms before the policy changes: `stopIPQ()` |
 | `qos` | the QoS forms after their writes: `take_qos_effect()` (`stopIPQ()`, `setupIPQ()`) |
+| `upnp` | formUpnp after its writes: `restart_upnp(CONFIGALL, 0, 0, 0)` |
 | `easymesh <role> <prev> <backhaul> [norestart]` | formMultiAP (0x44791c) Apply: `setupMultiAPController(role, prev, backhaul, &dhcp)` / `setupMultiAP_TMAuto()` / `setupMultiAPDisabled()`, `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)`, `Commit()` |
 | `easymesh-pair` | formMultiAP Start PBC (controller): `echo 2 > /tmp/virtual_push_button` |
 | `snooping` | `rtk_multicast_snooping()` |
@@ -110,6 +112,7 @@ set`, `isp`, `ploam`, `loid`) use it.
 | `PORT_FW_ENABLE`, `PORT_FW_TBL` | `portfw` | | `portfw` |
 | `ENABLE_QOS`, `QOS_POLICY`, `TOTAL_BANDWIDTH`, `TOTAL_BANDWIDTH_LIMIT`, `ENABLE_DSCP_MARK`, `ENABLE_1P`, their `DOWNSTREAM` twins, the `IP_QOS_*` tables | `qos` | `qos-stop` | `qos` |
 | `LAN_IP_ADDR`, `LAN_SUBNET`, `LAN_*2`, `LAN_DHCP*`, `DHCP_MODE`, `DHCPS_*` | `lan` | | `lan` |
+| `UPNP`, `UPNP_EXT_ITF` | `upnp` | | `upnp` |
 | `WLAN_*`, `WLAN1_*`, `WSC_*`, `SSID` | `wlan` | | `wlan` |
 | `LOID`, `LOID_PASSWD` | `loid` | | `omcicli set loid`, then `gpon-omci` last |
 | `GPON_PLOAM_PASSWD` | `ploam` | | `gpon-ploam` |
@@ -244,14 +247,35 @@ accept rule; 0 keeps the port, but the accept rule then takes any port:
 `! -i br0 -o br0 -p tcp -j ACCEPT`), `Protocol` (1 TCP, 2 UDP, 3 both:
 D-Link maps the form's "4" to 3), `remotehost`, `OutInf` (WAN ifIndex,
 65535 any), `Comment` (59 characters), `enable`, `Dynamic` (UPnP, not
-editable). A forward needs protocol, external port and internal address,
+editable). The stock miniupnpd adds its mappings with `mib_chain_add` and
+does not commit them: they are in configd's copy (`mib get PORT_FW_TBL`),
+not in `flash get`'s (the committed one) until something else commits. A forward needs protocol, external port and internal address,
 like a MikroTik dst-nat (dst-port, to-addresses; to-ports optional); the
 LuCI page writes the external port(s) as the internal ones when none are
 given. The stock page adds up to 12 rules per submit; the table's size
 is libmib's (`flash all`, MIB Chain Information; SDK: 8, 32 in the TRUE
-build). rpcd `portfw_set` rewrites the static rules with `flash del/add/set`
-(TM build: through configd), runs `mib commit cs now` so the page reads the
-new rules back from flash, and runs `rtk-apply portfw`.
+build). rpcd `portfw_get` reads the table from configd (`mib get`), so the
+UPnP mappings show. rpcd `portfw_set` rewrites the static rules with `flash
+del/add/set` (TM build: through configd; it counts and finds the records
+there too, the committed copy can be short of UPnP's), runs `mib commit cs
+now` and `rtk-apply portfw`.
+
+## UPnP (formUpnp, miniupnpd 1.3)
+
+`upnpctrl up <wan> <lan>` (from `start_upnp`) creates the `MINIUPNPD` chains
+(nat `PREROUTING`/`POSTROUTING`, filter `FORWARD`), a route for
+239.0.0.0/8 on br0, an INPUT rule for the IGD port, and runs
+`/bin/miniupnpd -i <wan> -a <lan ip> -p 52869`: no `-f`, so it reads
+`/etc/miniupnpd.conf`, which stock does not have (no permission rules, no
+secure mode). NAT-PMP is not enabled. `upnpctrl down` removes them again,
+except the INPUT rule: it is added as `-I INPUT 1 -i br0 -p TCP --dport
+52869 -j ACCEPT` and deleted without `-i br0` (by "up" too), which never
+matches, so each start adds one more copy. NijikaWrt ships
+`/rtk/etc/miniupnpd.conf` (`secure_mode=yes`, ports 1024-65535) and wraps
+`upnpctrl` to drop the copies before up and down. A refused mapping
+(permission rule or secure mode) is answered with UPnP error 718
+ConflictInMappingEntry; miniupnpd logs the reason at info level, below
+what the stock log keeps.
 
 ## IP QoS (Advance > QoS pages, IP_QOS_* tables)
 

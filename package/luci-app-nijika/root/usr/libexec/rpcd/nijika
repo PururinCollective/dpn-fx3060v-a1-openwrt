@@ -552,7 +552,8 @@ m_portfw_get() {
 	en=false; [ "$(mib_get PORT_FW_ENABLE)" = 1 ] && en=true
 	max=$(chain_max PORT_FW_TBL)
 	printf '{"enable":%s,"max":%d,"chain":' "$en" "${max:-0}"
-	rtk /bin/flash get PORT_FW_TBL 2>/dev/null | awk -v table=PORT_FW_TBL -f "$NIJIKA_LIB/chain.awk" | tr -d '\n'
+	# configd's copy: UPnP's records (Dynamic=1) are never committed
+	rtk /bin/mib get PORT_FW_TBL 2>/dev/null | awk -v table=PORT_FW_TBL -f "$NIJIKA_LIB/chain.awk" | tr -d '\n'
 	printf '}\n'
 }
 
@@ -572,8 +573,8 @@ is_port() {
 #  (internal ports; none: the external ones), "proto" (1 TCP, 2 UDP, 3 both:
 #  D-Link stores "both" as 3), "rhost", "ifindex" (65535 = any WAN)}]}
 # Replaces the static rules; UPnP's (Dynamic=1) stay. Records go in with the
-# stock `flash add/del/set`, committed before the reply (the page reads them
-# back from flash), then setupPortFW like the stock page.
+# stock `flash add/del/set` and are committed before the reply, then
+# setupPortFW like the stock page.
 m_portfw_set() {
 	need_vendor
 	local en n i k total idx out vals="$NIJIKA_RUNDIR/portfw.$$" ok=0
@@ -609,11 +610,13 @@ m_portfw_set() {
 			"externalportEnd=$r_eto" "--" >> "$vals"
 	done
 
-	# drop the static rules, last first (indexes shift)
-	total=$(rtk /bin/flash get PORT_FW_TBL.NUM 2>/dev/null | sed -n 's/.*NUM=//p')
+	# drop the static rules, last first (indexes shift). `flash del` works on
+	# configd's copy, so count and read there: it also holds UPnP's records,
+	# which the committed copy may not have
+	total=$(mib_get_live PORT_FW_TBL.NUM)
 	i=$(( ${total:-0} - 1 ))
 	while [ $i -ge 0 ]; do
-		[ "$(mib_get "PORT_FW_TBL.$i.Dynamic")" = 1 ] || rtk /bin/flash del "PORT_FW_TBL.$i" >/dev/null 2>&1
+		[ "$(mib_get_live "PORT_FW_TBL.$i.Dynamic")" = 1 ] || rtk /bin/flash del "PORT_FW_TBL.$i" >/dev/null 2>&1
 		i=$((i - 1))
 	done
 	# add the new ones
@@ -629,8 +632,8 @@ m_portfw_set() {
 	done < "$vals"
 	rm -f "$vals"
 	mib_set PORT_FW_ENABLE "$( [ "$en" = 1 ] || [ "$en" = true ] && echo 1 || echo 0)"
-	# configd keeps writes in RAM and `flash get` reads flash: without the
-	# commit the page's reload would still show the old switch and rules
+	# configd keeps writes in RAM and `flash get` (PORT_FW_ENABLE) reads
+	# flash: without the commit the page's reload would show the old switch
 	rtk /bin/mib commit cs now >/dev/null 2>&1
 	apply_detached portfw
 	json_init

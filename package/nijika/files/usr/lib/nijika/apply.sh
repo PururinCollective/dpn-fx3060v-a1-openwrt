@@ -22,6 +22,7 @@
 #   lan       LAN address, DHCP server    formTcpipLanSetup, formDhcpd
 #   snooping  IGMP/MLD snooping (MP_MODE) formTcpipLanSetup
 #   wlanblock LAN <-> WiFi blocking       formTcpipLanSetup
+#   upnp      UPnP daemon, its WAN        formUpnp
 #   wlan      WiFi                        formWlanSetup, formWlEncrypt
 #   loid      LOID + password             formgponConf
 #   ploam     PLOAM password              formgponConf
@@ -54,6 +55,8 @@ apply_area() {
 			echo snooping ;;
 		WLAN_BLOCK_ETH2WIR)
 			echo wlanblock ;;
+		UPNP|UPNP_EXT_ITF)
+			echo upnp ;;
 		IPF_*|V6_IPF_*|MACF_*|DMZ_*|IPFILTER_SPI_ENABLE|V6_SESSION_FW_ENABLE|\
 		IP_PORT_FILTER_TBL*|V6_IP_PORT_FILTER_TBL*|MAC_FILTER_TBL*|MAC_FILTER_EBTABLES_ENABLE)
 			echo firewall ;;
@@ -83,7 +86,7 @@ apply_areas() {
 	while IFS= read -r k; do apply_area "$k"; done | awk '
 		{ seen[$0] = 1 }
 		END {
-			n = split("firewall portfw qos lan snooping wlanblock wlan loid ploam omci voip reboot", order, " ")
+			n = split("firewall portfw qos lan snooping wlanblock upnp wlan loid ploam omci voip reboot", order, " ")
 			for (a in seen) if (a ~ /^wanmode:/) out = out " " a
 			for (a in seen) if (a ~ /^wan:/) out = out " " a
 			for (a in seen) if (a ~ /^port:/) out = out " " a
@@ -119,7 +122,7 @@ apply_after() {
 			port:*) rtk_apply lan-port "${a#port:}" ;;
 			snooping) rtk_apply snooping ;;
 			wlanblock) rtk_apply wlan-block ;;
-			firewall|portfw|qos|lan|wlan|voip) rtk_apply "$a" ;;
+			firewall|portfw|qos|lan|upnp|wlan|voip) rtk_apply "$a" ;;
 			loid)
 				loid=$(mib_get LOID) pw=$(mib_get LOID_PASSWD)
 				logger -t rtk-apply "omcicli set loid"

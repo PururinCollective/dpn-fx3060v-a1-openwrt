@@ -1,0 +1,19 @@
+#!/bin/sh
+# NijikaWrt wrapper for the stock UPnP control tool (the real one is
+# /lib/nijika/upnpctrl). libmib (restart_upnp: start_upnp / stop_upnp) runs
+# `upnpctrl up|down <wan> <lan>`.
+#
+# "up" opens the IGD port to the LAN with
+# `iptables -I INPUT 1 -i br0 -p TCP --dport 52869 -j ACCEPT`, but "up" and
+# "down" both delete it without "-i br0", which never matches: each start
+# left one more copy, and "down" left the port open. The wrapper drops every
+# copy first; "up" then adds exactly one.
+
+REAL=/lib/nijika/upnpctrl
+
+case "$1" in
+	up|down)
+		while /bin/iptables -D INPUT -i br0 -p TCP --dport 52869 -j ACCEPT 2>/dev/null; do :; done
+		;;
+esac
+exec "$REAL" "$@"

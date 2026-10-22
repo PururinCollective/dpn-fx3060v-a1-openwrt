@@ -133,6 +133,18 @@
 		}
 	},
 
+	"admin/services/upnp": {
+		"title": "UPnP",
+		"order": 15,
+		"action": {
+			"type": "view",
+			"path": "nijika/upnp"
+		},
+		"depends": {
+			"acl": [ "luci-app-nijika" ]
+		}
+	},
+
 	"admin/services/ddns": {
 		"title": "DDNS",
 		"order": 20,

@@ -45,6 +45,9 @@ extern int restart_ethernet(int instnum);
 extern int setup_wlan_block(void);
 extern int setupPortFW(void);
 extern void reWriteAllDhcpcScript(void);
+/* UPnP (SDK utility.h): CONFIGALL stops miniupnpd and starts it again when
+ * UPNP is on, on the WAN UPNP_EXT_ITF names */
+extern int restart_upnp(int configAll, int wan_enable, int wan_IfIndex, int disable_upnp);
 /* IP QoS (SDK subr_qos_3.c): take_qos_effect() is stopIPQ() + setupIPQ() */
 extern int stopIPQ(void);
 extern void take_qos_effect(void);
@@ -84,6 +87,7 @@ static int usage(void)
 	      "  qos-stop      before the QoS configuration changes: tear the running QoS down\n"
 	      "  qos           after the change: QoS policies, classification, traffic shaping\n"
 	      "  lan           LAN address and DHCP server\n"
+	      "  upnp          UPnP daemon (UPNP, UPNP_EXT_ITF)\n"
 	      "  wan-down <n>  before ATM_VC_TBL record <n> changes: take its connection down\n"
 	      "  wan-up <n>    after the change: bring record <n> up again, resync VoIP\n"
 	      "  wan-mode <n>  after the connection mode of record <n> changed (before\n"
@@ -261,6 +265,9 @@ int main(int argc, char **argv)
 		/* formTcpipLanSetup (LAN IP change), formDhcpd */
 		restart_lanip();
 		restart_dhcp();
+	} else if (!strcmp(cmd, "upnp")) {
+		/* formUpnp, after its mib writes */
+		restart_upnp(CONFIGALL, 0, 0, 0);
 	} else if (!strcmp(cmd, "wan-down") && argc == 3) {
 		/* formEth (edit): deleteConnection(CONFIGONE, &old) */
 		if (!(rec = wan_record(argv[2])))

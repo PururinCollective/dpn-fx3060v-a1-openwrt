@@ -158,7 +158,7 @@ t_parsers() {
 # --------------------------------------------- stock dnsmasq DoH wrapper
 
 t_wrapper() {
-	echo "wrapper (stock dnsmasq for DNS over HTTPS, TR-069 client, SNMP agent, hostapd)"
+	echo "wrapper (stock dnsmasq for DNS over HTTPS, TR-069 client, SNMP agent, hostapd, upnpctrl)"
 	local V="$W/dns"
 	mkdir -p "$V/nijika"
 	printf '#!/bin/sh\necho "$*" > %s/real.args\n' "$V" > "$V/real"
@@ -219,6 +219,20 @@ t_wrapper() {
 		[ \$(grep -c '^he_bss_color=48\$' '$V/hostapd.conf.wlan0') -eq 1 ] &&
 		[ \$(wc -l < '$V/hostapd.conf.wlan0') -eq 6 ] && cmp -s '$V/hostapd.pid.wlan0' '$V/stock.conf'"
 	check "real hostapd started with the stock arguments" grep -qx -- "$V/hostapd.conf.wlan0 -s -g /var/run/hostapd/global.wlan0 -B -P $V/hostapd.pid.wlan0" "$V/real.args"
+
+	# upnpctrl: every copy of the IGD port's LAN rule goes before up/down
+	# (the stock one never deletes it); iptables keeps a count of copies
+	printf '#!/bin/sh\n[ "$*" = "-D INPUT -i br0 -p TCP --dport 52869 -j ACCEPT" ] || exit 2\nn=$(cat %s/rules)\n[ "$n" -gt 0 ] || exit 1\necho $((n - 1)) > %s/rules\n' "$V" "$V" > "$V/iptables"
+	chmod +x "$V/iptables"
+	sed -e "s|^REAL=.*|REAL=$V/real|" -e "s|/bin/iptables|$V/iptables|" \
+		"$TOP/package/rtk-vendor/files/rtk/bin/upnpctrl" > "$V/upnpctrl"
+	echo 3 > "$V/rules"; rm -f "$V/real.args"
+	"$BB" sh "$V/upnpctrl" down ppp0 br0
+	check "upnpctrl down: every copy of the 52869 rule removed, then the real one" sh -c "
+		[ \"\$(cat '$V/rules')\" = 0 ] && grep -qx 'down ppp0 br0' '$V/real.args'"
+	echo 1 > "$V/rules"
+	"$BB" sh "$V/upnpctrl" sync
+	check "upnpctrl sync: the rule is left alone" sh -c "[ \"\$(cat '$V/rules')\" = 1 ] && grep -qx sync '$V/real.args'"
 }
 
 # ------------------------------------------------- /etc/config/rtk quoting
@@ -311,6 +325,8 @@ t_apply() {
 	check "port forwarding keys: portfw, after the firewall (DMZ)" sh -c "[ \"$(areas PORT_FW_TBL.0.IP DMZ_IP PORT_FW_ENABLE)\" = 'firewall portfw' ]"
 	check "QoS keys and tables: qos, after port forwarding, before the LAN" sh -c "[ \"$(areas ENABLE_QOS IP_QOS_TBL.0.Name LAN_IP_ADDR PORT_FW_ENABLE QOS_DOWNSTREAM_POLICY TOTAL_DOWNSTREAM_BANDWIDTH IP_QOS_TC_TBL.1.rate)\" = 'portfw qos lan' ]"
 	check "qos as the stock QoS forms: stopIPQ before the write, take_qos_effect after" sh -c "[ \"$(run 1 "apply_before qos; echo WRITE >> '$D/calls'; apply_after qos")\" = '/bin/rtk-apply qos-stop;WRITE;/bin/rtk-apply qos;rc=0;' ]"
+	check "UPnP keys: upnp, after the LAN, before WiFi" sh -c "[ \"$(areas UPNP_EXT_ITF SSID UPNP LAN_IP_ADDR)\" = 'lan upnp wlan' ]"
+	check "upnp as formUpnp: restart_upnp after the write, nothing before" sh -c "[ \"$(run 1 "apply_before upnp; echo WRITE >> '$D/calls'; apply_after upnp")\" = 'WRITE;/bin/rtk-apply upnp;rc=0;' ]"
 	check "WAN mode change: wan-mode before the record comes up" sh -c "[ \"$(areas ATM_VC_TBL.1.ChannelMode ATM_VC_TBL.1.vid ATM_VC_TBL.0.MTU)\" = 'wanmode:1 wan:0 wan:1' ]"
 	check "wan-mode, then wan-up, nothing before the write" sh -c "[ \"$(run 1 "apply_before wanmode:1 wan:1; echo WRITE >> '$D/calls'; apply_after wanmode:1 wan:1")\" = '/bin/rtk-apply wan-down 1;WRITE;/bin/rtk-apply wan-mode 1;/bin/rtk-apply wan-up 1;rc=0;' ]"
 	check "WAN edit: wan-down before the write, wan-up after" sh -c "[ \"$(run 1 "apply_before wan:0 firewall; echo WRITE >> '$D/calls'; apply_after wan:0 firewall")\" = '/bin/rtk-apply wan-down 0;WRITE;/bin/rtk-apply wan-up 0;/bin/rtk-apply firewall;rc=0;' ]"
@@ -461,7 +477,8 @@ t_helpers() {
 import json, sys
 d = json.load(open(sys.argv[1]))
 views = {v.get('action', {}).get('path') for v in d.values()}
-assert {'nijika/wan', 'nijika/lan', 'nijika/wlan', 'nijika/portfw', 'nijika/dmz', 'nijika/qos', 'nijika/voip', 'nijika/gpon'} <= views, views
+assert {'nijika/wan', 'nijika/lan', 'nijika/wlan', 'nijika/portfw', 'nijika/dmz', 'nijika/qos', 'nijika/voip', 'nijika/upnp', 'nijika/gpon'} <= views, views
+assert d['admin/services/voip']['order'] < d['admin/services/upnp']['order'] < d['admin/services/ddns']['order']
 assert 'nijika/omci' not in views
 assert d['admin/nijika/identity']['depends']['uci'] == {'nijika': {'ui': {'developer': '1'}}}
 order = sorted((v['order'], k) for k, v in d.items() if k.startswith('admin/nijika/'))

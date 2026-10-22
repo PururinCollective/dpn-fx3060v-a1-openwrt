@@ -28,7 +28,7 @@ PORT = int(os.environ.get('PORT', '8080'))
 THEME = os.environ.get('LUCI_THEME', 'perfect')
 HTDOCS = sorted(os.path.join(TOP, 'package', p, 'htdocs') for p in os.listdir(os.path.join(TOP, 'package'))
                 if os.path.isdir(os.path.join(TOP, 'package', p, 'htdocs')))
-VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'qos', 'voip', 'ddns', 'wireguard', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
+VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'qos', 'voip', 'upnp', 'ddns', 'wireguard', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
 BOOT = time.time()
 
 
@@ -320,7 +320,8 @@ def rtk_uci():
                       'WLAN_BAND': '204', 'WLAN1_BAND': '139', 'WLAN_OFDMA_ENABLED': '0', 'WLAN1_OFDMA_ENABLED': '0',
                       'BEACON_INTERVAL': '100', 'DTIM_PERIOD': '1', 'WLAN1_BEACON_INTERVAL': '300', 'WLAN1_DTIM_PERIOD': '1',
                       'WSC_DISABLE': '0', 'WLAN1_WSC_DISABLE': '0', 'MAP_CONTROLLER': '3', 'MAP_DEVICE_NAME': 'MeshAuto_5a2e',
-                      'DMZ_ENABLE': '0', 'DMZ_IP': '0.0.0.0', 'DMZ_WAN': '65535'}}
+                      'DMZ_ENABLE': '0', 'DMZ_IP': '0.0.0.0', 'DMZ_WAN': '65535',
+                      'UPNP': '0', 'UPNP_EXT_ITF': '65535'}}
     fix = os.path.join(TOP, 'tests', 'fixtures', 'flash-get-atm_vc_tbl.txt')
     sec = None
     for line in open(fix):

@@ -118,9 +118,14 @@ Other build-time changes to `/rtk`:
   this default file, which stock does not have: without it any LAN host can
   map any port (22, 80, 443 ...), also to another host's address. Now
   `secure_mode=yes` (mappings only to the requesting host) and only ports
-  1024-65535, external and internal (`allow`/`deny` rules; UPnP IGD and
-  NAT-PMP both check them). Upstream OpenWrt's miniupnpd has the same
-  defaults.
+  1024-65535, external and internal (`allow`/`deny` rules; NAT-PMP, which
+  stock does not enable, would check them too). Upstream OpenWrt's
+  miniupnpd has the same defaults. Services > UPnP turns it on and off.
+* `bin/upnpctrl` becomes a wrapper (the real one is `lib/nijika/upnpctrl`):
+  the stock one adds the LAN rule for the IGD port (`-I INPUT 1 -i br0 -p
+  TCP --dport 52869 -j ACCEPT`) on every start but deletes it without
+  `-i br0`, so the copies piled up and the port stayed open after "down".
+  The wrapper deletes every copy before `up` and `down`.
 * `bin/ccom_linkkit` **removed**: D-Link's Alibaba Cloud Link Kit agent
   (MQTT to `iot-*.aliyuncs.com`, cloud firmware/config push, remote
   property/service calls, AWSS WiFi provisioning, ALCS LAN control). An inert

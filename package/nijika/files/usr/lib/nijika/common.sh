@@ -60,6 +60,14 @@ mib_get() {
 		sed -n -e "s/^[[:space:]]*$1=//p" -e "s/^[[:space:]]*${1##*.}=//p" | head -n 1
 }
 
+# mib_get_live KEY: the same from configd's running copy (`mib get`), which
+# also holds what the stock services added without a commit (UPnP's port
+# forwarding records); `flash get` reads the committed copy
+mib_get_live() {
+	rtk /bin/mib get "$1" 2>/dev/null |
+		sed -n -e "s/^[[:space:]]*$1=//p" -e "s/^[[:space:]]*${1##*.}=//p" | head -n 1
+}
+
 # mib_get_def KEY -> factory default value
 mib_get_def() {
 	rtk /bin/flash get_def "$1" 2>/dev/null | sed -n "s/^$1=//p" | head -n 1

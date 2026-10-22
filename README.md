@@ -106,6 +106,8 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
     (LAN DHCP client, no DHCP server), which only suits a spare unit.
   * Services > VoIP: SIP accounts of both phone ports (a tab each), primary
     and backup proxy.
+  * Services > UPnP: the stock UPnP page (on/off, the WAN connection it
+    serves) and its current port forwarding table.
   * Services > DDNS: see above; status per entry, *Update now*.
   * Services > WireGuard: see above; handshakes and traffic per peer.
   * PON > Authentication: LOID, PLOAM, device type, OLT mode.
@@ -125,7 +127,8 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   are untouched.
 * **UPnP limited**: when UPnP is on, a LAN device can only open ports
   1024-65535 and only to its own address (stock allows any port, to any
-  host), like OpenWrt's miniupnpd.
+  host), like OpenWrt's miniupnpd. Turning it off also closes the IGD port
+  the stock tool left open.
 * **WiFi 6 defaults**: at first boot OFDMA is turned on, 802.11r on the main
   SSIDs (FT-PSK and FT-SAE, WPA3 included) and 2.4 GHz drops 802.11b
   (g/n/ax). Once; later changes stay. Band steering (prefer 5 GHz) follows
