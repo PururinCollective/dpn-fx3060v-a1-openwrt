@@ -341,14 +341,14 @@ First boot:
 
 ```
  ┌────────────────────────── OpenWrt 25.12 (musl) ───────────────────────────┐
- │ procd · ubus · rpcd · uhttpd/LuCI · dropbear · apk · logd · housekeep    │
+ │ procd · ubus · rpcd · uhttpd/LuCI · dropbear · apk · logd · housekeep     │
  │                                                                           │
  │  /usr/bin/{mib,flash,diag,omcicli,nv,...} ──► chroot /rtk                 │
  │  rpcd "nijika" ──► nijika CLI ──► same wrappers                           │
  │                                                                           │
  │   ┌──────────────── /rtk : stock D-Link rootfs (glibc 2.30) ───────────┐  │
  │   │ configd · startup · systemd(rtk) · omci_app · spppd · dnsmasq ·    │  │
- │   │ hostapd · VoIP · boa (:8080, firewalled to localhost)            │  │
+ │   │ hostapd · VoIP · boa (:8080, firewalled to localhost)              │  │
  │   │ /var = own tmpfs, /var/config = UBI ubi_Config (stock MIB)         │  │
  │   └────────────────────────────────────────────────────────────────────┘  │
  └───────────────────────────────────────────────────────────────────────────┘
