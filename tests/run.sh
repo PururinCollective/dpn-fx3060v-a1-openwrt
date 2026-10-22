@@ -233,6 +233,27 @@ t_wrapper() {
 	echo 1 > "$V/rules"
 	"$BB" sh "$V/upnpctrl" sync
 	check "upnpctrl sync: the rule is left alone" sh -c "[ \"\$(cat '$V/rules')\" = 1 ] && grep -qx sync '$V/real.args'"
+
+	# factory reset: firstboot runs the stock reset, then fstools'
+	# factoryreset; nothing when the question is answered no
+	local R="$TOP/package/rtk-vendor/files/usr/libexec/rtk"
+	printf '#!/bin/sh\necho "stock-reset" >> %s/fb.calls\n' "$V" > "$V/stock-reset"
+	printf '#!/bin/sh\necho "factoryreset $*" >> %s/fb.calls\n' "$V" > "$V/factoryreset"
+	chmod +x "$V/stock-reset" "$V/factoryreset"
+	sed -e "s|/usr/libexec/rtk/stock-reset|$V/stock-reset|" -e "s|/sbin/factoryreset|$V/factoryreset|" "$R/firstboot" > "$V/firstboot"
+	fb() { : > "$V/fb.calls"; echo "$1" | "$BB" sh "$V/firstboot" $2 >/dev/null; echo "rc=$?" >> "$V/fb.calls"; tr '\n' ';' < "$V/fb.calls"; }
+	check "firstboot -r -y (LuCI): stock reset, then factoryreset -r -y" sh -c "[ \"$(fb '' '-r -y')\" = 'stock-reset;factoryreset -r -y;rc=0;' ]"
+	check "firstboot, answered no: nothing reset" sh -c "[ \"$(fb n '')\" = 'rc=1;' ]"
+	check "firstboot, answered y: stock reset, then factoryreset -y" sh -c "[ \"$(fb y '')\" = 'stock-reset;factoryreset -y;rc=0;' ]"
+	# stock-reset: the stock GUI's Restore Default, committed; nothing
+	# without the stock stack
+	sr() { : > "$V/sr.calls"
+		sed -e "s|^\. /usr/lib/nijika/common.sh|vendor_up() { $1; }; rtk() { echo \"\$*\" >> '$V/sr.calls'; }; logger() { :; }|" "$R/stock-reset" > "$V/sr.sh"
+		"$BB" sh "$V/sr.sh" 2>/dev/null; echo "rc=$?" >> "$V/sr.calls"; tr '\n' ';' < "$V/sr.calls"; }
+	check "stock-reset: rtk-apply factory-reset (reset_cs_to_default), then commit" sh -c "[ \"$(sr true)\" = '/bin/rtk-apply factory-reset;/bin/mib commit cs now;rc=0;' ]"
+	check "stock-reset without the stock stack: nothing, rc 1" sh -c "[ \"$(sr false)\" = 'rc=1;' ]"
+	check "no 'flash default hs' anywhere (hs: MAC, PON identity, WiFi calibration)" sh -c "
+		! grep -rnE '^[^#]*flash default hs' '$TOP/package' '$TOP/scripts'"
 }
 
 # ------------------------------------------------- /etc/config/rtk quoting
@@ -509,6 +530,9 @@ assert {'admin/nijikawrt/settings', 'admin/nijikawrt/firmware', 'admin/nijikawrt
 		check "EasyMesh role pinned before the stock WiFi starts" sh -c "
 			grep -q 'easymesh-pin boot' '$st/usr/libexec/rtk/vendor-boot' && [ -x '$st/usr/libexec/rtk/easymesh-pin' ] &&
 			grep -q \"option easymesh 'controller'\" '$st/etc/config/nijika'"
+		check "factory reset: /sbin/firstboot resets the stock configuration, then factoryreset" sh -c "
+			grep -q '/usr/libexec/rtk/stock-reset' '$st/sbin/firstboot' && grep -q 'exec /sbin/factoryreset' '$st/sbin/firstboot' &&
+			[ -x '$st/sbin/firstboot' ] && [ -x '$st/usr/libexec/rtk/stock-reset' ] && [ ! -e '$st/usr/libexec/rtk/firstboot' ]"
 		check "stock hostapd behind its wrapper (BSS colouring), real one kept" sh -c "
 			grep -q 'NijikaWrt wrapper' '$st/rtk/bin/hostapd' && [ -x '$st/rtk/lib/nijika/hostapd' ] &&
 			grep -q \"option bss_color_wlan0 '1'\" '$st/etc/config/nijika'"

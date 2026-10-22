@@ -140,6 +140,12 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   ends the PPPoE sessions (LCP Terminate + PADT) and releases DHCP leases, so
   the ISP accepts the next login at once, and writes the stock
   configuration still held in RAM to flash.
+* **Factory reset of both halves**: System > Backup / Flash Firmware >
+  Perform reset (and `firstboot`) also resets the stock configuration (WAN,
+  WiFi, VoIP, LAN) to the D-Link defaults, as the stock GUI's Restore
+  Default does. The hardware settings stay: MAC, PON serial, PLOAM password,
+  LOID, WiFi calibration. The reset button is still the stock one: it
+  resets the stock configuration only.
 * **Live apply, like the stock GUI**: a change to the WAN, firewall, LAN,
   WiFi, GPON registration or VoIP takes effect right away. `rtk-apply` makes
   the same libmib calls the stock web forms make after "Apply"
@@ -367,7 +373,7 @@ nijika doh [on|off|url <URL>]         DNS over HTTPS status / switch / resolver
 nijika uci [sync|diff]                /etc/config/rtk against the stock flash
 nijika apply wan [n]|firewall|lan|wlan|voip|gpon   apply the stock config to the running stack
 nijika wan [list|delete <#>]          stock WAN connections (PON_<n>); delete one
-nijika reset [--all]                  factory reset, keeps serial/PLOAM/MAC
+nijika reset [--all]                  stock config to factory defaults (hardware settings stay); --all: overlay too
 nijika banner | version | rtk [cmd]
 ```
 

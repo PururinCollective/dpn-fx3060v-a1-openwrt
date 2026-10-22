@@ -532,8 +532,10 @@ nijika_reset() {
 	need_vendor
 	local all=0 confirm
 	[ "$1" = "--all" ] && all=1
-	echo "[Warning] This resets the stock configuration (WAN, WiFi, VoIP) to"
-	echo "factory defaults, keeping PON serial, PLOAM password, MAC and key."
+	echo "[Warning] This resets the stock configuration (WAN, WiFi, VoIP, LAN) to"
+	echo "the D-Link factory defaults, like the stock GUI's Restore Default. The"
+	echo "hardware settings stay: MAC, PON serial, PLOAM password, LOID, WiFi"
+	echo "calibration."
 	[ "$all" = 1 ] && echo "The OpenWrt overlay (/etc/config, packages) is wiped too."
 	printf "Continue? [y/N]: "
 	read -r confirm
@@ -542,23 +544,11 @@ nijika_reset() {
 		*) echo "[FAIL] Reset cancelled."; return 1 ;;
 	esac
 
-	local ploam sn mac key
-	ploam=$(mib_get GPON_PLOAM_PASSWD); sn=$(mib_get GPON_SN)
-	mac=$(mib_get ELAN_MAC_ADDR); key=$(mib_get MAC_KEY)
-
-	echo "[INFO] Resetting stock configuration..."
-	rtk /bin/flash default hs
-	rtk /bin/flash default cs
-
-	echo "[INFO] Restoring PON credentials and hardware identity..."
-	mib_set GPON_PLOAM_PASSWD "$ploam"
-	mib_set GPON_SN "$sn"
-	[ -n "$mac" ] && mib_set ELAN_MAC_ADDR "$mac"
-	[ -n "$key" ] && mib_set MAC_KEY "$key"
-
 	if [ "$all" = 1 ]; then
-		echo "[INFO] Wiping OpenWrt overlay..."
-		firstboot -y
+		# NijikaWrt's firstboot: the stock reset, then the overlay
+		/sbin/firstboot -y || return 1
+	else
+		/usr/libexec/rtk/stock-reset || return 1
 	fi
 	echo "[ OK ] Factory reset done. Reboot to take effect."
 }
@@ -669,7 +659,9 @@ System
                                   Apply the stock config to the running stack
                                   (like the stock GUI's Apply)
   boa [hidden|lan]                Stock D-Link GUI on :8080: router-only or LAN
-  reset [--all]                   Factory reset (keeps PON identity)
+  reset [--all]                   Stock config to factory defaults (keeps hardware
+                                  settings: PON identity, MAC, WiFi calibration);
+                                  --all: the OpenWrt overlay too
   banner                          Show the login banner
   version                         Versions of all layers
   hw                              Hardware revision check (switch PHY IDs)

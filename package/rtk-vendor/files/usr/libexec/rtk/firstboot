@@ -1,0 +1,23 @@
+#!/bin/sh
+# NijikaWrt /sbin/firstboot (moved there by scripts/assemble.sh): the factory
+# reset of LuCI (System > Backup / Flash Firmware > Perform reset:
+# `firstboot -r -y`) and of the command line. Before fstools' factoryreset
+# wipes the overlay, the stock configuration goes back to the D-Link
+# defaults too (/usr/libexec/rtk/stock-reset), so a reset leaves neither
+# half with old settings. Without the stock stack (failsafe) only the
+# overlay is reset; stock-reset says so. Options are factoryreset's (-y: no
+# question, -r: reboot when done).
+
+yes=0
+for a in "$@"; do
+	case "$a" in -*y*) yes=1 ;; esac
+done
+if [ $yes = 0 ]; then
+	printf 'This will erase all settings, the stock configuration (WAN, WiFi, VoIP) included, and remove any installed packages. Are you sure? [N/y] '
+	read -r ans
+	case "$ans" in [yY]*) ;; *) exit 1 ;; esac
+	set -- -y "$@"
+fi
+
+/usr/libexec/rtk/stock-reset
+exec /sbin/factoryreset "$@"

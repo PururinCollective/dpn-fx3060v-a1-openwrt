@@ -33,6 +33,7 @@ about:
 | PON WAN, delete | `formEth`, `formStatus` | `deleteConnection(CONFIGONE, &e)`, `mib_chain_delete`, `restartWAN(CONFIGONE, NULL)` |
 | IPv6 on/off | `formIPv6EnableDisable` (0x43a840) | `deleteConnection(CONFIGALL, NULL)`, `restartWAN(CONFIGALL, NULL)` |
 | WLAN Basic, Security | `formWlanSetup` (0x43153c), `formWlEncrypt` (0x4322d8) | `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)`, the same call as the stock `wlan_apply restart` |
+| Backup / Restore page: reset to factory default | `formReboot` | `echo 2 > /proc/load_default` (LED), `reset_cs_to_default(1)`, `cmd_reboot()` (SDK `fmmgmt.c`) |
 | GPON Settings | `formgponConf` (0x42ad0c) | LOID: `omcicli set loid <loid> [<password>]`; PLOAM: `rt_gpon_deactivate()`, `diag rt_gpon set registrationId-hex <hex>`, `rt_gpon_activate(0)`; LOID, Device Type or OLT mode changed: `restartOMCIsettings` (`rt_gpon_deactivate()`, `omcicli mib reset`, `rt_gpon_activate(0)`) |
 | VoIP | `web_restart_solar` (0x481018) | `voip_flash_server_update()`, `echo x > /var/run/solar_control.fifo`, the same as `reSync_reStartVoIP()` |
 | Advance > UPnP | `formUpnp` | `UPNP` (daemon on/off), `UPNP_EXT_ITF` (ifIndex of the WAN connection; 65535 = none, what the form writes while the daemon is off), then `restart_upnp(CONFIGALL, 0, 0, 0)` (SDK `fmupnp.c`): `stop_upnp()`, then `start_upnp()` when `UPNP` is 1 (`upnpctrl down` / `up <wan> br0`) |
@@ -71,6 +72,7 @@ queue, no initialisation needed.
 | `qos-stop` | the QoS policy forms before the policy changes: `stopIPQ()` |
 | `qos` | the QoS forms after their writes: `take_qos_effect()` (`stopIPQ()`, `setupIPQ()`) |
 | `upnp` | formUpnp after its writes: `restart_upnp(CONFIGALL, 0, 0, 0)` |
+| `factory-reset` | formReboot's Restore Default without its reboot: `reset_cs_to_default(1)` |
 | `easymesh <role> <prev> <backhaul> [norestart]` | formMultiAP (0x44791c) Apply: `setupMultiAPController(role, prev, backhaul, &dhcp)` / `setupMultiAP_TMAuto()` / `setupMultiAPDisabled()`, `config_WLAN(ACT_RESTART, CONFIG_SSID_ALL)`, `Commit()` |
 | `easymesh-pair` | formMultiAP Start PBC (controller): `echo 2 > /tmp/virtual_push_button` |
 | `snooping` | `rtk_multicast_snooping()` |
@@ -259,6 +261,34 @@ UPnP mappings show. rpcd `portfw_set` rewrites the static rules with `flash
 del/add/set` (TM build: through configd; it counts and finds the records
 there too, the committed copy can be short of UPnP's), runs `mib commit cs
 now` and `rtk-apply portfw`.
+
+## Factory reset (formReboot, the reset button)
+
+The stock reset resets the current settings (`cs`: WAN connections, WiFi,
+VoIP, LAN, firewall, UPnP, QoS) and leaves the hardware settings (`hs`)
+alone. `reset_cs_to_default(1)` sends `CMD_MIB_FLASH_TO_DEFAULT` to
+configd, which loads the program defaults into its RAM copy and writes
+them to flash (SDK `msgparser.c`: `mib_init_mib_with_program_default(...,
+FLASH_DEFAULT_TO_ALL)`; RAM only in XML-config builds), so a later `mib
+commit cs now` (vendor-shutdown) writes the defaults, not the old
+settings. On the A1, `hs` holds per unit:
+`ELAN_MAC_ADDR`, `GPON_SN`, `GPON_PLOAM_PASSWD`, `LOID`, `LOID_PASSWD`,
+`HW_SERIAL_NO`, `HW_HWVER`, `GPON_ONU_MODEL`, `PON_VENDOR_ID`,
+`HW_MAC_LIC`, the cloud keys, and the WiFi calibration of both radios
+(`HW_*_TSSI_*`, `HW_THERMAL_*`, `HW_XCAP_WLAN*_AX`, `HW_RX_GAINGAP_*`).
+`flash default hs` (what the PON stick's `nijika reset` runs) would put
+generic values there.
+
+The reset button is a `gpio-keys` key (`/dev/input/event0`) read by the
+stock `/bin/systemd`: `rtk_sys_pushbtn_reset_action` calls
+`reset_cs_to_default` and `cmd_reboot`. OpenWrt's `/etc/rc.button/reset`
+never runs (no `button-hotplug` in the stock kernel), so the button resets
+the stock configuration but not the OpenWrt overlay.
+
+NijikaWrt: `/sbin/firstboot` (LuCI's "Perform reset" runs `firstboot -r
+-y`) runs `/usr/libexec/rtk/stock-reset` (`rtk-apply factory-reset`, `mib
+commit cs now`) before fstools' `factoryreset`; `nijika reset` runs
+`stock-reset` alone, `nijika reset --all` runs `firstboot -y`.
 
 ## UPnP (formUpnp, miniupnpd 1.3)
 

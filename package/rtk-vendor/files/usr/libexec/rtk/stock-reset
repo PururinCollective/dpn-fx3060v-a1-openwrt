@@ -1,0 +1,23 @@
+#!/bin/sh
+# Reset the stock configuration to the D-Link factory defaults, as the stock
+# GUI's Restore Default does (boa formReboot: reset_cs_to_default(1), here
+# `rtk-apply factory-reset`): the current settings (cs: WAN connections,
+# WiFi, VoIP, LAN, firewall, UPnP, QoS). The hardware settings (hs) stay,
+# as on the stock reset: MAC, PON serial, PLOAM password, LOID, the WiFi
+# calibration (TSSI, thermal, crystal), serial number. `flash default hs`
+# would reset those to generic values.
+#
+# configd resets its RAM copy as well; the commit writes it to flash (the
+# shutdown commit, vendor-shutdown, would too). The running stack keeps the
+# old settings until the reboot that has to follow.
+#
+# Used by /sbin/firstboot (LuCI factory reset) and `nijika reset`.
+
+. /usr/lib/nijika/common.sh
+
+vendor_up || { echo "stock-reset: the stock stack is not running, stock configuration not reset" >&2; exit 1; }
+
+logger -t rtk-vendor "factory reset: stock configuration to factory defaults"
+rtk /bin/rtk-apply factory-reset >/dev/null 2>&1
+rtk /bin/mib commit cs now >/dev/null 2>&1
+exit 0

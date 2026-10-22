@@ -48,6 +48,9 @@ extern void reWriteAllDhcpcScript(void);
 /* UPnP (SDK utility.h): CONFIGALL stops miniupnpd and starts it again when
  * UPNP is on, on the WAN UPNP_EXT_ITF names */
 extern int restart_upnp(int configAll, int wan_enable, int wan_IfIndex, int disable_upnp);
+/* Restore Default (SDK utility.h): the current settings (cs) to the
+ * program defaults, in configd's RAM and in flash; hs stays */
+extern int reset_cs_to_default(int flag);
 /* IP QoS (SDK subr_qos_3.c): take_qos_effect() is stopIPQ() + setupIPQ() */
 extern int stopIPQ(void);
 extern void take_qos_effect(void);
@@ -105,7 +108,8 @@ static int usage(void)
 	      "  lan-port <n>  LAN port n (0..3) on/off (SW_PORT_TBL.<n>.Enable)\n"
 	      "  voip          reload the VoIP configuration and restart the VoIP stack\n"
 	      "  gpon-omci     re-register with the OLT, OMCI MIB reset (LOID, OLT mode)\n"
-	      "  gpon-ploam <password>  set the PLOAM password and re-register\n", stderr);
+	      "  gpon-ploam <password>  set the PLOAM password and re-register\n"
+	      "  factory-reset the stock configuration (cs) to factory defaults; reboot after\n", stderr);
 	return 2;
 }
 
@@ -372,6 +376,11 @@ int main(int argc, char **argv)
 		snprintf(line, sizeof(line), "/sbin/diag rt_gpon set registrationId-hex %s", hex);
 		system(line);
 		rt_gpon_activate(0);
+	} else if (!strcmp(cmd, "factory-reset")) {
+		/* formReboot "Restore Default" before its reboot (it ignores
+		 * the return value); the stock reset button handler
+		 * (rtk_sys_pushbtn_reset_action) calls it too */
+		reset_cs_to_default(1);
 	} else {
 		return usage();
 	}

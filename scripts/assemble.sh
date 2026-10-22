@@ -122,8 +122,12 @@ rm -f "$R"/www/luci-static/resources/view/status/include/29_ports.js \
 	"$R"/www/luci-static/resources/view/status/include/50_dsl.js \
 	"$R"/www/luci-static/resources/view/status/include/60_wifi.js
 
+# Factory reset (LuCI "Perform reset", `firstboot`): NijikaWrt's firstboot
+# resets the stock configuration too, then runs fstools' factoryreset.
+mv "$R/usr/libexec/rtk/firstboot" "$R/sbin/firstboot"
+
 # Executable bits for everything we ship (git may not keep them).
-chmod 0755 "$R"/usr/sbin/nijika "$R"/usr/libexec/rtk/* "$R"/usr/libexec/rtk/post-boot.d/* \
+chmod 0755 "$R"/usr/sbin/nijika "$R"/usr/libexec/rtk/* "$R"/usr/libexec/rtk/post-boot.d/* "$R"/sbin/firstboot \
 	"$R"/usr/libexec/nijika/* "$R"/usr/libexec/rpcd/nijika "$R"/etc/init.d/rtk-vendor \
 	"$R"/etc/init.d/nijika-housekeep "$R"/etc/init.d/nijika-doh "$R"/etc/init.d/nijika-ddns \
 	"$R"/etc/init.d/nijika-wireguard \
