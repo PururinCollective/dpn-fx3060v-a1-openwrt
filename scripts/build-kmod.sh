@@ -19,6 +19,10 @@
 # <module>.load per feature module (wireguard.load, sch_cake.load: it and its
 # dependencies). Without the SDK or its prepared tree the step is skipped
 # with a warning and the image has no WireGuard and no CAKE.
+# A new module (a driver, WireGuard, a tunnel such as MikroTik EoIP or IPIP)
+# is a major change: the pull request needs the UART log of a real device,
+# boot and the feature in use (AGENTS.md section 11). Once the module is
+# proven, later changes to it do not need it.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 

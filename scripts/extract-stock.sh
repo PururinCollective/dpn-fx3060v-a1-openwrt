@@ -40,4 +40,8 @@ log "stock version: ${ver:-unknown}"
 # the image ships this kernel + device tree: it must be the profile's revision
 echo "$ver" | grep -Eq "$DEVICE_STOCK_MATCH" ||
 	die "stock firmware '$ver' is not for the $DEVICE_MODEL (expects $DEVICE_STOCK_MATCH)"
+# minimum stock version of the profile (AGENTS.md section 10)
+sv=$(echo "$ver" | sed -n 's/^[^_]*_\(V[0-9][0-9.]*\).*/\1/p')
+[ -z "$DEVICE_STOCK_MIN" ] || { [ -n "$sv" ] && nijika_ver_ge "$sv" "$DEVICE_STOCK_MIN"; } ||
+	die "[FAIL] stock firmware '$ver' is older than $DEVICE_STOCK_MIN (minimum for the $DEVICE_MODEL)"
 basename "$fw" > "$STOCK_DIR/.source"

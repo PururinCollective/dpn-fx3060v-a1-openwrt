@@ -211,6 +211,59 @@ then a short description in the style of section 7:
   code). Code of another origin keeps its license and copyright lines.
 * No header: JSON, images, fonts, font licence, test fixtures, data tables.
 
+## 9. Sync before a build, a pull request or an issue
+
+* Before a firmware build, a pull request or an issue, sync the working copy
+  with the original repository:
+  * original: `git fetch origin`, then `git pull --ff-only` until
+    `git status` shows no "behind";
+  * fork or copy: also fetch `https://github.com/PururinCollective/dpn-fx3060v-a1-openwrt`
+    (`main`) and merge or rebase on it.
+* An issue or a pull request is checked against the current `main`: a
+  problem fixed there is not reported again.
+* `./build.sh` fetches `origin` and warns when the checkout is behind
+  (`nijika_sync_check` in `scripts/lib.sh`).
+
+## 10. Firmware banks: one stock bank
+
+The DPN-FX3060V has two firmware banks. One bank always keeps the stock D-Link
+firmware, at least this version (`DEVICE_STOCK_MIN` in
+`devices/<id>/device.conf`):
+
+| Hardware | Minimum stock firmware |
+|---|---|
+| A1 | V1.1.2 |
+| B1 | V2.0.7 |
+
+* NijikaWrt (OpenWrt) in both banks is [FAIL]. A stock bank older than the
+  minimum is [FAIL] too.
+* Check on the device: `nijika boot` prints `[ OK ] bank <n>: stock firmware
+  ...` or `[FAIL] ...` (exit code 1). Without access to the device, ask the
+  user for the output of `nijika boot`.
+* The update path that keeps the stock bank: boot the stock bank, then flash
+  the NijikaWrt `-factory.bin` from the stock web GUI.
+* The build stops on stock firmware older than `DEVICE_STOCK_MIN`
+  (`scripts/extract-stock.sh`).
+
+## 11. UART log for a major change
+
+* A major new change needs the UART (serial console) log of a real device in
+  its pull request: the boot and the feature in use. Major: a new driver or
+  kernel module (`KMOD_CONFIG`), WireGuard, MikroTik EoIP, IPIP or another
+  tunnel.
+* Once the feature is proven on hardware, later changes to it do not need a
+  UART log.
+* Reason: NijikaWrt is at an early stage and not yet stable.
+
+## Preconditions: stop when one is not fulfilled
+
+Sections 9 to 11 are preconditions. When one is not fulfilled (working copy
+not synced, `[FAIL]` from the bank check, no UART log for a major change),
+the agent stops: no build, no flash, no pull request, no issue, no further
+work on the task. Section 11 stops the pull request of the major change and
+any statement that the feature works. The agent tells the user which
+condition is missing and continues only after the user has fulfilled it.
+
 ## Before you finish
 
 * `tests/run.sh` (offline, about 20 s) passes. Its `lint` group checks the
@@ -218,3 +271,5 @@ then a short description in the style of section 7:
   dash, the SPDX header of every source file, the attribution notice code.
 * The firmware is experimental. Do not describe a change as tested on a
   router unless it was tested on one.
+* Sections 9 to 11 are fulfilled: the working copy is synced, `nijika boot`
+  shows `[ OK ]`, a major change has its UART log.

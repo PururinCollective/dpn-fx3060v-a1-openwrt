@@ -56,8 +56,9 @@ overrides. `nijika hw` shows the expected and the live fingerprint.
    FXS count, WiFi.
 4. **Create `devices/dpn-fx3060v-b1/`**: copy the A1 profile and set
    `DEVICE_ID`, `DEVICE_BOARD`, `DEVICE_MODEL`, `DEVICE_STOCK_MATCH` (e.g.
-   `^DPN-FX3060V_V2\.`), `DEVICE_PHY_IDS` (from step 1; the RTL8221B reads
-   `001cc849`) and the UBI sizes. Write the facts into `NOTES.md`.
+   `^DPN-FX3060V_V2\.`), `DEVICE_STOCK_MIN` (B1: `V2.0.7`, AGENTS.md section
+   10), `DEVICE_PHY_IDS` (from step 1; the RTL8221B reads `001cc849`) and
+   the UBI sizes. Write the facts into `NOTES.md`.
 5. **Build and test**: `DEVICE=dpn-fx3060v-b1 ./build.sh` and `tests/run.sh`.
    The `fwu` group runs against the B1 factory image; the dry run takes the
    matching (and a differing) fingerprint and stock version from the image's

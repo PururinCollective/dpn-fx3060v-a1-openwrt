@@ -314,6 +314,10 @@ never overwritten.
   board (`dlink,dpn-fx3060v-a1`) and the image CRC from the fwtool metadata. The
   new bank is tried once (60 s U-Boot watchdog) and committed after a good boot;
   OpenWrt settings are kept unless `-n` is given.
+* **One bank keeps the stock firmware**: at least V1.1.2 on the A1 (V2.0.7 on
+  the B1). NijikaWrt in both banks, or an older stock bank, is `[FAIL]` in
+  `nijika boot`: write the stock firmware back to one bank. This is a
+  condition for test reports, issues and pull requests (AGENTS.md section 10).
 * **Back to stock:** `nijika boot <bank>` if a bank still has D-Link firmware.
   You can also flash the D-Link `.bin` through *Nijika → Firmware Banks* or
   `nijika upgrade`. With `sysupgrade`/LuCI *Flash Firmware* you must force it
@@ -504,6 +508,13 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
 * **Wording and file headers**: Realtek style wording, `-` instead of the em
   dash, an SPDX license identifier at the top of every source file
   ([AGENTS.md](AGENTS.md#7-wording-realtek-style)).
+* **Before a build, a pull request or an issue**: sync with this repository
+  (`git pull --ff-only`), and keep the stock firmware in one bank
+  (`nijika boot` shows `[ OK ]`).
+* **Major changes** (a new driver or kernel module, WireGuard, MikroTik EoIP,
+  IPIP or another tunnel): the pull request needs the UART (serial console)
+  log of a real device until the feature is proven. NijikaWrt is at an early
+  stage and not yet stable.
 * **AI agents**: read [AGENTS.md](AGENTS.md).
 
 ## Credits

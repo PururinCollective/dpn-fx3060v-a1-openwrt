@@ -81,6 +81,42 @@ nijika_origin() {
 	fi
 }
 
+# nijika_sync_check: before a build the checkout is in sync with its remote
+# (AGENTS.md section 9). Fetches origin (15 s, skipped offline) and warns
+# when the branch is behind it.
+nijika_sync_check() {
+	local up behind
+	if ! git -C "$TOPDIR" rev-parse --git-dir >/dev/null 2>&1; then
+		warn "not a git checkout: sync with github.com/$NIJIKA_UPSTREAM before a build"
+		return 0
+	fi
+	if ! timeout 15 git -C "$TOPDIR" fetch --quiet origin 2>/dev/null; then
+		warn "git fetch origin failed (offline?): the checkout is not checked against its remote"
+		return 0
+	fi
+	up=$(git -C "$TOPDIR" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null) || {
+		warn "the branch has no upstream: sync it with origin before a build"
+		return 0
+	}
+	behind=$(git -C "$TOPDIR" rev-list --count "HEAD..$up" 2>/dev/null || echo 0)
+	if [ "$behind" -gt 0 ]; then
+		warn "the checkout is $behind commit(s) behind $up: run 'git pull --ff-only' before a build"
+	else
+		log "checkout in sync with $up"
+	fi
+}
+
+# nijika_ver_ge A B: version A >= version B ("V1.1.2", "1.1.2")
+nijika_ver_ge() {
+	awk -v a="${1#[Vv]}" -v b="${2#[Vv]}" 'BEGIN {
+		na = split(a, x, "."); nb = split(b, y, ".")
+		for (i = 1; i <= (na > nb ? na : nb); i++) {
+			if (x[i] + 0 > y[i] + 0) exit 0
+			if (x[i] + 0 < y[i] + 0) exit 1
+		}
+		exit 0 }'
+}
+
 # nijika_stock_version -> "V1.1.2" (fwu_ver of the stock firmware:
 # "DPN-FX3060V_V1.1.2 -- <date>")
 nijika_stock_version() {

@@ -6,7 +6,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint origin parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme
+# Groups: syntax json lint origin banks parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -111,6 +111,52 @@ t_lint() {
 			"$PY" -I "$TOP/tests/style_check.py" spdx
 	else
 		skp "dashes, SPDX headers" "no python3"
+	fi
+}
+
+# ------------------------------------------- firmware banks, build rules
+
+# AGENTS.md sections 9 to 11: one bank keeps the stock firmware (nijika boot
+# [ OK ] / [FAIL]), the build syncs and stops on old stock firmware
+t_banks() {
+	echo "banks (one bank keeps the stock firmware, build rules)"
+	local D="$W/banks" f="$TOP/package/nijika/files/usr/sbin/nijika"
+	mkdir -p "$D"
+	{
+		echo "nv_get() { sed -n \"s/^\$1=//p\" '$D/nv'; }"
+		sed -n '/^ver_ge() {/,/^}/p' "$f"
+		sed -n '/^bank_check() {/,/^}/p' "$f"
+	} > "$D/bc.sh"
+	bc() { # min version0 version1 -> output;rc
+		printf '%s\n' "sw_version0=$2" "sw_version1=$3" > "$D/nv"
+		NIJIKA_STOCK_MIN="$1" "$BB" sh -c ". '$D/bc.sh'; bank_check; echo \"rc=\$?\"" | tr '\n' ';'
+	}
+	check "NijikaWrt + stock V1.1.2: [ OK ]" sh -c "
+		[ \"$(bc V1.1.2 NijikaWrt_r38_25.12.5 DPN-FX3060V_V1.1.2)\" = '[ OK ] bank 1: stock firmware DPN-FX3060V_V1.1.2 (minimum V1.1.2);rc=0;' ]"
+	check "NijikaWrt in both banks: [FAIL]" sh -c "
+		case \"$(bc V1.1.2 NijikaWrt_r38_25.12.5 NijikaWrt_r37_25.12.5)\" in
+			'[FAIL] both banks hold NijikaWrt'*'rc=1;') ;; *) exit 1 ;; esac"
+	check "stock bank older than the minimum: [FAIL]" sh -c "
+		case \"$(bc V1.1.2 DPN-FX3060V_V1.0.9 NijikaWrt_r38_25.12.5)\" in
+			'[FAIL] bank 0: stock firmware DPN-FX3060V_V1.0.9 is older than V1.1.2'*'rc=1;') ;; *) exit 1 ;; esac"
+	check "versions compare by number (V1.1.10 > V1.1.2), B1 minimum V2.0.7" sh -c "
+		case \"$(bc V1.1.2 DPN-FX3060V_V1.1.10 NijikaWrt_r38)\" in '[ OK ]'*'rc=0;') ;; *) exit 1 ;; esac &&
+		case \"$(bc V2.0.7 NijikaWrt_r38 DPN-FX3060V_V2.0.6)\" in '[FAIL]'*'rc=1;') ;; *) exit 1 ;; esac &&
+		case \"$(bc V2.0.7 DPN-FX3060V_V2.1.0 NijikaWrt_r38)\" in '[ OK ]'*'rc=0;') ;; *) exit 1 ;; esac"
+	check "nijika boot prints the bank check" sh -c "
+		sed -n '/^nijika_boot() {/,/^}/p' '$f' | grep -q '^[[:space:]]*bank_check\$'"
+	if command -v bash >/dev/null; then
+		check "build: nijika_ver_ge" bash -c ". '$TOP/scripts/lib.sh'
+			nijika_ver_ge V1.1.2 V1.1.2 && nijika_ver_ge V1.2 V1.1.9 && ! nijika_ver_ge V1.1.1 V1.1.2 && nijika_ver_ge V2.0.7 V1.1.2"
+	fi
+	check "build: profile minimum, extract-stock stops on older stock, sync check, rules in build.sh" sh -c "
+		grep -qx \"DEVICE_STOCK_MIN='V1.1.2'\" '$TOP/devices/dpn-fx3060v-a1/device.conf' &&
+		grep -q 'nijika_ver_ge \"\$sv\" \"\$DEVICE_STOCK_MIN\"' '$TOP/scripts/extract-stock.sh' &&
+		grep -q 'nijika_sync_check' '$TOP/build.sh' && grep -q 'UART' '$TOP/build.sh' && grep -q 'B1: V2.0.7' '$TOP/build.sh'"
+	if [ -f "$TOP/build/stage/etc/nijika_release" ]; then
+		check "staged image: NIJIKA_STOCK_MIN recorded" grep -qx "NIJIKA_STOCK_MIN='V1.1.2'" "$TOP/build/stage/etc/nijika_release"
+	else
+		skp "staged image" "no build/stage (./build.sh assemble)"
 	fi
 }
 
@@ -1326,10 +1372,10 @@ FN
 
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint origin parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme}"
+groups="${*:-syntax json lint origin banks parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|origin|parsers|wrapper|ucimirror|spi|lanmgmt|apply|qos|easymesh|ddns|wireguard|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
+		syntax|json|lint|origin|banks|parsers|wrapper|ucimirror|spi|lanmgmt|apply|qos|easymesh|ddns|wireguard|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

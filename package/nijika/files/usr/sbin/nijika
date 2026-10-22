@@ -401,6 +401,45 @@ wan_internet_index() {
 
 # ------------------------------------------------------------- boot ----
 
+# ver_ge A B: version A ("V1.1.2") >= version B
+ver_ge() {
+	awk -v a="${1#[Vv]}" -v b="${2#[Vv]}" 'BEGIN {
+		na = split(a, x, "."); nb = split(b, y, ".")
+		for (i = 1; i <= (na > nb ? na : nb); i++) {
+			if (x[i] + 0 > y[i] + 0) exit 0
+			if (x[i] + 0 < y[i] + 0) exit 1
+		}
+		exit 0 }'
+}
+
+# Firmware bank rule (AGENTS.md section 10): one bank keeps the stock D-Link
+# firmware, NIJIKA_STOCK_MIN or newer (A1: V1.1.2, B1: V2.0.7). NijikaWrt
+# (OpenWrt) in both banks is [FAIL]. A report only: the firmware update code
+# (fw.sh, sysupgrade, LuCI) is not changed by it. Returns 1 on [FAIL].
+bank_check() {
+	local n v sv ok="" old="" own=0
+	for n in 0 1; do
+		v=$(nv_get "sw_version$n")
+		case "$v" in NijikaWrt*) own=$((own + 1)); continue ;; esac
+		sv=$(printf '%s\n' "$v" | sed -n 's/^[^_]*_\(V[0-9][0-9.]*\).*/\1/p')
+		[ -n "$sv" ] || continue
+		if [ -z "$NIJIKA_STOCK_MIN" ] || ver_ge "$sv" "$NIJIKA_STOCK_MIN"; then ok="$n:$v"; else old="$n:$v"; fi
+	done
+	if [ -n "$ok" ]; then
+		echo "[ OK ] bank ${ok%%:*}: stock firmware ${ok#*:} (minimum ${NIJIKA_STOCK_MIN:-not set})"
+		return 0
+	fi
+	if [ "$own" = 2 ]; then
+		echo "[FAIL] both banks hold NijikaWrt (OpenWrt): one bank must keep the stock D-Link firmware"
+	elif [ -n "$old" ]; then
+		echo "[FAIL] bank ${old%%:*}: stock firmware ${old#*:} is older than $NIJIKA_STOCK_MIN"
+	else
+		echo "[FAIL] no bank holds the stock D-Link firmware"
+	fi
+	echo "[FAIL] write the stock firmware ${NIJIKA_STOCK_MIN:-of this device} or newer to the bank NijikaWrt does not run from"
+	return 1
+}
+
 nijika_boot() {
 	local cur commit act try
 	cur=$(running_bank)
@@ -413,7 +452,8 @@ nijika_boot() {
 			echo "sw_tryactive : $try $([ "$try" = 2 ] && echo '(no trial pending)' || echo '(trial boot pending)')"
 			echo "bank 0       : $(nv_get sw_version0) (valid=$(nv_get sw_valid0))"
 			echo "bank 1       : $(nv_get sw_version1) (valid=$(nv_get sw_valid1))"
-			return 0
+			bank_check
+			return
 			;;
 		0|1)
 			nv_set sw_commit "$1"
