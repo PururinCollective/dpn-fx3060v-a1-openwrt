@@ -17,6 +17,8 @@ MUST RUN TEST ON REAL XGS-PON/GPON OLT
 
 # NijikaWrt for the D-Link DPN-FX3060V (A1)
 
+![NIJK](docs/images/nijk_banner.jpg)
+
 OpenWrt userland for the D-Link DPN-FX3060V (A1) GPON HGU, the Realtek
 RTL9607DQ "Taurus" router with a built-in ONT. It runs on the
 **stock Realtek 5.10.70 kernel**, and the **stock Realtek userland** keeps driving
