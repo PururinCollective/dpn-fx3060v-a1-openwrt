@@ -255,6 +255,20 @@ t_ucimirror() {
 	check "from_uci: unquotes uci show (quote inside a value)" grep -qxF "mib.Q=a'b c" "$W/um.cur"
 	"$BB" sh -c ". '$W/um.sh'; changed '$W/um.in' '$W/um.cur'" > "$W/um.chg"
 	check "changed: only the edited option" sh -c "[ \"\$(cat '$W/um.chg')\" = 'mib.LAN_IP_ADDR=192.168.0.2' ]"
+	# reload_config's record of the rtk file (/etc/init.d/boot takes it
+	# before the mirror writes the file): replaced, the others kept
+	sed -n '/^baseline()/,/^}/p' "$f" | sed 's|/sbin/uci -q -c "$UCI_DIR" show rtk|cat "$UCI_SHOW"|' > "$W/bl.sh"
+	printf '%s\n' "0123456789abcdef0123456789abcdef  /var/run/config.check/network" \
+		"ffffffffffffffffffffffffffffffff  /var/run/config.check/rtk" > "$W/config.md5"
+	UCI_SHOW="$W/um.show" RELOAD_MD5="$W/config.md5" "$BB" sh -c ". '$W/bl.sh'; baseline"
+	sum=$("$BB" md5sum < "$W/um.show"); sum=${sum%% *}
+	check "baseline: rtk's reload_config record is the file as written, other records kept" sh -c "
+		grep -qx '0123456789abcdef0123456789abcdef  /var/run/config.check/network' '$W/config.md5' &&
+		grep -qx '$sum  /var/run/config.check/rtk' '$W/config.md5' && [ \$(wc -l < '$W/config.md5') -eq 2 ]"
+	rm -f "$W/config.md5"
+	UCI_SHOW="$W/um.show" RELOAD_MD5="$W/config.md5" "$BB" sh -c ". '$W/bl.sh'; baseline"
+	check "baseline: no record yet (no reload_config ran): rtk's alone" sh -c "
+		[ \"\$(cat '$W/config.md5')\" = '$sum  /var/run/config.check/rtk' ]"
 }
 
 # ------------------------------------------- stock SPI firewall switches

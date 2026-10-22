@@ -22,10 +22,11 @@
 . /usr/lib/nijika/common.sh
 . /usr/lib/nijika/apply.sh
 
-# RTK_UCI_DIR / NIJIKA_RUNDIR only change for tests
+# RTK_UCI_DIR / RTK_RELOAD_MD5 / NIJIKA_RUNDIR only change for tests
 UCI_DIR=${RTK_UCI_DIR:-/etc/config}
 CONF=$UCI_DIR/rtk
 SNAP=$NIJIKA_RUNDIR/rtk.snapshot
+RELOAD_MD5=${RTK_RELOAD_MD5:-/var/run/config.md5}
 
 tables() {
 	local t
@@ -136,6 +137,21 @@ push() {
 	return 0
 }
 
+# reload_config sends config.change only for a config whose `uci show`
+# checksum it has on record ($RELOAD_MD5, "<md5>  /var/run/config.check/<name>").
+# /etc/init.d/boot takes that record before this mirror writes the file
+# (on the first boot after a flash there is no file yet), so the first
+# `uci commit rtk; reload_config` after boot did nothing. Record the file
+# as written here: it holds no unsynced change, flash and UCI agree.
+baseline() {
+	local sum
+	sum=$(/sbin/uci -q -c "$UCI_DIR" show rtk 2>/dev/null | md5sum) || return 0
+	{
+		grep -v '  /var/run/config.check/rtk$' "$RELOAD_MD5" 2>/dev/null
+		echo "${sum%% *}  /var/run/config.check/rtk"
+	} > "$RELOAD_MD5.$$" && mv "$RELOAD_MD5.$$" "$RELOAD_MD5"
+}
+
 do_sync() {
 	local new="$NIJIKA_RUNDIR/rtk.new" cur="$NIJIKA_RUNDIR/rtk.current" areas
 
@@ -172,6 +188,7 @@ do_sync() {
 	fi
 	mv "$new" "$SNAP"
 	rm -f "$new.uci" "$cur"
+	baseline
 }
 
 do_diff() {
