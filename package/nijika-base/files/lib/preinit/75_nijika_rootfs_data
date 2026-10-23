@@ -3,13 +3,45 @@
 # NijikaWrt: make sure the UBI volume "rootfs_data" exists before
 # mount_root looks for it, and process a pending wipe left by sysupgrade.
 #
-# The stock UBI layout leaves ~32 MiB of free PEBs; rootfs_data takes them
-# (minus a small reserve) with a high volume id so the gluebi mtd numbers
-# of the stock volumes (root=31:8 / 31:11) never shift.
+# The stock UBI layout leaves free PEBs; rootfs_data takes them (minus a small
+# reserve) with a high volume id so the gluebi mtd numbers of the stock volumes
+# (root=31:8 / 31:11) never shift.
+#
+# UBI can be briefly busy right after attach / ubimkvol on this SoC, and the
+# volume create or its first UBIFS mount then fails. On the B1 that left the
+# first boot after a factory flash with no overlay (read-only root: dropbear
+# could not write host keys, /etc/config/rtk could not be created) until a
+# second boot found the volume ready. So the *create path* (first boot only)
+# retries, bounded; the per-boot mount below stays a single attempt, so every
+# boot once the volume exists behaves exactly as before (A1 included). Steps
+# are logged to /dev/kmsg so a first-boot overlay failure is visible in the
+# kernel log without a serial console.
 
 NIJIKA_DATA_VOL=rootfs_data
 NIJIKA_DATA_ID=120
 NIJIKA_DATA_RESERVE=8
+NIJIKA_DATA_TRIES=8
+NIJIKA_GLIBC=/usr/libexec/rtk/glibc
+
+nijika_log() {
+	echo "- nijika: $* -"
+	echo "nijika rootfs_data: $*" > /dev/kmsg 2>/dev/null
+}
+
+# nijika_retry <tries> <cmd...>: run until it succeeds or the tries run out,
+# pausing 1s between attempts. Used only on the volume-create path (first boot
+# after a flash). Retries on any failure: the shell cannot tell a transient
+# EBUSY from a real error by exit code, and the attempt count is the bound.
+nijika_retry() {
+	local n="$1"
+	shift
+	while :; do
+		"$@" && return 0
+		n=$((n - 1))
+		[ "$n" -gt 0 ] || return 1
+		sleep 1
+	done
+}
 
 nijika_ubi_has_vol() {
 	local d
@@ -19,8 +51,12 @@ nijika_ubi_has_vol() {
 	return 1
 }
 
+nijika_mkvol() {
+	$NIJIKA_GLIBC /rtk/bin/ubimkvol /dev/ubi0 -n $NIJIKA_DATA_ID -N $NIJIKA_DATA_VOL -s "$1"
+}
+
 nijika_rootfs_data() {
-	local glibc=/usr/libexec/rtk/glibc mnt=/tmp/.nijika_data avail leb size
+	local mnt=/tmp/.nijika_data avail leb size
 
 	[ -c /dev/ubi0 ] || return 0
 
@@ -29,21 +65,33 @@ nijika_rootfs_data() {
 		leb=$(cat /sys/class/ubi/ubi0/eraseblock_size 2>/dev/null)
 		[ -n "$avail" ] && [ -n "$leb" ] || return 0
 		if [ "$avail" -le $((NIJIKA_DATA_RESERVE + 16)) ]; then
-			echo "- nijika: only $avail free PEBs, no persistent overlay -"
+			nijika_log "only $avail free PEBs, no persistent overlay"
 			return 0
 		fi
 		size=$(( (avail - NIJIKA_DATA_RESERVE) * leb ))
-		echo "- nijika: creating UBI volume $NIJIKA_DATA_VOL ($((size / 1048576)) MiB) -"
-		$glibc /rtk/bin/ubimkvol /dev/ubi0 -n $NIJIKA_DATA_ID -N $NIJIKA_DATA_VOL -s $size || return 0
-		# Let UBIFS lay down an empty filesystem so fstools recognises it.
+		nijika_log "creating UBI volume $NIJIKA_DATA_VOL ($((size / 1048576)) MiB)"
+		if ! nijika_retry $NIJIKA_DATA_TRIES nijika_mkvol "$size"; then
+			nijika_log "ubimkvol failed, no persistent overlay"
+			return 0
+		fi
+		# Format it (an empty UBIFS) so fstools/mount_root recognise it and
+		# mount_root (the next preinit hook) finds a ready volume. This first
+		# mount is the one that raced UBI settling right after ubimkvol, so
+		# retry it rather than leaving a read-only root.
 		mkdir -p $mnt
-		mount -t ubifs ubi0:$NIJIKA_DATA_VOL $mnt && umount $mnt
+		if nijika_retry $NIJIKA_DATA_TRIES mount -t ubifs ubi0:$NIJIKA_DATA_VOL $mnt; then
+			umount $mnt
+		else
+			nijika_log "could not format $NIJIKA_DATA_VOL (UBI busy); mount_root will retry"
+		fi
 	fi
 
+	# Every boot: process a pending wipe left by sysupgrade. Single attempt,
+	# unchanged from before (the volume already exists on a normal boot).
 	mkdir -p $mnt
 	mount -t ubifs ubi0:$NIJIKA_DATA_VOL $mnt 2>/dev/null || return 0
 	if [ -f $mnt/.nijika_wipe ]; then
-		echo "- nijika: firmware changed, resetting overlay -"
+		nijika_log "firmware changed, resetting overlay"
 		[ -f $mnt/.nijika_keep.tgz ] && gzip -dc $mnt/.nijika_keep.tgz > /tmp/sysupgrade.tar
 		rm -rf $mnt/* $mnt/.[!.]* 2>/dev/null
 		sync
