@@ -9,7 +9,8 @@ do not make the change. Human contributors follow the same rules
 
 ## 1. No vendor source code: clean room only
 
-This repository contains **no vendor source code**. Everything in it is
+This repository contains **no vendor source code**. Everything in it, apart
+from the open source LuCI theme `package/luci-theme-footstrap` (section 8), is
 **clean-room code** written for this project. **Proprietary code and data are
 kept offline** by the maintainers and are **not included**:
 
@@ -63,7 +64,7 @@ repository (write access to `PururinCollective/dpn-fx3060v-a1-openwrt`):
   `vendor.snmp`), the vendor cloud agent `ccom_linkkit` removed, the stock
   GUI `hidden` (`vendor.boa`).
 * **Branding and links**: `NIJIKA_DISTRO`, `NIJIKA_TAGLINE`, the banner
-  links (`/usr/share/nijika/banner-links`), the default theme (Perfect).
+  links (`/usr/share/nijika/banner-links`), the default theme (Footstrap).
 * **Download sources and checksums** in `build.conf` (`OPENWRT_MIRROR`,
   `KMOD_TOOLCHAIN_URL`, `KMOD_TOOLCHAIN_SHA256`).
 
@@ -166,8 +167,9 @@ for example `Nijika Firmware r38, V1.1.2, Open PON Foundation (project lead by A
 * The build does this itself: `nijika_origin`, `NIJIKA_NOTICE_FMT` and
   `nijika_notice_apply` in `scripts/lib.sh`, called by `scripts/assemble.sh`;
   the placeholder `@NIJIKA_NOTICE@` in
-  `package/luci-theme-perfect/root/usr/share/ucode/luci/template/themes/perfect/sysauth.ut`
-  and `package/luci-app-nijika/htdocs/luci-static/resources/view/status/include/11_nijika_notice.js`;
+  `package/luci-app-nijika/htdocs/luci-static/resources/view/status/include/11_nijika_notice.js`;
+  the line `nijika_notice_apply` adds to the build's copy of the login pages
+  (`themes/footstrap/sysauth.ut`, `themes/bootstrap/sysauth.ut`);
   `NIJIKA_ORIGIN` and `NIJIKA_NOTICE` in `/etc/nijika_release`.
 * Do not remove, hide, shorten or weaken the notice or the check. Examples:
   `nijika_origin` always answering `upstream`, an `origin` remote set to
@@ -215,9 +217,15 @@ then a short description in the style of section 7:
 * GPL-2.0-only: `package/nijika`, `package/nijika-base`, `package/rtk-vendor`,
   `build.sh`, `build.conf`, `scripts/`, `devices/`, `firmware/`, `tests/`,
   `tools/` (`LICENSE`).
-* Apache-2.0: `package/luci-app-nijika`, `package/luci-theme-perfect`
-  (`PKG_LICENSE` of the LuCI packages; the theme contains LuCI Bootstrap
-  code). Code of another origin keeps its license and copyright lines.
+* Apache-2.0: `package/luci-app-nijika` (`PKG_LICENSE` of the LuCI package).
+  Code of another origin keeps its license and copyright lines.
+* `package/luci-theme-footstrap` is third-party code (Apache-2.0, its own
+  `LICENSE`): a copy of the package directory of
+  `github.com/VizzleTF/luci-theme-footstrap` at the tag of `FOOTSTRAP_VERSION`
+  in `build.conf`. It stays as upstream ships it: no SPDX header, no section 7
+  wording, no edit in the repository (the build changes its own copy), and the
+  `lint` group of `tests/run.sh` skips it. An update replaces the directory and
+  `FOOTSTRAP_VERSION` together.
 * No header: JSON, images, fonts, font licence, test fixtures, data tables.
 
 ## 9. Sync before a build, a pull request or an issue

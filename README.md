@@ -115,15 +115,20 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   * Services > DDNS: see above; status per entry, *Update now*.
   * Services > WireGuard: see above; handshakes and traffic per peer.
   * PON > Authentication: LOID, PLOAM, device type, OLT mode.
-* **Status > Overview**: System, then PON / ONT (the fibre link drawn as
-  OLT ⇄ NijikaWrt with live 1490/1310 nm light, RX/TX power, WAN address),
-  then the WAN connections (VLAN, type, protocol, address, gateway, state)
-  like the stock Device Status page.
-* **Perfect theme** (the default LuCI theme): the look of
-  [Perfect](https://perfect.my/) - blue header and footer, lime buttons with
-  hard shadows, the Inter font, the Perfect logo, and the Perfect cat on the
-  login page. Bootstrap is still there: System > System > Language and Style.
-  A theme picked there is kept across upgrades.
+* **Status > Overview**: System, memory and storage, then Fibre (GPON): the
+  ONT drawn with its fibre and live 1490/1310 nm light, ONU state, RX power on
+  the class B+ window, TX power, temperature, the WAN connection of the
+  default route and its traffic. Then the WAN connections (type, VLAN,
+  addresses, status, traffic). Traffic is read from the Linux interface
+  counters: flows offloaded to the hardware NAT may not be counted.
+* **Footstrap theme** (the default LuCI theme):
+  [luci-theme-footstrap](https://github.com/VizzleTF/luci-theme-footstrap),
+  third-party code in `package/luci-theme-footstrap` (Apache-2.0). Dark and
+  light mode, top bar or side menu, appearance settings in System > Footstrap.
+  It needs Chrome 120, Firefox 121, Safari 17.2 or newer. Bootstrap is still
+  there: System > System > Language and Style. A theme selected there is kept
+  across upgrades. An upgrade from an image with the Perfect theme moves to
+  Footstrap.
 * **ISP management off**: the stock TR-069 client and SNMP agent do not run
   under NijikaWrt (Nijika > Settings turns them back on), so the ISP's ACS
   cannot reconfigure the stock stack behind OpenWrt's back. The TR-069 WAN
@@ -444,9 +449,11 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
   (`COLOR=truecolor STATE=O3 RX=-28.4 tools/banner-preview.sh`; no fibre:
   `STATE=O1.1 LOS=1 RX=-inf TX=-inf`, no reading yet: `NODATA=1`).
 * `tools/luci-mock/server.py`: run the LuCI app in a browser against
-  synthetic data (after `./build.sh rootfs assemble`). Pages use the Perfect
-  theme (`LUCI_THEME=bootstrap` for Bootstrap), `/cgi-bin/luci/login` is the
-  login page, and `package/*/htdocs` is served live, so edits need no rebuild.
+  synthetic data (after `./build.sh rootfs assemble`). Pages use the real
+  Footstrap templates (`LUCI_THEME=bootstrap` for Bootstrap),
+  `/cgi-bin/luci/admin/status/overview` is Status > Overview,
+  `/cgi-bin/luci/login` is the login page (`?notice` shows the notice of a
+  fork), and `package/*/htdocs` is served live, so edits need no rebuild.
 * `tests/run.sh`: offline regression suite (about 20 s, no router): shell
   syntax, JSON, lint rules, the parsers against real captures, the stock
   dnsmasq wrapper, `/etc/config/rtk` quoting, the boot-env hook, every factory
@@ -526,6 +533,6 @@ the stock configuration (PPPoE, WiFi keys) and is readable by root only.
 
 * Anime4000: NIJIKA firmware and the [RTL960x](https://github.com/Anime4000/RTL960x) project
 * OpenWrt and LuCI projects
-* Perfect (perfect.my): logo, colours and cat artwork used by the Perfect theme
-* The Inter Project Authors: the Inter font (SIL Open Font License 1.1)
+* [VizzleTF](https://github.com/VizzleTF/luci-theme-footstrap): the Footstrap theme
+* Peter-Pon: the Footstrap port and the style of the Status cards
 * Realtek / D-Link for the stock firmware this builds upon (not included)

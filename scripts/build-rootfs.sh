@@ -27,7 +27,25 @@ for pkg in "$TOPDIR"/package/*/; do
 		mkdir -p "$overlay/www"
 		cp -a "$pkg/htdocs/." "$overlay/www/"
 	fi
+	# luci.mk installs ucode/ as /usr/share/ucode/luci
+	if [ -d "$pkg/ucode" ]; then
+		log "overlay: $name/ucode -> /usr/share/ucode/luci"
+		mkdir -p "$overlay/usr/share/ucode/luci"
+		cp -a "$pkg/ucode/." "$overlay/usr/share/ucode/luci/"
+	fi
 done
+
+# Footstrap (luci-theme-footstrap, the default theme): the two steps of its
+# Build/Prepare the image needs. build-css.sh writes the stylesheet from
+# styles/ (cat and awk only). The version shown on System > Footstrap comes
+# from build.conf: a vendored copy has no git tag.
+fs_css="$overlay/www/luci-static/footstrap/cascade.css"
+fs_ver="$overlay/www/luci-static/resources/fs-version.js"
+sh "$TOPDIR/package/luci-theme-footstrap/build-css.sh" "$fs_css" >/dev/null
+[ -s "$fs_css" ] || die "Footstrap: no cascade.css"
+sed -i "s#const FS_VERSION *= *'[^']*'#const FS_VERSION = '$FOOTSTRAP_VERSION'#" "$fs_ver"
+grep -q "FS_VERSION = '$FOOTSTRAP_VERSION'" "$fs_ver" || die "Footstrap: version not stamped in fs-version.js"
+log "Footstrap $FOOTSTRAP_VERSION: cascade.css $(stat -c %s "$fs_css") bytes"
 
 # Files for the vendor chroot (/rtk) are applied by assemble.sh after the
 # stock rootfs is unpacked, not by the ImageBuilder.

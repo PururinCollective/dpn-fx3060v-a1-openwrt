@@ -1,0 +1,31 @@
+# Single source of the openwrt/luci commit whose i18n-scan.pl update-po.sh downloads and runs by
+# perl to decide whether the translation catalogue is complete, and of its checksum. Sourced as
+# shell (`. luci-upstream.pin`) by update-po.sh, build-apk.sh and tools/build-usign.sh.
+# Off a moving `master` the check would be whatever upstream pushed last.
+# To bump: change LUCI_PIN, re-fetch the file at the new commit, update its sha256.
+LUCI_PIN=5cf20c5741dc34eea0faaf7324ef3751b05fa1f3
+I18N_SCAN_SHA256=a1823d1fdd942f31a105e1e53b401e146bc10527f231e016930b1a5123ef21d3
+
+# No ucode pin, deliberately: the `e2e` job renders every installed template with the router's own
+# ucode on both release lines (tools/e2e.mjs), so nothing is pinned, built or stubbed here.
+
+# usign, OpenWrt's ed25519 signer: owfeed signs each release package with it, and build-apk.sh
+# builds this copy (via tools/build-usign.sh, not run in CI) to check the SDK it downloads. This is
+# the commit the router's own /usr/bin/usign is built from (`usign-2025.10.03~c4c72b1b`), so signer
+# and field verifier are the same code; `cc *.c` over six sources plus base64.c is the whole build.
+USIGN_PIN=c4c72b1b07945ee192361dc751291a7c98d6adcd
+
+# OpenWrt's usign RELEASE keys and the keyring commit they come from; build-apk.sh checks the SDK
+# with them. The SDK is the only input that ends up inside the installed package, and the
+# `sha256sums` beside the tarball is no verification: same host, same directory, unsigned
+# (docs/conventions.md). `sha256sums.sig` is, verified with a key pinned from a different host
+# (github.com/openwrt/keyring): the router's usign says "signature OK", and one flipped byte gives
+# "verification failed". 24.10 and 25.12 do not share a key (a release key vs the unattended-build
+# key). The key id is the keyring file name and the keynum usign embeds in the signature; on
+# "verification failed" read that keynum first, since a key rotation looks exactly like an attack.
+# The sha256 holds the content.
+OPENWRT_KEYRING_PIN=fbae29d730f81c892f52e0ff00fe867444aeeae6
+OPENWRT_SDK_KEY_2512=b5043e70f9a75cde
+OPENWRT_SDK_KEY_2512_SHA256=d7ac10f9ed1b38033855f3d27c9327d558444fca804c685b17d9dcfb0648228f
+OPENWRT_SDK_KEY_2410=d310c6f2833e97f7
+OPENWRT_SDK_KEY_2410_SHA256=e3624aa9be785362a172595b4919b233268871c4365a9b8da2b42ac41745ad95

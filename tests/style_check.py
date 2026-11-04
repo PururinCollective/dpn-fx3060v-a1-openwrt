@@ -15,7 +15,9 @@ DASHES = ('\u2014', '\u2013', '\u2212')   # em dash, en dash, minus sign
 NO_HEADER_EXT = ('.md', '.json', '.jpg', '.png', '.webp', '.svg', '.woff2', '.txt', '.tsv')
 NO_HEADER = {'LICENSE', '.gitignore', '.gitattributes', '.github/CODEOWNERS',
              'package/nijika-base/files/usr/share/nijika/banner-links'}
-APACHE = ('package/luci-app-nijika/', 'package/luci-theme-perfect/')
+APACHE = ('package/luci-app-nijika/',)
+# third-party code, kept as upstream ships it (AGENTS.md section 8)
+THIRD_PARTY = ('package/luci-theme-footstrap/',)
 
 
 def files():
@@ -41,7 +43,7 @@ def text(f):
 def dashes():
     bad = []
     for f in files():
-        t = text(f)
+        t = None if f.startswith(THIRD_PARTY) else text(f)
         if t is None:
             continue
         for n, line in enumerate(t.split('\n'), 1):
@@ -53,7 +55,7 @@ def dashes():
 def spdx():
     bad = []
     for f in files():
-        if f in NO_HEADER or f.endswith(NO_HEADER_EXT) or f.startswith(('docs/', 'tests/fixtures/')):
+        if f in NO_HEADER or f.endswith(NO_HEADER_EXT) or f.startswith(('docs/', 'tests/fixtures/') + THIRD_PARTY):
             continue
         t = text(f)
         if t is None:

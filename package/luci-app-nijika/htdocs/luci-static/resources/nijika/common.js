@@ -234,6 +234,7 @@ return baseclass.extend({
 	callQosGet: rpc.declare({ object: 'nijika', method: 'qos_get' }),
 	callQosSet: rpc.declare({ object: 'nijika', method: 'qos_set', params: [ 'mib', 'queues', 'dqueues', 'rules', 'tc' ] }),
 	callWanStatus: rpc.declare({ object: 'nijika', method: 'wan_status', expect: { wans: [] } }),
+	callNetDevices: rpc.declare({ object: 'luci-rpc', method: 'getNetworkDevices', expect: { '': {} } }),
 	callDdnsStatus: rpc.declare({ object: 'nijika', method: 'ddns_status' }),
 	callDdnsUpdate: rpc.declare({ object: 'nijika', method: 'ddns_update' }),
 	callWgStatus: rpc.declare({ object: 'nijika', method: 'wg_status' }),
@@ -275,6 +276,22 @@ return baseclass.extend({
 			this._wan = L.resolveDefault(this.callWanStatus(), []);
 		}
 		return this._wan;
+	},
+
+	/* Linux interface counters for the Overview cards of one poll */
+	netDevices: function() {
+		var now = Date.now();
+		if (!this._devAt || now - this._devAt > 2500) {
+			this._devAt = now;
+			this._dev = L.resolveDefault(this.callNetDevices(), {});
+		}
+		return this._dev;
+	},
+
+	/* the WAN connection of the default route, else the first with an address */
+	wanDefault: function(wans) {
+		return wans.filter(function(w) { return w.default_route && (w.ip4 || w.ip6); })[0] ||
+			wans.filter(function(w) { return w.ip4; })[0] || null;
 	},
 
 	meName: function(cls, fallback) {

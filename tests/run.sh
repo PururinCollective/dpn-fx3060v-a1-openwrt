@@ -89,10 +89,11 @@ t_lint() {
 		grep -q 'lib/nijika/slogd' '$TOP/scripts/patch-vendor.sh'"
 	# gsub()/sub() whose replacement string holds a backslash: busybox 1.37
 	# awk (OpenWrt) drops it ("\\\"" becomes a bare quote, "\\n" an n).
+	# luci-theme-footstrap: third-party, its scripts do not run on the router.
 	local hits
 	hits=$(grep -rnE 'g?sub\([^)]*,[[:space:]]*"[^"]*\\' "$TOP/package" "$TOP/scripts" "$TOP/firmware" \
 		--include='*.awk' --include='*.sh' --include='nijika' --include='*' 2>/dev/null |
-		grep -vE '^[^:]*:[0-9]+:[[:space:]]*#' | grep -v '/htdocs/' || true)
+		grep -vE '^[^:]*:[0-9]+:[[:space:]]*#' | grep -v -e '/htdocs/' -e '/luci-theme-footstrap/' || true)
 	[ -z "$hits" ] && ok "no backslash in gsub()/sub() replacements" || bad "backslash in gsub()/sub() replacement" "$hits"
 
 	# device-specific values belong in devices/<id>/device.conf
@@ -196,10 +197,10 @@ t_origin() {
 
 	# nijika_notice_apply on copies of the pages
 	for m in fork upstream; do
-		mkdir -p "$D/$m/usr/share/ucode/luci/template/themes/perfect" "$D/$m/usr/share/ucode/luci/template/themes/bootstrap" \
+		mkdir -p "$D/$m/usr/share/ucode/luci/template/themes/footstrap" "$D/$m/usr/share/ucode/luci/template/themes/bootstrap" \
 			"$D/$m/www/luci-static/resources/view/status/include"
-		cp "$TOP/package/luci-theme-perfect/root/usr/share/ucode/luci/template/themes/perfect/sysauth.ut" \
-			"$D/$m/usr/share/ucode/luci/template/themes/perfect/"
+		cp "$TOP/package/luci-theme-footstrap/ucode/template/themes/footstrap/sysauth.ut" \
+			"$D/$m/usr/share/ucode/luci/template/themes/footstrap/"
 		cp "$TOP/package/luci-app-nijika/htdocs/luci-static/resources/view/status/include/11_nijika_notice.js" \
 			"$D/$m/www/luci-static/resources/view/status/include/"
 		printf '%s\n' '<section hidden>' '	<form method="post" class="cbi-map">' '	</form>' '</section>' \
@@ -207,13 +208,24 @@ t_origin() {
 	done
 	bash -c ". '$TOP/scripts/lib.sh'; nijika_notice_apply '$D/fork' 'Nijika Firmware r9, V1.1.2, x <&>'; nijika_notice_apply '$D/upstream' ''"
 	f="usr/share/ucode/luci/template/themes"
-	check "fork: notice on the Perfect and Bootstrap login, Status > Overview (escaped)" sh -c "
-		grep -qF '<p class=\"perfect-login-notice\">Nijika Firmware r9, V1.1.2, x &lt;&amp;&gt;</p>' '$D/fork/$f/perfect/sysauth.ut' &&
+	check "fork: notice in the Footstrap login form, on the Bootstrap login, Status > Overview (escaped)" sh -c "
+		sed -n '/<form/,/<\/form>/p' '$D/fork/$f/footstrap/sysauth.ut' |
+			grep -qF '<p class=\"nijika-notice\">Nijika Firmware r9, V1.1.2, x &lt;&amp;&gt;</p>' &&
 		grep -qF '<p class=\"nijika-notice\">Nijika Firmware r9, V1.1.2, x &lt;&amp;&gt;</p>' '$D/fork/$f/bootstrap/sysauth.ut' &&
 		grep -qF \"var NOTICE = 'Nijika Firmware r9, V1.1.2, x <&>';\" '$D/fork/www/luci-static/resources/view/status/include/11_nijika_notice.js'"
 	check "original repository: no notice, no placeholder left" sh -c "
-		! grep -rq -e '@NIJIKA_NOTICE@' -e 'perfect-login-notice\">' -e nijika-notice '$D/upstream' &&
+		! grep -rq -e '@NIJIKA_NOTICE@' -e nijika-notice '$D/upstream' &&
 		grep -qF \"var NOTICE = '';\" '$D/upstream/www/luci-static/resources/view/status/include/11_nijika_notice.js'"
+	# the login page is a vendored file: an update without the form stops the build
+	cp -a "$D/upstream" "$D/noform"
+	cp "$TOP/package/luci-app-nijika/htdocs/luci-static/resources/view/status/include/11_nijika_notice.js" \
+		"$D/noform/www/luci-static/resources/view/status/include/"
+	echo '<section></section>' > "$D/noform/$f/footstrap/sysauth.ut"
+	check "default theme without a login form: the build stops" sh -c "
+		! bash -c \". '$TOP/scripts/lib.sh'; nijika_notice_apply '$D/noform' 'x'\" 2>/dev/null"
+	rm -f "$D/noform/$f/footstrap/sysauth.ut"
+	check "default theme without a login page: the build stops" sh -c "
+		! bash -c \". '$TOP/scripts/lib.sh'; nijika_notice_apply '$D/noform' ''\" 2>/dev/null"
 	check "assemble.sh runs the origin check and the notice" sh -c "
 		grep -q 'origin=\$(nijika_origin)' '$TOP/scripts/assemble.sh' && grep -q 'nijika_notice_apply \"\$R\" \"\$notice\"' '$TOP/scripts/assemble.sh'"
 	local st="$TOP/build/stage"
@@ -650,7 +662,7 @@ assert {'admin/nijikawrt/settings', 'admin/nijikawrt/firmware', 'admin/nijikawrt
 			[ -x '$st/rtk/lib/nijika/cwmpClient' ] && [ -x '$st/rtk/lib/nijika/snmpd' ] &&
 			grep -q 'stock-services boot' '$st/usr/libexec/rtk/vendor-boot' &&
 			grep -q \"option tr069 '0'\" '$st/etc/config/nijika'"
-		check "Overview: System, notice (forks), PON / ONT, WAN, memory, storage (no empty OpenWrt cards)" sh -c "
+		check "Overview: System, notice (forks), Fibre (GPON), WAN, memory, storage (no empty OpenWrt cards)" sh -c "
 			[ \"\$(ls '$st/www/luci-static/resources/view/status/include' | tr '\n' ' ')\" = '10_system.js 11_nijika_notice.js 15_nijika.js 17_nijika_wan.js 20_memory.js 25_storage.js ' ]"
 		check "EasyMesh role pinned before the stock WiFi starts" sh -c "
 			grep -q 'easymesh-pin boot' '$st/usr/libexec/rtk/vendor-boot' && [ -x '$st/usr/libexec/rtk/easymesh-pin' ] &&
@@ -813,7 +825,8 @@ t_banner() {
 
 t_theme() {
 	echo "theme"
-	local P="$TOP/package/luci-theme-perfect" D="$W/theme"
+	local P="$TOP/package/luci-theme-footstrap" D="$W/theme"
+	local U="$TOP/package/nijika-base/files/etc/uci-defaults/30_luci-theme-default"
 	mkdir -p "$D"
 	# uci-defaults against a key=value store: start state -> final mediaurlbase
 	defaults() {
@@ -824,31 +837,49 @@ t_theme() {
 				case \"\$1\" in
 					get) grep \"^\$2=\" '$D/uci' | cut -d= -f2- | grep . ;;
 					set) echo \"\$2\" >> '$D/uci' ;;
+					delete) sed -i \"/^\$2=/d\" '$D/uci' ;;
 					commit) ;;
 				esac
 			}
-			. '$P/root/etc/uci-defaults/30_luci-theme-perfect'" >/dev/null 2>&1
+			. '$U'" >/dev/null 2>&1
 		grep '^luci.main.mediaurlbase=' "$D/uci" | tail -n 1 | cut -d= -f2-
 	}
-	check "first boot: Perfect registered and made the default" sh -c '
-		[ "$1" = /luci-static/perfect ]' _ \
+	check "first boot: Footstrap made the default" sh -c '
+		[ "$1" = /luci-static/footstrap ]' _ \
 		"$(defaults luci.main.mediaurlbase=/luci-static/bootstrap luci.themes.Bootstrap=/luci-static/bootstrap)"
-	check "theme picked later survives the next upgrade" sh -c '
+	check "theme selected later is kept at the next upgrade" sh -c '
 		[ "$1" = /luci-static/bootstrap ]' _ \
-		"$(defaults luci.main.mediaurlbase=/luci-static/bootstrap luci.themes.Perfect=/luci-static/perfect)"
-	check "files referenced by the templates and perfect.css exist" sh -c '
-		cd "$1/htdocs/luci-static/perfect" || exit 1
-		for f in $(sed -n "s|.*{{ media }}/\([^\"?]*\).*|\1|p" "$1"/root/usr/share/ucode/luci/template/themes/perfect/*.ut) \
-		         $(grep -o "url(\"[^\"]*\")" perfect.css | grep -v "url(\"data:" | sed "s|^url(\"||; s|\")\$||"); do
+		"$(defaults luci.main.mediaurlbase=/luci-static/bootstrap luci.themes.Footstrap=/luci-static/footstrap)"
+	check "upgrade from an image with Perfect: moved to Footstrap, Perfect removed" sh -c '
+		[ "$1" = /luci-static/footstrap ] && ! grep -q "^luci.themes.Perfect=" "$2"' _ \
+		"$(defaults luci.main.mediaurlbase=/luci-static/perfect luci.themes.Perfect=/luci-static/perfect)" "$D/uci"
+	check "upgrade from an image with Perfect, Bootstrap selected: kept, Perfect removed" sh -c '
+		[ "$1" = /luci-static/bootstrap ] && ! grep -q "^luci.themes.Perfect=" "$2"' _ \
+		"$(defaults luci.main.mediaurlbase=/luci-static/bootstrap luci.themes.Perfect=/luci-static/perfect)" "$D/uci"
+	check "the default runs after Bootstrap sets itself and before Footstrap registers" sh -c '
+		[ "$(printf "%s\n" 30_luci-theme-footstrap "$(basename "$1")" 30_luci-theme-bootstrap | LC_ALL=C sort | tr "\n" " ")" = \
+		  "30_luci-theme-bootstrap 30_luci-theme-default 30_luci-theme-footstrap " ] &&
+		[ -f "$2/root/etc/uci-defaults/30_luci-theme-footstrap" ]' _ "$U" "$P"
+	check "stylesheet built from styles/, files the templates reference exist" sh -c '
+		sh "$1/build-css.sh" "$2/cascade.css" >/dev/null && grep -q "\.fs-login" "$2/cascade.css" || exit 1
+		cd "$1/htdocs/luci-static/footstrap" || exit 1
+		for f in $(sed -n "s|.*{{ media }}/\([^\"?]*\).*|\1|p" "$1"/ucode/template/themes/footstrap/partials/head.ut); do
+			case "$f" in cascade.css|fonts/*) continue ;; esac	# generated, /etc/footstrap
 			[ -f "$f" ] || { echo "missing $f"; exit 1; }
-		done' _ "$P"
-	if [ -d "$TOP/build/stage/www/luci-static/bootstrap" ]; then
-		check "Bootstrap files the theme loads are in the built image" sh -c '
-			for f in luci-static/bootstrap/cascade.css luci-static/bootstrap/mobile.css luci-static/resources/menu-bootstrap.js; do
-				[ -f "$1/$f" ] || { echo "missing /www/$f"; exit 1; }
-			done' _ "$TOP/build/stage/www"
+		done' _ "$P" "$D"
+	check "version of build.conf can be stamped, vendored theme not edited for the notice" sh -c '
+		grep -q "^: \"\${FOOTSTRAP_VERSION:=[0-9]" "$2/build.conf" &&
+		grep -q "const FS_VERSION = " "$1/htdocs/luci-static/resources/fs-version.js" &&
+		! grep -rq -e NIJIKA_NOTICE -e nijika-notice "$1/ucode"' _ "$P" "$TOP"
+	if [ -d "$TOP/build/stage/www/luci-static/footstrap" ]; then
+		check "Footstrap and the Bootstrap fallback are in the built image" sh -c '
+			for f in www/luci-static/footstrap/cascade.css www/luci-static/resources/menu-footstrap.js \
+				usr/share/ucode/luci/template/themes/footstrap/sysauth.ut \
+				www/luci-static/bootstrap/cascade.css www/luci-static/resources/menu-bootstrap.js; do
+				[ -f "$1/$f" ] || { echo "missing /$f"; exit 1; }
+			done' _ "$TOP/build/stage"
 	else
-		skp "Bootstrap files in the built image" "no build/stage"
+		skp "Footstrap and Bootstrap files in the built image" "no build/stage"
 	fi
 }
 

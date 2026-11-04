@@ -11,26 +11,37 @@ sample data (no real device secrets).
     ./build.sh rootfs assemble          # once, produces build/stage/www
     python3 tools/luci-mock/server.py   # http://127.0.0.1:8080/
 
-Views: /cgi-bin/luci/admin/nijika/<status|quicksetup|omci|identity|mib|firmware|settings>
-Login page: /cgi-bin/luci/login. LUCI_THEME=perfect (default) or bootstrap
-picks the page chrome; package/*/htdocs is served over the built www, so
-theme and view edits show up without a rebuild.
+Views: /cgi-bin/luci/admin/status/overview and the paths of the menu.d files;
+/cgi-bin/luci/admin/nijika/<status|quicksetup|omci|identity|mib|firmware|settings>
+Login page: /cgi-bin/luci/login (?error: failed login, ?notice: the notice of a
+build from a fork or a copy). LUCI_THEME=footstrap (default) or bootstrap picks
+the page chrome. Footstrap pages are its real templates, without the ucode: the
+statements are left out, a table below answers the conditions and values.
+package/*/htdocs is served over the built www, so theme and view edits show up
+without a rebuild.
 """
 
+import glob
 import http.server
 import json
 import os
+import re
+import shutil
 import socketserver
+import subprocess
 import sys
+import tempfile
 import time
 
 TOP = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 WWW = os.environ.get('LUCI_WWW', os.path.join(TOP, 'build', 'stage', 'www'))
 PORT = int(os.environ.get('PORT', '8080'))
-THEME = os.environ.get('LUCI_THEME', 'perfect')
-HTDOCS = sorted(os.path.join(TOP, 'package', p, 'htdocs') for p in os.listdir(os.path.join(TOP, 'package'))
-                if os.path.isdir(os.path.join(TOP, 'package', p, 'htdocs')))
+THEME = os.environ.get('LUCI_THEME', 'footstrap')
+CACHE = os.path.join(tempfile.gettempdir(), 'nijika-luci-mock')
+HTDOCS = [CACHE] + sorted(os.path.join(TOP, 'package', p, 'htdocs') for p in os.listdir(os.path.join(TOP, 'package'))
+                          if os.path.isdir(os.path.join(TOP, 'package', p, 'htdocs')))
 VIEWS = ['status', 'quicksetup', 'wan', 'lan', 'wlan', 'portfw', 'dmz', 'qos', 'voip', 'upnp', 'ddns', 'wireguard', 'gpon', 'provision', 'identity', 'mib', 'firmware', 'settings']
+OVERVIEW_DROPPED = ('29_ports.js', '30_network.js', '40_dhcp.js', '50_dsl.js', '60_wifi.js')   # scripts/assemble.sh
 BOOT = time.time()
 
 
@@ -374,77 +385,173 @@ def ubus(obj, method, args):
         return [0, {'changes': {}}]
     if obj == 'luci' and method == 'getFeatures':
         return [0, {}]
+    if obj == 'luci' and method == 'getVersion':
+        return [0, {'revision': 'mock', 'branch': 'mock'}]
+    if obj == 'luci' and method == 'getUnixtime':
+        return [0, {'result': int(time.time())}]
+    if obj == 'luci' and method == 'getMountPoints':
+        return [0, {'result': [{'mount': '/overlay', 'device': 'ubi0_2', 'size': 40 << 20, 'avail': 36 << 20, 'free': 36 << 20}]}]
+    if obj == 'system' and method == 'board':
+        return [0, {'hostname': 'NijikaWrt', 'model': 'D-Link DPN-FX3060V (A1)', 'kernel': '5.10.70', 'system': 'ARMv8 Processor rev 0',
+                    'release': {'description': 'NijikaWrt r47 / OpenWrt 25.12.5 r32000-mock', 'target': 'armsr/armv8'}}]
+    if obj == 'system' and method == 'info':
+        return [0, {'uptime': int(time.time() - BOOT) + 4440, 'localtime': int(time.time()), 'load': [21000, 18000, 15000],
+                    'memory': {'total': 512 << 20, 'free': 300 << 20, 'available': 340 << 20, 'shared': 1 << 20, 'buffered': 8 << 20, 'cached': 40 << 20},
+                    'root': {'total': 40960, 'free': 36864, 'used': 4096, 'avail': 36864}, 'tmp': {'total': 262144, 'free': 259072, 'used': 3072, 'avail': 259072}}]
+    if obj == 'file' and method == 'list':
+        return [0, {'entries': www_list(args.get('path', ''))}]
+    if obj == 'luci-rpc' and method == 'getNetworkDevices':
+        # byte counters of 42 and 3 Mbit/s on ppp0
+        up = time.time() - BOOT
+        return [0, {'ppp0': {'name': 'ppp0', 'up': True, 'stats': {'rx_bytes': 8 * 2 ** 30 + int(up * 5250000), 'tx_bytes': 512 * 2 ** 20 + int(up * 375000)}},
+                    'nas0_2': {'name': 'nas0_2', 'up': True, 'stats': {'rx_bytes': 1441792, 'tx_bytes': 524288}},
+                    'nas0_3': {'name': 'nas0_3', 'up': True, 'stats': {'rx_bytes': 0, 'tx_bytes': 22528}}}]
     return [0, {}]
 
 
-# Page chrome per theme, mirroring themes/<theme>/header.ut + footer.ut.
-CHROME = {
-    'bootstrap': {
-        'css': '<link rel="stylesheet" href="/luci-static/bootstrap/cascade.css">',
-        'dark': '<script>document.querySelector(":root").setAttribute("data-darkmode", '
-                'window.matchMedia("(prefers-color-scheme: dark)").matches);</script>',
-        'brand': '<a class="brand" href="/">NijikaWrt (mock)</a>',
-        'footer': '',
-    },
-    'perfect': {
-        'css': '<link rel="stylesheet" href="/luci-static/bootstrap/cascade.css">'
-               '<link rel="stylesheet" media="only screen and (max-device-width: 854px)" href="/luci-static/bootstrap/mobile.css">'
-               '<link rel="stylesheet" href="/luci-static/perfect/perfect.css">'
-               '<link rel="icon" href="/luci-static/perfect/logo_48.png" sizes="48x48">',
-        'dark': '<script>document.querySelector(":root").setAttribute("data-darkmode", "false");</script>',
-        'brand': '<a class="perfect-brand" href="/"><img src="/luci-static/perfect/brand.svg" alt="Perfect" width="111" height="34">'
-                 '<span class="perfect-host">NijikaWrt (mock)</span></a>',
-        'footer': '<footer><span>Powered by <a href="#">LuCI (mock)</a> / <a href="#">OpenWrt 25.12.5</a></span>'
-                  '<ul class="breadcrumb pull-right" id="modemenu"><li class="active"><a href="#">Administration</a></li></ul></footer>',
-    },
+def www_list(path):
+    """`file list` of a /www directory, the Overview cards as in an image."""
+    names = set()
+    for root in HTDOCS + [WWW]:
+        d = os.path.join(root, path[len('/www/'):])
+        if os.path.isdir(d):
+            names.update(n for n in os.listdir(d) if os.path.isfile(os.path.join(d, n)) and n not in OVERVIEW_DROPPED)
+    return [{'name': n, 'type': 'file'} for n in sorted(names)]
+
+
+def menu_nodes():
+    """The menu.d files of package/*, with the LuCI nodes the pages hang on."""
+    nodes = {
+        'admin/status': {'title': 'Status', 'order': 10, 'action': {'type': 'firstchild'}},
+        'admin/status/overview': {'title': 'Overview', 'order': 1, 'action': {'type': 'view', 'path': 'status/index'}},
+        'admin/network': {'title': 'Network', 'order': 30, 'action': {'type': 'firstchild'}},
+        'admin/services': {'title': 'Services', 'order': 40, 'action': {'type': 'firstchild'}},
+        'admin/system': {'title': 'System', 'order': 60, 'action': {'type': 'firstchild'}},
+    }
+    for f in glob.glob(os.path.join(TOP, 'package', '*', 'root', 'usr', 'share', 'luci', 'menu.d', '*.json')):
+        with open(f, encoding='utf-8') as src:
+            nodes.update(json.load(src))
+    return nodes
+
+
+def menu_tree():
+    root = {'children': {}}
+    for path, spec in sorted(menu_nodes().items()):
+        cur = root
+        for part in path.split('/'):
+            cur = cur['children'].setdefault(part, {'children': {}})
+        cur.update({k: v for k, v in spec.items() if k != 'depends'}, satisfied=True)
+    root['children']['admin'].update(title='Administration', action={'type': 'firstchild'}, satisfied=True)
+    return root
+
+
+def view_of(path):
+    """The view of admin/<path>, through firstchild nodes."""
+    node = menu_tree()['children']['admin']
+    for part in [p for p in path.split('/') if p]:
+        node = node['children'].get(part)
+        if node is None:
+            return None
+    while node.get('action', {}).get('type') == 'firstchild' and node['children']:
+        node = min(node['children'].values(), key=lambda n: n.get('order', 99))
+    return node.get('action', {}).get('path') if node.get('action', {}).get('type') == 'view' else None
+
+
+FS_TEMPLATES = os.path.join(TOP, 'package', 'luci-theme-footstrap', 'ucode', 'template', 'themes', 'footstrap')
+FS_IF = re.compile(r'\{%-?\s*if \(((?:(?!%\}).)*?)\):\s*-?%\}((?:(?!\{%-?\s*if ).)*?)\{%-?\s*endif\s*-?%\}', re.S)
+# the conditions of the templates that hold in the mock; all others do not
+FS_TRUE = ('!blank_page', 'dispatcher.lookup("admin/logout")')
+FS_VALUES = {
+    'media': '/luci-static/footstrap', 'resource': '/luci-static/resources', 'pkgs_update_time': str(int(BOOT)),
+    'dispatcher.lang': 'en', 'dispatcher.build_url()': '/cgi-bin/luci/', "dispatcher.build_url('admin/logout')": '/cgi-bin/luci/admin/logout',
+    "_rtl ? 'rtl' : 'ltr'": 'ltr', "_sd.layout == 'sidebar' ? 'sidebar' : 'top'": 'top',
+    "entityencode(striptags(boardinfo.hostname ?? 'OpenWrt'), true)": 'NijikaWrt',
+    "entityencode(striptags(dispatched?.title ? _(dispatched.title) : (boardinfo.hostname ?? 'OpenWrt')), true)": 'NijikaWrt',
+    'entityencode(duser, true)': 'root', 'https_ports': '[]', 'entityencode(version.luciname, true)': 'LuCI (mock)',
+    'entityencode(version.luciversion, true)': 'mock', 'entityencode(version.distname, true)': 'NijikaWrt',
+    'entityencode(version.distversion, true)': 'r47', 'entityencode(version.distrevision, true)': 'mock',
 }
 
-PAGE = '''<!DOCTYPE html>
+
+def fs_render(text, true=FS_TRUE, values=None):
+    """A Footstrap template without ucode: comments and statements out, conditions and values from the tables."""
+    def branch(m):
+        yes, _, no = m.group(2).partition('{% else %}')
+        return yes if m.group(1) in true else no
+
+    values = dict(FS_VALUES, **(values or {}))
+    text = re.sub(r'\{#.*?#\}', '', text, flags=re.S)
+    n = 1
+    while n:
+        text, n = FS_IF.subn(branch, text)
+    text = re.sub(r'\{%.*?%\}', '', text, flags=re.S)
+    text = re.sub(r"\{\{\s*_\('([^']*)'\)\s*\}\}", r'\1', text)
+    return re.sub(r'\{\{\s*(.*?)\s*\}\}', lambda m: values.get(m.group(1), ''), text)
+
+
+def fs_file(name):
+    with open(os.path.join(FS_TEMPLATES, name), encoding='utf-8') as src:
+        return src.read()
+
+
+def fs_header(page, true=FS_TRUE):
+    text = re.sub(r"\{%\s*include\('themes/footstrap/partials/head'.*?%\}", lambda m: fs_file('partials/head.ut'), fs_file('header.ut'), flags=re.S)
+    return fs_render(text, true, {'fs_page': page})
+
+
+def fs_login(error, notice):
+    """The login page of an image: sysauth.ut, with the notice of scripts/lib.sh for ?notice."""
+    with tempfile.TemporaryDirectory() as tmp:
+        ut = os.path.join(tmp, 'usr/share/ucode/luci/template/themes/footstrap/sysauth.ut')
+        js = os.path.join(tmp, 'www/luci-static/resources/view/status/include/11_nijika_notice.js')
+        os.makedirs(os.path.dirname(ut))
+        os.makedirs(os.path.dirname(js))
+        shutil.copy(os.path.join(FS_TEMPLATES, 'sysauth.ut'), ut)
+        shutil.copy(os.path.join(TOP, 'package/luci-app-nijika/htdocs/luci-static/resources/view/status/include/11_nijika_notice.js'), js)
+        text = 'Nijika Firmware r47, V1.1.2, Open PON Foundation (project lead by Anime4000/RTL960x)' if notice else ''
+        subprocess.run(['bash', '-c', '. "$0/scripts/lib.sh"; nijika_notice_apply "$1" "$2"', TOP, tmp, text], check=True)
+        with open(ut, encoding='utf-8') as src:
+            body = src.read()
+    body = re.sub(r"\{%\s*include\('header'.*?%\}", lambda m: fs_file('header.ut'), body, flags=re.S)
+    body = re.sub(r"\{%\s*include\('themes/footstrap/partials/head'.*?%\}", lambda m: fs_file('partials/head.ut'), body, flags=re.S)
+    body = re.sub(r"\{%\s*include\('footer'.*?%\}", '', body, flags=re.S)
+    return fs_render(body, ('fuser && !auth_plugin',) if error else (), {'fs_page': ''})
+
+
+LUCI_BOOT = '''<script src="/luci-static/resources/luci.js"></script>
+<script>
+L = new LuCI(%(env)s);
+</script>
+<div id="view"><div class="spinning">Loading view...</div>
+<script>L.require('ui').then(function(ui) { ui.instantiateView('%(view)s'); });</script></div>'''
+
+BOOTSTRAP = '''<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>NijikaWrt | %(view)s</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-%(css)s
+<link rel="stylesheet" href="/luci-static/bootstrap/cascade.css">
 <script src="/luci-static/resources/cbi.js"></script>
-%(dark)s
-</head><body class="lang_en" data-page="admin-nijika-%(view)s">
-<header>%(brand)s<ul class="nav" id="topmenu">%(menu)s</ul><div id="indicators" class="pull-right"></div></header>
-<div id="maincontent" class="container">
-<script src="/luci-static/resources/luci.js"></script>
-<script>
-L = new LuCI({"media":"/luci-static/%(theme)s","resource":"/luci-static/resources","scriptname":"/cgi-bin/luci",
- "pathinfo":"/admin/nijika/%(view)s","documentroot":"/www","requestpath":["admin","nijika","%(view)s"],
- "dispatchpath":["admin","nijika","%(view)s"],"pollinterval":5,"ubuspath":"/ubus/","sessionid":"mock","token":"mock",
- "nodespec":{"action":{"type":"view","path":"nijika/%(view)s"}},"apply_rollback":90,"apply_holdoff":4,"apply_timeout":5,"apply_display":1.5});
-</script>
-<div id="view"><div class="spinning">Loading view…</div>
-<script>L.require('ui').then(function(ui) { ui.instantiateView('nijika/%(view)s'); });</script></div>
-</div>%(footer)s</body></html>'''
-
-# themes/perfect/sysauth.ut with sample values (?error shows the failed login)
-LOGIN = '''<!DOCTYPE html>
-<html lang="en" data-darkmode="false"><head><meta charset="utf-8"><title>NijikaWrt (mock)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-%(css)s
-</head><body class="lang_en perfect-blank" data-page="">
-<main class="perfect-login">
-	<section class="perfect-login-panel">
-		<img class="perfect-login-logo" src="/luci-static/perfect/brand.svg" alt="Perfect" width="148" height="45">
-		<span class="perfect-pill">NijikaWrt (mock)</span>
-		<h1>Authorization Required</h1>
-		<p class="perfect-login-lead">Please enter your username and password.</p>
-		<form method="get" class="perfect-login-card" id="perfect-login" action="/cgi-bin/luci/admin/nijika/status">
-			%(error)s
-			<label for="luci_username">Username</label>
-			<input name="luci_username" id="luci_username" type="text" autocomplete="username" value="root">
-			<label for="luci_password">Password</label>
-			<input name="luci_password" id="luci_password" type="password" autocomplete="current-password">
-			<button type="submit" class="btn cbi-button-action important">Log in</button>
-		</form>
-	</section>
-	<div class="perfect-login-art" aria-hidden="true">
-		<img src="/luci-static/perfect/login-cat.webp" alt="" width="636" height="430">
-	</div>
-</main>
+<script>document.querySelector(":root").setAttribute("data-darkmode", window.matchMedia("(prefers-color-scheme: dark)").matches);</script>
+</head><body class="lang_en" data-page="%(page)s">
+<header><a class="brand" href="/">NijikaWrt (mock)</a><ul class="nav" id="topmenu" style="display:none"></ul><div id="indicators" class="pull-right"></div></header>
+<div id="maincontent" class="container"><div id="tabmenu" style="display:none"></div>
+%(boot)s
+</div><footer><span>LuCI mock</span><ul class="breadcrumb pull-right" id="modemenu" style="display:none"></ul></footer>
+<script>L.require('menu-bootstrap')</script>
 </body></html>'''
+
+
+def page(path, view):
+    """admin/<path> with its view: the chrome of the theme around LuCI's view page."""
+    parts = ['admin'] + [p for p in path.split('/') if p]
+    env = {'media': '/luci-static/' + THEME, 'resource': '/luci-static/resources', 'scriptname': '/cgi-bin/luci',
+           'pathinfo': '/' + '/'.join(parts), 'documentroot': '/www', 'requestpath': parts, 'dispatchpath': parts,
+           'pollinterval': 5, 'ubuspath': '/ubus/', 'sessionid': 'mock', 'token': 'mock',
+           'nodespec': {'action': {'type': 'view', 'path': view}}, 'apply_rollback': 90, 'apply_holdoff': 4,
+           'apply_timeout': 5, 'apply_display': 1.5, 'rollback_token': None}
+    boot = LUCI_BOOT % {'env': json.dumps(env), 'view': view}
+    if THEME == 'bootstrap':
+        return BOOTSTRAP % {'view': view, 'page': '-'.join(parts), 'boot': boot}
+    return fs_header('-'.join(parts)) + boot + fs_render(fs_file('footer.ut'))
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -479,27 +586,34 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split('?')[0]
         if path == '/':
-            links = ''.join('<li><a href="/cgi-bin/luci/admin/nijika/%s">%s</a></li>' % (v, v) for v in VIEWS)
+            links = '<li><a href="/cgi-bin/luci/admin/status/overview">overview</a></li>'
+            links += ''.join('<li><a href="/cgi-bin/luci/admin/nijika/%s">%s</a></li>' % (v, v) for v in VIEWS)
             links += '<li><a href="/cgi-bin/luci/login">login</a></li>'
             return self.send_body('<h1>NijikaWrt LuCI mock</h1><ul>%s</ul>' % links, 'text/html')
-        if path.startswith('/cgi-bin/luci/admin/nijika/'):
-            view = path.rsplit('/', 1)[1]
-            if view in VIEWS:
-                menu = ''.join('<li><a href="/cgi-bin/luci/admin/nijika/%s">%s</a></li>' % (v, v) for v in VIEWS)
-                chrome = CHROME.get(THEME, CHROME['bootstrap'])
-                return self.send_body(PAGE % dict(chrome, view=view, menu=menu, theme=THEME), 'text/html')
         if path == '/cgi-bin/luci/login':
-            error = ('<div class="alert-message error">Invalid username and/or password! Please try again.</div>'
-                     if 'error' in self.path else '')
-            return self.send_body(LOGIN % {'css': CHROME['perfect']['css'], 'error': error}, 'text/html')
+            return self.send_body(fs_login('error' in self.path, 'notice' in self.path), 'text/html')
         if path.startswith('/cgi-bin/luci/admin/translations'):
             return self.send_body('', 'application/javascript')
         if path.startswith('/cgi-bin/luci/admin/menu'):
-            return self.send_body('{}', 'application/json')
+            return self.send_body(json.dumps(menu_tree()), 'application/json')
+        if path.startswith('/cgi-bin/luci/admin/nijika/') and path.rsplit('/', 1)[1] in VIEWS:
+            view = path.rsplit('/', 1)[1]
+            return self.send_body(page('nijika/' + view, 'nijika/' + view), 'text/html')
+        if path.startswith('/cgi-bin/luci/admin'):
+            sub = path[len('/cgi-bin/luci/admin'):]
+            view = view_of(sub)
+            if view:
+                return self.send_body(page(sub, view), 'text/html')
         return super().do_GET()
 
     def do_POST(self):
         body = self.rfile.read(int(self.headers.get('Content-Length', 0)) or 0)
+        if self.path.split('?')[0] == '/cgi-bin/luci/login':
+            self.send_response(303)
+            self.send_header('Location', '/cgi-bin/luci/admin/status/overview')
+            self.send_header('Content-Length', '0')
+            self.end_headers()
+            return None
         if not self.path.startswith('/ubus'):
             return self.send_body('{}', 'application/json')
         req = json.loads(body or b'[]')
@@ -515,6 +629,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 if __name__ == '__main__':
     if not os.path.isdir(os.path.join(WWW, 'luci-static')):
         sys.exit('LuCI www not found at %s (run ./build.sh rootfs assemble first)' % WWW)
+    subprocess.run(['sh', os.path.join(TOP, 'package/luci-theme-footstrap/build-css.sh'),
+                    os.path.join(CACHE, 'luci-static/footstrap/cascade.css')], check=True, stdout=subprocess.DEVNULL)
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.ThreadingTCPServer(('127.0.0.1', PORT), Handler) as srv:
         print('LuCI mock on http://127.0.0.1:%d/' % PORT)

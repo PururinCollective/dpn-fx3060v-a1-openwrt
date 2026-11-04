@@ -65,8 +65,8 @@ nijika_githash() {
 # on Status > Overview. Do not remove or weaken this check or the notice.
 NIJIKA_UPSTREAM="PururinCollective/dpn-fx3060v-a1-openwrt"
 NIJIKA_NOTICE_FMT="Nijika Firmware %s, %s, Open PON Foundation (project lead by Anime4000/RTL960x)"
-NIJIKA_NOTICE_FILES="usr/share/ucode/luci/template/themes/perfect/sysauth.ut
-www/luci-static/resources/view/status/include/11_nijika_notice.js"
+NIJIKA_NOTICE_FILES="www/luci-static/resources/view/status/include/11_nijika_notice.js"
+NIJIKA_NOTICE_LOGIN="usr/share/ucode/luci/template/themes/footstrap/sysauth.ut"
 NIJIKA_NOTICE_BOOTSTRAP="usr/share/ucode/luci/template/themes/bootstrap/sysauth.ut"
 
 # nijika_origin -> upstream | fork. upstream: the git remote "origin" of this
@@ -124,8 +124,9 @@ nijika_stock_version() {
 }
 
 # nijika_notice_apply ROOT NOTICE: write NOTICE (empty: no notice) into the
-# files of NIJIKA_NOTICE_FILES (placeholder @NIJIKA_NOTICE@) and below the
-# login form of the Bootstrap theme.
+# files of NIJIKA_NOTICE_FILES (placeholder @NIJIKA_NOTICE@), at the end of
+# the login form of the default theme (the vendored page holds no placeholder,
+# the build's copy is changed) and below the login form of the Bootstrap theme.
 nijika_notice_apply() {
 	local root="$1" notice="$2" html js f
 	html=$(printf '%s' "$notice" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e "s/'/\&#39;/g" -e 's/"/\&quot;/g')
@@ -133,18 +134,17 @@ nijika_notice_apply() {
 	for f in $NIJIKA_NOTICE_FILES; do
 		[ -f "$root/$f" ] || die "notice: $f missing"
 		grep -q '@NIJIKA_NOTICE@' "$root/$f" || die "notice: no @NIJIKA_NOTICE@ in $f"
-		case "$f" in
-			*.js) sed -i "s#@NIJIKA_NOTICE@#$(printf '%s' "$js" | sed -e 's/[\\&#]/\\&/g')#g" "$root/$f" ;;
-			*) if [ -n "$notice" ]; then
-				sed -i "s#@NIJIKA_NOTICE@#$(printf '%s' "$html" | sed -e 's/[\\&#]/\\&/g')#g" "$root/$f"
-			   else
-				sed -i '/@NIJIKA_NOTICE@/d' "$root/$f"
-			   fi ;;
-		esac
+		sed -i "s#@NIJIKA_NOTICE@#$(printf '%s' "$js" | sed -e 's/[\\&#]/\\&/g')#g" "$root/$f"
 	done
+	f="$root/$NIJIKA_NOTICE_LOGIN"
+	[ -f "$f" ] || die "notice: $NIJIKA_NOTICE_LOGIN missing"
+	grep -q '</form>' "$f" || die "notice: no </form> in $NIJIKA_NOTICE_LOGIN"
+	[ -n "$notice" ] || return 0
+	html=$(printf '%s' "$html" | sed -e 's/[\\&#]/\\&/g')
+	sed -i "0,/<\/form>/s#</form>#\t<p class=\"nijika-notice\">$html</p>\n</form>#" "$f"
 	f="$root/$NIJIKA_NOTICE_BOOTSTRAP"
-	if [ -n "$notice" ] && [ -f "$f" ]; then
+	if [ -f "$f" ]; then
 		grep -q '</form>' "$f" || die "notice: no </form> in $NIJIKA_NOTICE_BOOTSTRAP"
-		sed -i "0,/<\/form>/s#</form>#</form>\n\t<p class=\"nijika-notice\">$(printf '%s' "$html" | sed -e 's/[\\&#]/\\&/g')</p>#" "$f"
+		sed -i "0,/<\/form>/s#</form>#</form>\n\t<p class=\"nijika-notice\">$html</p>#" "$f"
 	fi
 }

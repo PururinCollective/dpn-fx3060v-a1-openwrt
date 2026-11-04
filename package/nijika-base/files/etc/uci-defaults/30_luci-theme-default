@@ -1,0 +1,24 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Make Footstrap the default LuCI theme.
+# The name sorts between 30_luci-theme-bootstrap, which sets Bootstrap on a
+# new configuration, and 30_luci-theme-footstrap, which registers Footstrap
+# and does not change the theme in use. The default is set only while
+# luci.themes.Footstrap is missing, so a theme selected later in
+# System > System > Language and Style is kept across upgrades.
+
+uci -q get luci.themes.Footstrap >/dev/null && exit 0
+
+# An upgrade from an image with the Perfect theme: that theme is removed, a
+# router on another theme stays on it.
+if uci -q get luci.themes.Perfect >/dev/null; then
+	[ "$(uci -q get luci.main.mediaurlbase)" = /luci-static/perfect ] &&
+		uci set luci.main.mediaurlbase=/luci-static/footstrap
+	uci delete luci.themes.Perfect
+else
+	uci set luci.main.mediaurlbase=/luci-static/footstrap
+fi
+uci commit luci
+
+exit 0
