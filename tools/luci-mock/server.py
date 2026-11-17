@@ -251,6 +251,7 @@ UCI = {'nijika': {
             'resolver_url': 'https://b.hitoha.moe/dns-query', 'bootstrap_dns': '1.1.1.1,8.8.8.8', 'listen_port': '5053'},
     'firewall': {'.type': 'firewall', '.name': 'firewall', '.anonymous': False, 'spi_ipv4': 'off', 'spi_ipv6': 'off'},
     'ui': {'.type': 'ui', '.name': 'ui', '.anonymous': False, 'developer': '0'},
+    'announce': {'.type': 'announce', '.name': 'announce', '.anonymous': False, 'lldp': '1', 'mndp': '1'},
     'wifi': {'.type': 'wifi', '.name': 'wifi', '.anonymous': False, 'bss_color_wlan0': '1', 'bss_color_wlan1': '1'},
     'ddns': {'.type': 'ddns', '.name': 'ddns', '.anonymous': False, 'enabled': '1', 'interface': 'auto',
              'ip_url': ['http://ip1.dynupdate.no-ip.com/', 'https://api.ipify.org/', 'https://ipv4.icanhazip.com/'],

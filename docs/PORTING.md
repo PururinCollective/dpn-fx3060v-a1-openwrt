@@ -11,7 +11,7 @@ Everything that differs between revisions lives in one place:
 
 | | |
 |---|---|
-| `devices/<id>/device.conf` | board name, model, stock firmware pattern, hardware fingerprint (switch PHY IDs), UBI volume sizes |
+| `devices/<id>/device.conf` | board name, model, stock firmware pattern, hardware fingerprint (switch PHY IDs), LAN port devices and labels (`DEVICE_LAN_PORTS`), UBI volume sizes |
 | `devices/<id>/NOTES.md` | the measured facts behind those values (ports, PHYs, quirks) |
 | `stock/` | the stock firmware of that revision: kernel, device tree and the vendor userland come from it |
 

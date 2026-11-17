@@ -5,6 +5,8 @@
 #   rtk-apply  /rtk/bin: runs in the stock chroot, compiled for the stock
 #              userland (aarch64, glibc 2.30) against its libraries
 #   logrelay   /usr/libexec/rtk: runs on the OpenWrt side, static (musl)
+#   nbannounce /usr/libexec/nijika: LLDP and MNDP announcements, OpenWrt
+#              side, static (musl)
 #
 #   scripts/build-helpers.sh <stage-root>     (called by assemble.sh)
 #
@@ -61,3 +63,15 @@ if [ ! -x "$bin" ] || [ "$src" -nt "$bin" ] || [ "$0" -nt "$bin" ]; then
 	mv "$bin.tmp" "$bin"
 fi
 install -m 0755 "$bin" "$ROOT/usr/libexec/rtk/logrelay"
+
+# nbannounce: LLDP and MNDP out of the LAN ports (see the source)
+nsrc="$TOPDIR/package/nijika/src"
+bin="$OUT/nbannounce"
+if [ ! -x "$bin" ] || [ "$0" -nt "$bin" ] || [ -n "$(find "$nsrc" -newer "$bin" -print -quit)" ]; then
+	log "compiling nbannounce"
+	$ZIG cc -target aarch64-linux-musl -static -Os -s -Wall -Werror -I"$nsrc" -o "$bin.tmp" \
+		"$nsrc/nbannounce.c" "$nsrc/announce.c" \
+		|| die "nbannounce: compile failed (ZIG='$ZIG')"
+	mv "$bin.tmp" "$bin"
+fi
+install -D -m 0755 "$bin" "$ROOT/usr/libexec/nijika/nbannounce"

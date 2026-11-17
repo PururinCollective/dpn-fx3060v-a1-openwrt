@@ -157,6 +157,18 @@ config wireguard 'wireguard'
 #	# client configuration: what goes through the tunnel
 #	list client_allowed_ips '0.0.0.0/0'
 
+config announce 'announce'
+	# Neighbor announcements out of each LAN port (/usr/libexec/nijika/announce):
+	# LLDP (802.1AB, switches and routers of any make) and MikroTik MNDP
+	# (Winbox, RouterOS IP > Neighbors), every 30 s and at once when an
+	# address or the host name changes. They carry the LAN addresses, MAC,
+	# host name, NijikaWrt version, model and the running firmware bank.
+	option lldp '1'
+	option mndp '1'
+	# Ports the frames leave by, dev or dev=label (the LLDP port
+	# description). Not set: the LAN ports of the device profile.
+	#list port 'eth0.2=LAN1'
+
 config ui 'ui'
 	# Developer options: show expert pages in LuCI (PON > ONT Identity)
 	option developer '0'

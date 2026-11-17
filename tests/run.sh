@@ -6,7 +6,7 @@
 #   tests/run.sh                 every group
 #   tests/run.sh parsers fwu     some groups
 #
-# Groups: syntax json lint origin banks parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme
+# Groups: syntax json lint origin banks parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard announce kmod helpers stockshell bootenv fwu banner theme
 # Needs busybox (the router's shell and awk) and python3 (JSON checks).
 # `fwu` needs a factory image in bin/ (./build.sh). Fixtures in
 # tests/fixtures/ are real A1 captures (tools/probe.sh, tools/omci-capture.sh)
@@ -1401,12 +1401,78 @@ FN
 		! grep -q echo-request '$D/rules' && grep -q 'dport 22 -j ACCEPT' '$D/rules'"
 }
 
+# ------------------------------------------- LLDP / MNDP announcements
+
+# package/nijika/src: the frames byte for byte (tests/announce_test.c), the
+# daemon on the host, and when a user namespace is allowed, one round on a
+# bridge of veth ports: both frames out of each wired port, none on wlan*.
+t_announce() {
+	echo "announce (LLDP and MNDP out of the LAN ports)"
+	local src="$TOP/package/nijika/src" st="$TOP/build/stage"
+	if command -v gcc >/dev/null; then
+		gcc -std=c11 -Wall -Wextra -Werror -I"$src" -o "$W/announce_test" \
+			"$TOP/tests/announce_test.c" "$src/announce.c" 2>"$W/gcc.err" &&
+			check "frames: LLDP and MNDP byte for byte, checksums" sh -c "'$W/announce_test' | tail -n 1 | grep -q ' 0 failed'" ||
+			bad "announce_test compiles" "$(cat "$W/gcc.err")"
+		gcc -O2 -Wall -Wextra -Werror -I"$src" -o "$W/nbannounce" "$src/nbannounce.c" "$src/announce.c" 2>"$W/gcc.err" &&
+			ok "nbannounce compiles (-Wall -Wextra -Werror)" || bad "nbannounce compiles" "$(cat "$W/gcc.err")"
+	else
+		skp "frames, nbannounce" "no gcc"
+	fi
+	if [ -x "$W/nbannounce" ] && [ -n "$PY" ] && command -v ip >/dev/null &&
+	   unshare -rnm true 2>/dev/null; then
+		cat > "$W/rx.py" <<'PYEOF'
+import socket, sys, time
+s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+s.bind((sys.argv[1], 0)); s.settimeout(0.5)
+seen = set(); end = time.time() + 2
+while time.time() < end:
+    try: b = s.recv(2000)
+    except socket.timeout: continue
+    if b[12:14] == b'\x88\xcc' and b'LAN1' in b and b'\x04\x07\x05eth0.2' in b: seen.add('lldp')
+    if b[12:14] == b'\x08\x00' and b[23] == 17 and b[36:38] == b'\x16\x2e' and b'\xc0\xa8\x01\x01' in b[26:30]: seen.add('mndp')
+print(' '.join(sorted(seen)) or 'none')
+PYEOF
+		unshare -rnm sh -c "
+			mount -t sysfs sysfs /sys && ip link add br0 type bridge &&
+			ip link add eth0.2 type veth peer name p2 && ip link add wlan0 type veth peer name pw &&
+			ip link set eth0.2 master br0 && ip link set wlan0 master br0 &&
+			for i in lo br0 eth0.2 wlan0 p2 pw; do ip link set \$i up; done &&
+			ip addr add 192.168.1.1/24 dev br0 &&
+			{ '$PY' -I '$W/rx.py' p2 > '$W/rx.p2' & '$PY' -I '$W/rx.py' pw > '$W/rx.pw' & sleep 0.5;
+			  '$W/nbannounce' once -b br0 -p eth0.2=LAN1 -p wlan9 -V r0 > '$W/nb.once'
+			  '$W/nbannounce' once -b br0 -l 0 > '$W/nb.auto'; wait; }" >/dev/null 2>&1
+		check "a round on eth0.2: LLDP (port eth0.2, LAN1) and MNDP (from 192.168.1.1)" sh -c "
+			[ \"\$(cat '$W/rx.p2')\" = 'lldp mndp' ] && grep -q '^2 frame(s) sent on eth0.2 (LAN1), wlan9' '$W/nb.once'"
+		check "no -p: the bridge members except wlan*, nothing out of wlan0" sh -c "
+			grep -q '^1 frame(s) sent on eth0.2\.' '$W/nb.auto' && [ \"\$(cat '$W/rx.pw')\" = none ]"
+	else
+		skp "a round on veth ports" "no gcc, python3, ip or user namespaces"
+	fi
+	check "device profile: the LAN ports reach /etc/nijika_release" sh -c "
+		grep -q \"^DEVICE_LAN_PORTS='eth0.2=LAN1 \" '$TOP/devices/dpn-fx3060v-a1/device.conf' &&
+		grep -q 'NIJIKA_LAN_PORTS=.\${DEVICE_LAN_PORTS' '$TOP/scripts/build-rootfs.sh'"
+	check "service enabled, settings kept on upgrade (uci-defaults)" sh -c "
+		grep -q 'nijika-wireguard nijika-announce; do' '$TOP/scripts/assemble.sh' &&
+		grep -q 'nijika.announce.lldp=' '$TOP/package/nijika-base/files/etc/uci-defaults/90-nijika-defaults' &&
+		grep -q \"option lldp '1'\" '$TOP/package/nijika-base/files/etc/config/nijika'"
+	if [ -f "$st/usr/libexec/nijika/nbannounce" ]; then
+		check "stage: nbannounce static aarch64, executable" sh -c "
+			[ -x '$st/usr/libexec/nijika/nbannounce' ] && [ -x '$st/usr/libexec/nijika/announce' ] &&
+			readelf -h '$st/usr/libexec/nijika/nbannounce' | grep -q AArch64 &&
+			! readelf -l '$st/usr/libexec/nijika/nbannounce' | grep -q INTERP &&
+			[ -L '$st/etc/rc.d/S94nijika-announce' ]"
+	else
+		skp "staged nbannounce" "not built (./build.sh)"
+	fi
+}
+
 # ------------------------------------------------------------------- main
 
-groups="${*:-syntax json lint origin banks parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard kmod helpers stockshell bootenv fwu banner theme}"
+groups="${*:-syntax json lint origin banks parsers wrapper ucimirror spi lanmgmt apply qos easymesh ddns wireguard announce kmod helpers stockshell bootenv fwu banner theme}"
 for g in $groups; do
 	case "$g" in
-		syntax|json|lint|origin|banks|parsers|wrapper|ucimirror|spi|lanmgmt|apply|qos|easymesh|ddns|wireguard|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
+		syntax|json|lint|origin|banks|parsers|wrapper|ucimirror|spi|lanmgmt|apply|qos|easymesh|ddns|wireguard|announce|kmod|helpers|stockshell|bootenv|fwu|banner|theme) "t_$g" ;;
 		*) echo "unknown group: $g"; exit 2 ;;
 	esac
 done

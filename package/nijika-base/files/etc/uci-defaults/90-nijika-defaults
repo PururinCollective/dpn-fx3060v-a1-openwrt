@@ -79,6 +79,13 @@ set nijika.firewall.wan_ping='1'
 commit nijika
 END
 
+uci -q get nijika.announce >/dev/null || uci -q batch <<'END'
+set nijika.announce=announce
+set nijika.announce.lldp='1'
+set nijika.announce.mndp='1'
+commit nijika
+END
+
 uci -q get nijika.ui >/dev/null || uci -q batch <<'END'
 set nijika.ui=ui
 set nijika.ui.developer='0'

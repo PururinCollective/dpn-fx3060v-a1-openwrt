@@ -620,6 +620,32 @@ nijika_doh() {
 	echo "stock dnsmasq  : $(grep -q '^# nijika-doh' /rtk/var/dnsmasq.conf 2>/dev/null && echo 'forwards to the proxy (ISP voice/TR-069 domains excepted)' || echo 'uses the ISP DNS')"
 }
 
+# LLDP and MikroTik MNDP out of the LAN ports (nijika-announce)
+nijika_announce() {
+	local changed=1
+	case "$1" in
+		on|off)
+			uci set nijika.announce.lldp="$([ "$1" = on ] && echo 1 || echo 0)"
+			uci set nijika.announce.mndp="$([ "$1" = on ] && echo 1 || echo 0)"
+			;;
+		lldp|mndp)
+			case "$2" in
+				on|off) uci set "nijika.announce.$1=$([ "$2" = on ] && echo 1 || echo 0)" ;;
+				*) echo "usage: nijika announce $1 on|off"; return 1 ;;
+			esac
+			;;
+		once) /usr/libexec/nijika/announce once; return ;;
+		''|status|show) changed= ;;
+		*) echo "usage: nijika announce [on|off|lldp on|off|mndp on|off|once]"; return 1 ;;
+	esac
+	if [ -n "$changed" ]; then
+		uci commit nijika
+		/etc/init.d/nijika-announce reload
+	fi
+	/usr/libexec/nijika/announce show
+	echo "Service     : $(pidof nbannounce >/dev/null && echo running || echo stopped) (nijika-announce)"
+}
+
 # /etc/config/rtk mirrors the stock configuration (uci-mirror)
 nijika_uci() {
 	case "$1" in
@@ -696,6 +722,9 @@ System
   mib get|set|def|all|chain ...   Stock configuration database
   doh [on|off|url <URL>]          DNS over HTTPS for the LAN (default
                                   https://b.hitoha.moe/dns-query)
+  announce [on|off|lldp on|off|mndp on|off|once]
+                                  LLDP and MikroTik MNDP neighbor
+                                  announcements out of the LAN ports
   uci [sync|diff]                 /etc/config/rtk = stock config as UCI:
                                   uci get rtk.mib.LAN_IP_ADDR,
                                   uci set ...; uci commit rtk; reload_config
@@ -734,6 +763,7 @@ case "$CMD" in
 	uci) nijika_uci "$@" ;;
 	apply) nijika_apply "$@" ;;
 	doh) nijika_doh "$@" ;;
+	announce) nijika_announce "$@" ;;
 	reset) nijika_reset "$@" ;;
 	banner) NIJIKA_BANNER_FORCE=1 exec /usr/libexec/nijika/banner ;;
 	version|-v|--version) nijika_version ;;

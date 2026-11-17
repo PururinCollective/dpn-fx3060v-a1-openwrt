@@ -1,0 +1,51 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+# NijikaWrt neighbor announcements (nijika.announce; LuCI: NijikaWrt >
+# Settings; CLI: nijika announce): LLDP and MikroTik MNDP out of each LAN
+# port, so the switch or router on that port lists this router with its LAN
+# addresses, whatever subnet they are in. The frames are built and sent by
+# /usr/libexec/nijika/nbannounce; this script gives it the settings and the
+# facts of this image.
+#
+#   announce run    the service (/etc/init.d/nijika-announce): a round every
+#                   30 s, and within 5 s of a change of an address, the host
+#                   name or a port
+#   announce once   one round now
+#   announce show   what is sent
+#
+# Ports: the nijika.announce.port list (dev or dev=label); not set: the LAN
+# ports of the device profile (NIJIKA_LAN_PORTS, eth0.2=LAN1 ...); neither:
+# every member of the LAN bridge except the WiFi interfaces (wlan*).
+
+. /lib/functions.sh
+. /usr/lib/nijika/common.sh
+[ -f /etc/openwrt_release ] && . /etc/openwrt_release
+[ -f /etc/nijika_release ] && . /etc/nijika_release
+
+BIN=/usr/libexec/nijika/nbannounce
+
+cmd="${1:-show}"
+case "$cmd" in
+	run|once|show) ;;
+	*) echo "usage: $0 run|once|show" >&2; exit 2 ;;
+esac
+
+config_load nijika
+config_get_bool lldp announce lldp 1
+config_get_bool mndp announce mndp 1
+config_get ports announce port ''
+config_get mgmt vendor lan_ifname br0
+[ -n "$ports" ] || ports="$NIJIKA_LAN_PORTS"
+
+distro="${NIJIKA_DISTRO:-NijikaWrt}"
+rev="${NIJIKA_REVISION:-r0}"
+desc="$distro $rev${NIJIKA_CODENAME:+ ($NIJIKA_CODENAME)}, OpenWrt ${DISTRIB_RELEASE:-$NIJIKA_OPENWRT}, ${NIJIKA_MODEL:-D-Link DPN-FX3060V}"
+bank=$(running_bank 2>/dev/null)
+
+set -- "$cmd" -b "$mgmt" -l "$lldp" -m "$mndp" -P "$distro" -V "$rev" \
+	-B "${NIJIKA_MODEL_SHORT:-$NIJIKA_MODEL}" -S "${bank:+bank$bank}" -D "$desc"
+for p in $ports; do
+	set -- "$@" -p "$p"
+done
+exec "$BIN" "$@"

@@ -80,6 +80,31 @@ PON, OMCI, WAN, WiFi and VoIP from the existing configuration (MIB).
   gets a key pair, preshared key and the next free address, and its client
   configuration as a QR code; the endpoint is the DDNS name, else the WAN
   address, else (CGNAT) an IPv6 address of the router.
+* **Neighbor discovery (LLDP and MNDP)**: LLDP and MikroTik MNDP are sent
+  out of each LAN port (LAN1-LAN4) every 30 s, and within 5 s when an
+  address or the host name changes, so the switch or router on that port
+  lists this router with its LAN addresses, whatever subnet they are in:
+  RouterOS IP > Neighbors and Winbox (MNDP and LLDP), the LLDP neighbor table
+  of other switches. Both are whole frames from a packet socket on the port,
+  so they need no route; WiFi gets none. On by default, NijikaWrt > Settings
+  or `nijika announce` switch each off.
+
+  | Field | MNDP | LLDP | Value |
+  |---|---|---|---|
+  | MAC | MAC Address | Chassis ID (mac-address) | `br0` |
+  | Address | IP Address (the primary) | Management Address, one per address | every IPv4 address of `br0` |
+  | Identity | Identity | System Name | the host name (`NijikaWrt`) |
+  | Platform | Platform | | `NijikaWrt` |
+  | Version | Version | in System Description | the release (`r40`) |
+  | Board | Board Name | in System Description | the model (`DPN-FX3060V (A1)`) |
+  | Software ID | Software ID | | the running firmware bank (`bank0`) |
+  | Interface | Interface Name | Port ID (interface-name) | the port (`eth0.2`) |
+  | Port | | Port Description | its label (`LAN1`) |
+  | Uptime | Uptime | | |
+  | Capabilities | | System Caps | router, bridge, WLAN access point |
+
+  The frames are checked byte by byte by `tests/announce_test.c`
+  (`tests/run.sh announce`). No serial number or credential is sent.
 * **Stock SPI firewall off**: the stock GUI's *SPI Firewall* switches (IPv4 and
   IPv6, incoming and outgoing) are set to off at every boot, so a wrong toggle
   can no longer cut the LAN off. NAT still keeps unsolicited IPv4 out; on IPv6
@@ -383,6 +408,7 @@ nijika upgrade [--commit] <fw.bin>    write firmware to the other bank
 nijika mib get|set|def|all|chain      stock configuration database
 nijika boa [hidden|lan]               stock D-Link GUI on :8080: router-only or LAN
 nijika doh [on|off|url <URL>]         DNS over HTTPS status / switch / resolver
+nijika announce [on|off|lldp on|off|mndp on|off|once]   LLDP / MNDP neighbor announcements
 nijika uci [sync|diff]                /etc/config/rtk against the stock flash
 nijika apply wan [n]|firewall|lan|wlan|voip|gpon   apply the stock config to the running stack
 nijika wan [list|delete <#>]          stock WAN connections (PON_<n>); delete one
@@ -419,6 +445,9 @@ nijika banner | version | rtk [cmd]
 | `wireguard.mtu` | WAN MTU - 80 | 1412 with PPPoE |
 | `wireguard.endpoint` | automatic | address in client configurations: the first DDNS host name, else the WAN's public IPv4, else an IPv6 address of the router |
 | `wireguard.dns` | LAN address | DNS server in client configurations |
+| `announce.lldp` | `1` | LLDP out of each LAN port (NijikaWrt > Settings, `nijika announce lldp on\|off`) |
+| `announce.mndp` | `1` | MikroTik MNDP out of each LAN port (`nijika announce mndp on\|off`) |
+| `announce.port` | not set | ports, `dev` or `dev=label` (LLDP port description); not set: the LAN ports of the device profile (`DEVICE_LAN_PORTS`) |
 | `uci.tables` | `ATM_VC_TBL WLAN_MBSSIB_TBL WLAN1_MBSSIB_TBL` | chain tables mirrored into `/etc/config/rtk` |
 | `firewall.spi_ipv4` | `off` | stock *IPv4 SPI Firewall*, pinned at boot: `off` (allow both ways), `on` (stock: drop new incoming), `keep` (whatever the stock GUI set) |
 | `firewall.spi_ipv6` | `off` | the same for IPv6 (`off`: LAN devices reachable over IPv6) |

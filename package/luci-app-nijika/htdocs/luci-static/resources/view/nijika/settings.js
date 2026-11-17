@@ -99,6 +99,24 @@ return view.extend({
 		o.default = '1';
 		o.rmempty = false;
 
+		s = m.section(form.NamedSection, 'announce', 'announce', _('Neighbor Discovery'),
+			_('This section is used to configure the LLDP and MikroTik MNDP announcements sent out of each LAN port every 30 seconds. The switch or router on a port lists this router as a neighbor with its LAN IP addresses, MAC address, host name, firmware version and model, also when its IP address is in another subnet.'));
+
+		o = s.option(form.Flag, 'lldp', _('LLDP'),
+			_('IEEE 802.1AB Link Layer Discovery Protocol, read by managed switches and routers.'));
+		o.default = '1';
+		o.rmempty = false;
+
+		o = s.option(form.Flag, 'mndp', _('MNDP'),
+			_('MikroTik Neighbor Discovery Protocol, shown by Winbox and RouterOS IP &gt; Neighbors.'));
+		o.default = '1';
+		o.rmempty = false;
+
+		o = s.option(form.DynamicList, 'port', _('Ports'),
+			_('LAN interfaces the announcements are sent out of, as <code>interface</code> or <code>interface=label</code> (the label is the LLDP port description). Empty: every LAN port.'));
+		o.placeholder = 'eth0.2=LAN1';
+		o.datatype = 'string';
+
 		s = m.section(form.NamedSection, 'banner', 'banner', _('Login banner'));
 		o = s.option(form.ListValue, 'animate', _('Animation'));
 		o.value('always', _('Always (takes a moment on the 115200 baud serial console)'));
